@@ -18,6 +18,8 @@ enum TokenType {
   PushVerbatim, // [ name ] %}
   /* raw text inside a verbatim block, up through (but excluding) the matching endverbatim tag */
   VerbatimContent,
+  /* raw text inside a comment block, up through (but excluding) the endcomment tag */
+  CommentContent,
   /* indicates that an error occurred */
   MatcherError,
 };
@@ -299,18 +301,14 @@ static unsigned check_name(TSLexer *const lexer, const Name *const name) {
 }
 
 static bool check_close_block(TSLexer *const lexer) {
-  while (true) {
-    switch (lexer->lookahead) {
-      case ' ':
-      case '\t':
-        lexer->advance(lexer, false);
-      case '%':
-        lexer->advance(lexer, false);
-        return lexer->lookahead == '}';
-      default:
-        return false;
-    }
+  while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+    lexer->advance(lexer, false);
   }
+  if (lexer->lookahead != '%') {
+    return false;
+  }
+  lexer->advance(lexer, false);
+  return lexer->lookahead == '}';
 }
 
 const char inline_chars[] = "inline";
@@ -408,6 +406,62 @@ static bool scan_verbatim_content(struct Scanner *const scanner, TSLexer *const 
   }
 }
 
+const char endcomment_chars[] = "endcomment";
+
+/* Called right after consuming "{%"; checks whether what follows closes the
+ * comment block. Unlike verbatim, comment blocks have no name to match and
+ * cannot be nested, so any "{% endcomment %}" closes the innermost one. */
+static bool check_endcomment_close(TSLexer *const lexer) {
+  skip_horizontal_whitespace(lexer);
+  for (unsigned i = 0; i < sizeof(endcomment_chars) - 1; ++i) {
+    if (lexer->lookahead != endcomment_chars[i]) {
+      return false;
+    }
+    lexer->advance(lexer, false);
+  }
+  skip_horizontal_whitespace(lexer);
+  if (lexer->lookahead != '%') {
+    return false;
+  }
+  lexer->advance(lexer, false);
+  return lexer->lookahead == '}';
+}
+
+/* Consumes raw comment content up to (but not including) the next
+ * "{% endcomment %}", since comment bodies must not be parsed as template
+ * syntax even when they happen to contain tag-like text. */
+static bool scan_comment_content(TSLexer *const lexer) {
+  bool consumed_any = false;
+  while (true) {
+    if (lexer->eof(lexer)) {
+      if (!consumed_any) {
+        return false;
+      }
+      lexer->mark_end(lexer);
+      lexer->result_symbol = CommentContent;
+      return true;
+    }
+    if (lexer->lookahead == '{') {
+      lexer->mark_end(lexer);
+      lexer->advance(lexer, false);
+      if (lexer->lookahead == '%') {
+        lexer->advance(lexer, false);
+        if (check_endcomment_close(lexer)) {
+          if (!consumed_any) {
+            return false;
+          }
+          lexer->result_symbol = CommentContent;
+          return true;
+        }
+      }
+      consumed_any = true;
+      continue;
+    }
+    lexer->advance(lexer, false);
+    consumed_any = true;
+  }
+}
+
 bool tree_sitter_django_external_scanner_scan(
   void *payload,
   TSLexer *lexer,
@@ -428,6 +482,9 @@ bool tree_sitter_django_external_scanner_scan(
   }
   if (valid_symbols[VerbatimContent]) {
     return scan_verbatim_content(scanner, lexer);
+  }
+  if (valid_symbols[CommentContent]) {
+    return scan_comment_content(lexer);
   }
   while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
     lexer->advance(lexer, true);
@@ -508,9 +565,8 @@ bool tree_sitter_django_external_scanner_scan(
           return true;
         }
       }
-      // undo failed push
+      // name was never pushed onto the stack, just free the local copy
       array_delete(&name);
-      array_pop(stack);
       // single failed push implies failure to match any push
       return false;
     }

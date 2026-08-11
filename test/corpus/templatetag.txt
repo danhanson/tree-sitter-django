@@ -1,0 +1,25 @@
+==================
+Templatetag Openblock
+==================
+
+{% templatetag openblock %}
+
+---
+
+(template
+  (content)
+  (template_tag_block)
+  (content))
+
+==================
+Templatetag Closevariable
+==================
+
+{% templatetag closevariable %}
+
+---
+
+(template
+  (content)
+  (template_tag_block)
+  (content))

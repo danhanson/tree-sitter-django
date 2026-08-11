@@ -87,3 +87,57 @@ other
     (template
       (content)))
   (content))
+
+==================
+If With Complex Predicate
+==================
+
+{% if not done and count in valid_counts and status is not none or tags|length >= 3 %}
+yes
+{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (predicate
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (binaryOperator)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (binaryOperator)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (binaryOperator)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (binaryOperator)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (binaryOperator)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)))
+        (filter_expression
+          (filter)))
+      (binaryOperator)
+      (filtered_value
+        (value
+          (literal
+            (number)))))
+    (template
+      (content)))
+  (content))

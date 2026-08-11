@@ -1,0 +1,49 @@
+==================
+Querystring Empty
+==================
+
+{% querystring %}
+
+---
+
+(template
+  (content)
+  (query_string)
+  (content))
+
+==================
+Querystring With Key Value
+==================
+
+{% querystring page=2 %}
+
+---
+
+(template
+  (content)
+  (query_string
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Querystring With Identifier And Key Value
+==================
+
+{% querystring remove_key page=2 %}
+
+---
+
+(template
+  (content)
+  (query_string
+    (identifier)
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))

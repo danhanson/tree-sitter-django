@@ -1,0 +1,61 @@
+==================
+With Basic
+==================
+
+{% with total=business.employees.count %}
+{{ total }}
+{% endwith %}
+
+---
+
+(template
+  (content)
+  (with_group
+    name: (identifier)
+    variables: (filtered_value
+      (value
+        (variable_attribute
+          (identifier)
+          (attribute))))
+    (template
+      (content)
+      (template_variable
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (content)))
+  (content))
+
+==================
+With Multiple Variables
+==================
+
+{% with a=1 b=2 %}
+{{ a }}
+{% endwith %}
+
+---
+
+(template
+  (content)
+  (with_group
+    name: (identifier)
+    variables: (filtered_value
+      (value
+        (literal
+          (number))))
+    name: (identifier)
+    variables: (filtered_value
+      (value
+        (literal
+          (number))))
+    (template
+      (content)
+      (template_variable
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (content)))
+  (content))

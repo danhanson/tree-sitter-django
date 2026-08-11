@@ -1,0 +1,202 @@
+==================
+Template Variable Integer
+==================
+
+{{ 42 }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Template Variable Negative Float
+==================
+
+{{ -3.14 }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Template Variable Scientific Notation
+==================
+
+{{ 1.5e10 }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Template Variable Double Quoted String
+==================
+
+{{ "hello world" }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Template Variable Single Quoted String With Escape
+==================
+
+{{ 'it\'s ok' }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Template Variable Identifier
+==================
+
+{{ name }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))))
+  (content))
+
+==================
+Template Variable Attribute Access
+==================
+
+{{ user.profile.email }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)
+          (attribute)))))
+  (content))
+
+==================
+Template Variable With Single Filter
+==================
+
+{{ name|upper }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Template Variable With Filter Chain
+==================
+
+{{ name|lower|title }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter)
+        (filter))))
+  (content))
+
+==================
+Template Variable With Filter Argument
+==================
+
+{{ price|add:"5" }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter
+          (value
+            (literal
+              (string)))))))
+  (content))
+
+==================
+Template Variable Number With Filter Argument
+==================
+
+{{ 3.14|floatformat:2 }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (number)))
+      (filter_expression
+        (filter
+          (value
+            (literal
+              (number)))))))
+  (content))

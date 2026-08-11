@@ -350,6 +350,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "comment_group"
+        },
+        {
+          "type": "SYMBOL",
           "name": "csrf_token"
         },
         {
@@ -1165,7 +1169,7 @@
         }
       ]
     },
-    "comment": {
+    "comment_group": {
       "type": "SEQ",
       "members": [
         {
@@ -1202,8 +1206,16 @@
           ]
         },
         {
-          "type": "PATTERN",
-          "value": ".*"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "comment_content"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
         },
         {
           "type": "PREC",
@@ -2685,6 +2697,10 @@
     {
       "type": "SYMBOL",
       "name": "verbatim_content"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "comment_content"
     },
     {
       "type": "SYMBOL",

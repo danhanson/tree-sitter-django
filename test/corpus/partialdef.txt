@@ -1,0 +1,41 @@
+==================
+Partialdef Basic
+==================
+
+<div>
+{% partialdef header %}
+<h1>Title</h1>
+{% endpartialdef %}
+</div>
+
+---
+
+(template
+  (content)
+  (partialdef_group
+    name: (push_partial)
+    (template
+      (content))
+    (pop_partial))
+  (content))
+
+==================
+Partialdef Inline
+==================
+
+<div>
+{% partialdef header inline %}
+<h1>Title</h1>
+{% endpartialdef %}
+</div>
+
+---
+
+(template
+  (content)
+  (partialdef_group
+    name: (push_partial)
+    (template
+      (content))
+    (pop_partial))
+  (content))

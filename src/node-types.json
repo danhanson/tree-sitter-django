@@ -12,6 +12,10 @@
         "named": true
       },
       {
+        "type": "comment_group",
+        "named": true
+      },
+      {
         "type": "csrf_token",
         "named": true
       },
@@ -193,6 +197,40 @@
         },
         {
           "type": "template",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "comment_group",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "comment",
+            "named": false
+          },
+          {
+            "type": "endcomment",
+            "named": false
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "comment_content",
+          "named": true
+        },
+        {
+          "type": "string",
           "named": true
         }
       ]
@@ -1196,6 +1234,14 @@
     "named": false
   },
   {
+    "type": "comment",
+    "named": false
+  },
+  {
+    "type": "comment_content",
+    "named": true
+  },
+  {
     "type": "content",
     "named": true
   },
@@ -1261,6 +1307,10 @@
   },
   {
     "type": "endblock",
+    "named": false
+  },
+  {
+    "type": "endcomment",
     "named": false
   },
   {

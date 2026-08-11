@@ -1,0 +1,18 @@
+==================
+Spaceless Basic
+==================
+
+<div>
+{% spaceless %}
+<p>  hi  </p>
+{% endspaceless %}
+</div>
+
+---
+
+(template
+  (content)
+  (spaceless_group
+    (template
+      (content)))
+  (content))

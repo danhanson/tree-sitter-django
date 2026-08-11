@@ -24,6 +24,7 @@ const django = grammar({
     $.push_partial,
     $.push_verbatim,
     $.verbatim_content,
+    $.comment_content,
     $.matcher_error,
   ],
   reserved: {
@@ -77,6 +78,7 @@ const django = grammar({
       choice(
         $.autoescape_group,
         $.block_group,
+        $.comment_group,
         $.csrf_token,
         $.cycle,
         $.debug,
@@ -167,7 +169,12 @@ const django = grammar({
         optional($.template),
         block("endblock", $.pop_block)
       ),
-    comment: ($) => seq(block("comment", optional($.string)), /.*/, prec(1, block("endcomment"))),
+    comment_group: ($) =>
+      seq(
+        block("comment", optional($.string)),
+        optional($.comment_content),
+        prec(1, block("endcomment"))
+      ),
     csrf_token: ($) => block("csrf_token"),
     cycle: ($) =>
       block(

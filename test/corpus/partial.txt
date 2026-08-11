@@ -1,0 +1,13 @@
+==================
+Partial Basic
+==================
+
+{% partial header %}
+
+---
+
+(template
+  (content)
+  (partial
+    name: (identifier))
+  (content))

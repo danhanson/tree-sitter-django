@@ -1,0 +1,61 @@
+==================
+Comment Basic
+==================
+
+{% comment %}
+This is ignored
+{% endcomment %}
+
+---
+
+(template
+  (content)
+  (comment_group
+    (comment_content))
+  (content))
+
+==================
+Comment Empty
+==================
+
+{% comment %}{% endcomment %}
+
+---
+
+(template
+  (content)
+  (comment_group)
+  (content))
+
+==================
+Comment With Note
+==================
+
+{% comment "why" %}
+This is ignored
+{% endcomment %}
+
+---
+
+(template
+  (content)
+  (comment_group
+    (string)
+    (comment_content))
+  (content))
+
+==================
+Comment Ignores Tag Like Text
+==================
+
+{% comment %}
+Contains {% if x %} tag-like text
+{% endcomment %}
+
+---
+
+(template
+  (content)
+  (comment_group
+    (comment_content))
+  (content))

@@ -1,0 +1,18 @@
+==================
+Regroup Basic
+==================
+
+{% regroup people by gender as grouped %}
+
+---
+
+(template
+  (content)
+  (regroup
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (attribute)
+    variable: (identifier))
+  (content))

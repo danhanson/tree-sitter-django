@@ -1,0 +1,26 @@
+==================
+Resetcycle Bare
+==================
+
+{% resetcycle %}
+
+---
+
+(template
+  (content)
+  (reset_cycle)
+  (content))
+
+==================
+Resetcycle With Name
+==================
+
+{% resetcycle rowcolors %}
+
+---
+
+(template
+  (content)
+  (reset_cycle
+    (identifier))
+  (content))
