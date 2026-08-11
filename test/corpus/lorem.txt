@@ -1,0 +1,33 @@
+==================
+Lorem Words
+==================
+
+{% lorem 3 w %}
+
+---
+
+(template
+  (content)
+  (lorem
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Lorem Paragraphs Random
+==================
+
+{% lorem 2 p random %}
+
+---
+
+(template
+  (content)
+  (lorem
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))

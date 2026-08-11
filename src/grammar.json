@@ -173,7 +173,7 @@
     },
     "identifier": {
       "type": "PATTERN",
-      "value": "[a-zA-Z][a-zA-Z0-9_]+"
+      "value": "[a-zA-Z][a-zA-Z0-9_]*"
     },
     "binaryOperator": {
       "type": "CHOICE",
@@ -937,6 +937,10 @@
         {
           "type": "STRING",
           "value": "unordered_list"
+        },
+        {
+          "type": "STRING",
+          "value": "upper"
         },
         {
           "type": "CHOICE",
@@ -2515,37 +2519,41 @@
           ]
         },
         {
-          "type": "PATTERN",
-          "value": ".*"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "verbatim_content"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
         },
         {
-          "type": "PREC",
-          "value": 1,
-          "content": {
-            "type": "SEQ",
-            "members": [
-              {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "{%"
+            },
+            {
+              "type": "FIELD",
+              "name": "tag",
+              "content": {
                 "type": "STRING",
-                "value": "{%"
-              },
-              {
-                "type": "FIELD",
-                "name": "tag",
-                "content": {
-                  "type": "STRING",
-                  "value": "endverbatim"
-                }
-              },
-              {
-                "type": "SYMBOL",
-                "name": "pop_verbatim"
-              },
-              {
-                "type": "STRING",
-                "value": "%}"
+                "value": "endverbatim"
               }
-            ]
-          }
+            },
+            {
+              "type": "SYMBOL",
+              "name": "pop_verbatim"
+            },
+            {
+              "type": "STRING",
+              "value": "%}"
+            }
+          ]
         }
       ]
     },
@@ -2673,6 +2681,10 @@
     {
       "type": "SYMBOL",
       "name": "push_verbatim"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "verbatim_content"
     },
     {
       "type": "SYMBOL",

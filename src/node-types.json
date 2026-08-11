@@ -1019,11 +1019,15 @@
       }
     },
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": true,
       "types": [
         {
           "type": "pop_verbatim",
+          "named": true
+        },
+        {
+          "type": "verbatim_content",
           "named": true
         }
       ]
@@ -1624,6 +1628,10 @@
     "named": false
   },
   {
+    "type": "upper",
+    "named": false
+  },
+  {
     "type": "url",
     "named": false
   },
@@ -1646,6 +1654,10 @@
   {
     "type": "verbatim",
     "named": false
+  },
+  {
+    "type": "verbatim_content",
+    "named": true
   },
   {
     "type": "w",

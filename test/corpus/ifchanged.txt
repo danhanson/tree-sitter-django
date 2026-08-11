@@ -1,0 +1,41 @@
+==================
+Ifchanged Basic
+==================
+
+{% ifchanged %}
+content
+{% endifchanged %}
+
+---
+
+(template
+  (content)
+  (ifchanged_group
+    (template
+      (content)))
+  (content))
+
+==================
+Ifchanged With Values
+==================
+
+{% ifchanged var1 var2 %}
+content
+{% endifchanged %}
+
+---
+
+(template
+  (content)
+  (ifchanged_group
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (template
+      (content)))
+  (content))

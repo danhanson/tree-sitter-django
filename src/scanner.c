@@ -16,6 +16,8 @@ enum TokenType {
   PushBlock,    // name %}
   PushPartial,  // name [ inline ] %}
   PushVerbatim, // [ name ] %}
+  /* raw text inside a verbatim block, up through (but excluding) the matching endverbatim tag */
+  VerbatimContent,
   /* indicates that an error occurred */
   MatcherError,
 };
@@ -244,10 +246,11 @@ void tree_sitter_django_external_scanner_deserialize(
           continue;
         } else if (code == NAME_SEP) {
           if (name == NULL) {
-            scanner_error(scanner, "Empty name read");
-            return;
+            // an empty name was pushed (e.g. an anonymous verbatim block)
+            array_push(stack, (Name) array_new());
+          } else {
+            name = NULL;
           }
-          name = NULL;
         } else {
           if (name == NULL) {
             if (!check_name_start_char(code)) {
@@ -322,6 +325,89 @@ static bool check_inline(TSLexer *const lexer) {
   return check_close_block(lexer);
 }
 
+static void skip_horizontal_whitespace(TSLexer *const lexer) {
+  while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+    lexer->advance(lexer, false);
+  }
+}
+
+const char endverbatim_chars[] = "endverbatim";
+
+/* Called right after consuming "{%"; checks whether what follows closes the
+ * verbatim block identified by `name` (matching a name on the stack, or, if
+ * `name` is empty, an unnamed "{% endverbatim %}"). Consumes input either
+ * way, since a failed match still belongs in the verbatim block's raw text. */
+static bool check_endverbatim_close(TSLexer *const lexer, const Name *const name) {
+  skip_horizontal_whitespace(lexer);
+  for (unsigned i = 0; i < sizeof(endverbatim_chars) - 1; ++i) {
+    if (lexer->lookahead != endverbatim_chars[i]) {
+      return false;
+    }
+    lexer->advance(lexer, false);
+  }
+  skip_horizontal_whitespace(lexer);
+  if (name->size > 0) {
+    for (unsigned i = 0; i < name->size; ++i) {
+      if (lexer->lookahead != name->contents[i]) {
+        return false;
+      }
+      lexer->advance(lexer, false);
+    }
+    if (check_name_char(lexer->lookahead)) {
+      return false;
+    }
+    skip_horizontal_whitespace(lexer);
+  }
+  if (lexer->lookahead != '%') {
+    return false;
+  }
+  lexer->advance(lexer, false);
+  return lexer->lookahead == '}';
+}
+
+/* Consumes raw verbatim content up to (but not including) the next tag that
+ * closes the innermost open verbatim block, since that content must not be
+ * parsed as template syntax. A verbatim block opened with a name is only
+ * closed by an "endverbatim" tag bearing the same name, which lets an
+ * unrelated (e.g. unnamed) "{% verbatim %}...{% endverbatim %}" pair appear
+ * unparsed inside a named verbatim block. */
+static bool scan_verbatim_content(struct Scanner *const scanner, TSLexer *const lexer) {
+  Stack *stack = get_stack_for_token(scanner, PopVerbatim);
+  if (stack->size == 0) {
+    return false;
+  }
+  Name *name = array_back(stack);
+  bool consumed_any = false;
+  while (true) {
+    if (lexer->eof(lexer)) {
+      if (!consumed_any) {
+        return false;
+      }
+      lexer->mark_end(lexer);
+      lexer->result_symbol = VerbatimContent;
+      return true;
+    }
+    if (lexer->lookahead == '{') {
+      lexer->mark_end(lexer);
+      lexer->advance(lexer, false);
+      if (lexer->lookahead == '%') {
+        lexer->advance(lexer, false);
+        if (check_endverbatim_close(lexer, name)) {
+          if (!consumed_any) {
+            return false;
+          }
+          lexer->result_symbol = VerbatimContent;
+          return true;
+        }
+      }
+      consumed_any = true;
+      continue;
+    }
+    lexer->advance(lexer, false);
+    consumed_any = true;
+  }
+}
+
 bool tree_sitter_django_external_scanner_scan(
   void *payload,
   TSLexer *lexer,
@@ -339,6 +425,9 @@ bool tree_sitter_django_external_scanner_scan(
   }
   if (valid_symbols[MatcherError]) {
     return false;
+  }
+  if (valid_symbols[VerbatimContent]) {
+    return scan_verbatim_content(scanner, lexer);
   }
   while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
     lexer->advance(lexer, true);
@@ -426,5 +515,6 @@ bool tree_sitter_django_external_scanner_scan(
       return false;
     }
   }
+
   return false;
 }

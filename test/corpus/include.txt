@@ -1,0 +1,33 @@
+==================
+Include With String
+==================
+
+{% include "sidebar.html" %}
+
+---
+
+(template
+  (content)
+  (include
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Include With Variable
+==================
+
+{% include template_name %}
+
+---
+
+(template
+  (content)
+  (include
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))))
+  (content))

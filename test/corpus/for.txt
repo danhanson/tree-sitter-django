@@ -1,0 +1,94 @@
+==================
+For Basic
+==================
+
+<ul>
+{% for item in items %}
+<li>{{ item }}</li>
+{% endfor %}
+</ul>
+
+---
+
+(template
+  (content)
+  (for_group
+    variables: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (template
+      (content)
+      (template_variable
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (content)))
+  (content))
+
+==================
+For With Multiple Variables
+==================
+
+<dl>
+{% for key, value in items %}
+<dt>{{ key }}</dt>
+{% endfor %}
+</dl>
+
+---
+
+(template
+  (content)
+  (for_group
+    variables: (identifier)
+    variables: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (template
+      (content)
+      (template_variable
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (content)))
+  (content))
+
+==================
+For With Empty
+==================
+
+<ul>
+{% for item in items %}
+<li>{{ item }}</li>
+{% empty %}
+<li>Empty</li>
+{% endfor %}
+</ul>
+
+---
+
+(template
+  (content)
+  (for_group
+    variables: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (template
+      (content)
+      (template_variable
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (content))
+    (template
+      (content)))
+  (content))

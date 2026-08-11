@@ -1,0 +1,89 @@
+==================
+If Basic
+==================
+
+{% if user.is_authenticated %}
+Hi
+{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (predicate
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)
+            (attribute)))))
+    (template
+      (content)))
+  (content))
+
+==================
+If With Not
+==================
+
+{% if not done %}
+working
+{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (predicate
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)))))
+    (template
+      (content)))
+  (content))
+
+==================
+If With Elif And Else
+==================
+
+{% if count == 1 %}
+one
+{% elif count == 2 %}
+two
+{% else %}
+other
+{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (predicate
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (binaryOperator)
+      (filtered_value
+        (value
+          (literal
+            (number)))))
+    (template
+      (content))
+    (predicate
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (binaryOperator)
+      (filtered_value
+        (value
+          (literal
+            (number)))))
+    (template
+      (content))
+    (template
+      (content)))
+  (content))

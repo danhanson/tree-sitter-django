@@ -1,0 +1,46 @@
+==================
+Firstof Basic
+==================
+
+{% firstof var1 var2 "default" %}
+
+---
+
+(template
+  (content)
+  (firstof
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Firstof With As
+==================
+
+{% firstof var1 var2 as result %}
+
+---
+
+(template
+  (content)
+  (firstof
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (identifier))
+  (content))

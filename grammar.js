@@ -23,6 +23,7 @@ const django = grammar({
     $.push_block,
     $.push_partial,
     $.push_verbatim,
+    $.verbatim_content,
     $.matcher_error,
   ],
   reserved: {
@@ -48,7 +49,7 @@ const django = grammar({
     string: ($) => /"(?:[^"\\]|\\\\|\\")*"|'(?:[^'\\]|\\\\|\\')*'/,
     attribute: ($) => /[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*/,
     variable_attribute: ($) => seq($.identifier, optional(seq(token.immediate('.'), $.attribute))),
-    identifier: ($) => /[a-zA-Z][a-zA-Z0-9_]+/,
+    identifier: ($) => /[a-zA-Z][a-zA-Z0-9_]*/,
     binaryOperator: ($) =>
       choice(
         "and",
@@ -150,6 +151,7 @@ const django = grammar({
       seq("truncatewords:", $.value),
       seq("truncatewords_html:", $.value),
       "unordered_list",
+      "upper",
       choice(seq("urlencode:", $.value), "urlencode"),
       "urlize",
       seq("urlizetrunc:", $.value),
@@ -266,8 +268,8 @@ const django = grammar({
     verbatim_group: ($) =>
       seq(
         block("verbatim", field("name", $.push_verbatim)),
-        /.*/,
-        prec(1, block("endverbatim", $.pop_verbatim))
+        optional($.verbatim_content),
+        block("endverbatim", $.pop_verbatim),
       ),
     with_group: ($) =>
       seq(

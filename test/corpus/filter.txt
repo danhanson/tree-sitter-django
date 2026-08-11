@@ -1,0 +1,42 @@
+==================
+Filter Basic
+==================
+
+<p>
+{% filter upper %}
+hello
+{% endfilter %}
+</p>
+
+---
+
+(template
+  (content)
+  (filter_group
+    (filter_expression
+      (filter))
+    (template
+      (content)))
+  (content))
+
+==================
+Filter With Chain
+==================
+
+<p>
+{% filter lower|title %}
+HELLO WORLD
+{% endfilter %}
+</p>
+
+---
+
+(template
+  (content)
+  (filter_group
+    (filter_expression
+      (filter)
+      (filter))
+    (template
+      (content)))
+  (content))
