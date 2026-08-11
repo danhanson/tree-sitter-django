@@ -1,0 +1,93 @@
+==================
+Cycle Basic
+==================
+
+<table>
+  <tr class="{% cycle 'row1' 'row2' %}">
+  </tr>
+</table>
+
+---
+
+(template
+  (content)
+  (cycle
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Cycle With As
+==================
+
+<table>
+  <tr class="{% cycle 'row1' 'row2' as rowcolors %}">
+  </tr>
+</table>
+
+---
+
+(template
+  (content)
+  (cycle
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    name: (identifier))
+  (content))
+
+==================
+Cycle With As And Silent
+==================
+
+<table>
+  <tr class="{% cycle 'row1' 'row2' as rowcolors silent %}">
+  </tr>
+</table>
+
+---
+
+(template
+  (content)
+  (cycle
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    name: (identifier))
+  (content))
+
+==================
+Cycle Referencing Existing Variable
+==================
+
+<table>
+  <tr class="{% cycle rowcolors %}">
+  </tr>
+</table>
+
+---
+
+(template
+  (content)
+  (cycle
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))))
+  (content))

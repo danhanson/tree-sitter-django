@@ -1,0 +1,165 @@
+==================
+Block
+==================
+
+<section>
+    <h1>This is a block</h1>
+{% block test %}
+    <main>
+        <h2>Hello World</h2>
+    </main>
+{% endblock %}
+    <footer>Goodbye</footer>
+</section>
+
+---
+
+(template
+  (content)
+  (block_group
+    (push_block)
+    (template
+      (content))
+    (pop_block))
+  (content))
+
+==================
+Block Matching End Tag
+==================
+
+<section>
+    <h1>This is a block</h1>
+{% block test %}
+    <main>
+        <h2>Hello World</h2>
+    </main>
+{% endblock test %}
+    <footer>Goodbye</footer>
+</section>
+
+---
+
+(template
+  (content)
+  (block_group
+    (push_block)
+    (template
+      (content))
+    (pop_block))
+  (content))
+
+==================
+Nested Blocks
+==================
+
+<section>
+    <h1>This is a block</h1>
+{% block test %}
+    <main>
+{% block hello %}
+      <h2>Hello World</h2>
+{% endblock %}
+    </main>
+{% endblock %}
+    <footer>Goodbye</footer>
+</section>
+
+---
+
+(template
+  (content)
+  (block_group
+    (push_block)
+    (template
+      (content)
+      (block_group
+        (push_block)
+        (template
+          (content))
+        (pop_block))
+      (content))
+    (pop_block))
+  (content))
+
+---
+
+(template
+  (content)
+  (block_group
+    (push_block)
+    (template
+      (content)
+      (block_group
+        (push_block)
+        (template
+          (content))
+        (pop_block))
+      (content))
+    (pop_block))
+  (content))
+
+==================
+Nested Blocks End Tag
+==================
+
+<section>
+    <h1>This is a block</h1>
+{% block test %}
+    <main>
+{% block hello %}
+      <h2>Hello World</h2>
+{% endblock hello %}
+    </main>
+{% endblock test %}
+    <footer>Goodbye</footer>
+</section>
+
+---
+
+(template
+  (content)
+  (block_group
+    (push_block)
+    (template
+      (content)
+      (block_group
+        (push_block)
+        (template
+          (content))
+        (pop_block))
+      (content))
+    (pop_block))
+  (content))
+
+==================
+Nested Blocks Mixed Tags
+==================
+
+<section>
+    <h1>This is a block</h1>
+{% block test %}
+    <main>
+{% block hello %}
+      <h2>Hello World</h2>
+{% endblock %}
+    </main>
+{% endblock test %}
+    <footer>Goodbye</footer>
+</section>
+
+---
+
+(template
+  (content)
+  (block_group
+    (push_block)
+    (template
+      (content)
+      (block_group
+        (push_block)
+        (template
+          (content))
+        (pop_block))
+      (content))
+    (pop_block))
+  (content))

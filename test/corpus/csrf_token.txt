@@ -1,0 +1,14 @@
+==================
+Csrf Token
+==================
+
+<form method="post">
+  {% csrf_token %}
+</form>
+
+---
+
+(template
+  (content)
+  (csrf_token)
+  (content))

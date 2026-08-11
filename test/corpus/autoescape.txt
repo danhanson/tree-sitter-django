@@ -1,0 +1,22 @@
+==================
+Autoescape
+==================
+
+<div>
+  <ul>
+    <li>one</li>
+{% autoescape off %}
+    <li>two</li>
+{% endautoescape %}
+    <li>tree</li>
+  </ul>
+</div>
+
+---
+
+(template
+  (content)
+  (autoescape_group
+    (template
+      (content)))
+  (content))

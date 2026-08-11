@@ -1,0 +1,28 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "django",
+      "camelcase": "django",
+      "title": "Django Parser",
+      "scope": "source.django",
+      "file-types": ["html", "txt", "md"],
+      "injection-regex": "^django$",
+      "class-name": "TreeSitterDjango"
+    }
+  ],
+  "bindings": {
+    "node": true
+  },
+  "metadata": {
+    "version": "0.0.1",
+    "description": "DJango grammar for tree-sitter",
+    "authors": [{
+      "name": "Daniel Hanson",
+      "url": "https://github.com/danhanson"
+    }],
+    "links": {
+      "repository": "https://github.com/danhanson/tree-sitter-django"
+    }
+  }
+}

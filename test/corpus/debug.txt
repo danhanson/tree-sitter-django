@@ -1,0 +1,14 @@
+==================
+Debug
+==================
+
+<p>
+{% debug %}
+</p>
+
+---
+
+(template
+  (content)
+  (debug)
+  (content))

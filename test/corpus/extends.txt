@@ -1,0 +1,35 @@
+==================
+Extends With String
+==================
+
+{% extends "base.html" %}
+<h1>Hello</h1>
+
+---
+
+(template
+  (content)
+  (extends
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Extends With Variable
+==================
+
+{% extends base_template %}
+<h1>Hello</h1>
+
+---
+
+(template
+  (content)
+  (extends
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))))
+  (content))
