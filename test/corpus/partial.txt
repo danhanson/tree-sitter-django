@@ -9,5 +9,5 @@ Partial Basic
 (template
   (content)
   (partial
-    name: (identifier))
+    (identifier))
   (content))

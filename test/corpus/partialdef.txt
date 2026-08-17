@@ -13,7 +13,7 @@ Partialdef Basic
 (template
   (content)
   (partialdef_group
-    name: (push_partial)
+    (push_partial)
     (template
       (content))
     (pop_partial))
@@ -34,7 +34,7 @@ Partialdef Inline
 (template
   (content)
   (partialdef_group
-    name: (push_partial)
+    (push_partial)
     (template
       (content))
     (pop_partial))

@@ -28,28 +28,24 @@ const django = grammar({
     $.matcher_error,
   ],
   reserved: {
-    global: ($) => ["not", "if", "in", "is", "as"],
+    global: ($) => ["not", "if", "in", "is", "as", "for", "from"],
   },
   rules: {
     template: ($) => repeat1(choice($.template_tag, $.content)),
     content: ($) => /(?:[^\{]|\{[^\{#%}])+/,
-    template_tag: ($) => choice($.template_block_groups, $.template_variable, $.template_comment),
-    filtered_value: ($) => seq(
-      $.value,
-      optional(
-        seq(
-          token.immediate("|"),
-          $.filter_expression
-        ),
-      ),
-    ),
-    filter_expression: ($) => seq($.filter, repeat(seq(token.immediate("|"), $.filter))),
+    template_tag: ($) =>
+      choice($.template_block_groups, $.template_variable, $.template_comment),
+    filtered_value: ($) =>
+      seq($.value, optional(seq(token.immediate("|"), $.filter_expression))),
+    filter_expression: ($) =>
+      seq($.filter, repeat(seq(token.immediate("|"), $.filter))),
     value: ($) => choice($.literal, $.variable_attribute),
     literal: ($) => choice($.number, $.string),
     number: ($) => /-?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE]-?[0-9]+)?/,
     string: ($) => /"(?:[^"\\]|\\\\|\\")*"|'(?:[^'\\]|\\\\|\\')*'/,
     attribute: ($) => /[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*/,
-    variable_attribute: ($) => seq($.identifier, optional(seq(token.immediate('.'), $.attribute))),
+    variable_attribute: ($) =>
+      seq($.identifier, optional(seq(token.immediate("."), $.attribute))),
     identifier: ($) => /[a-zA-Z][a-zA-Z0-9_]*/,
     binaryOperator: ($) =>
       choice(
@@ -64,13 +60,13 @@ const django = grammar({
         "in",
         prec(1, seq("not", "in")),
         "is",
-        prec(1, seq("is", "not"))
+        prec(1, seq("is", "not")),
       ),
     predicate: ($) =>
       seq(
         optional("not"),
         $.filtered_value,
-        repeat(seq($.binaryOperator, optional("not"), $.filtered_value))
+        repeat(seq($.binaryOperator, optional("not"), $.filtered_value)),
       ),
     template_variable: ($) => seq("{{", $.filtered_value, "}}"),
     template_comment: ($) => seq("{#", /(?:[^#]|#[^}])*/, "#}"),
@@ -89,6 +85,7 @@ const django = grammar({
         $.if_group,
         $.ifchanged_group,
         $.include,
+        $.load,
         $.lorem,
         $.now,
         $.partial,
@@ -100,106 +97,127 @@ const django = grammar({
         $.template_tag_block,
         $.url_block,
         $.verbatim_group,
-        $.with_group
+        $.width_ratio,
+        $.with_group,
       ),
-    filter: ($) => choice(
-      seq("add:", $.value),
-      "addslashes",
-      "capfirst",
-      seq("center:", $.value),
-      seq("cut:", $.value),
-      choice(seq("date:", $.value), "date"),
-      seq("default:", $.value),
-      seq("default_if_none:", $.value),
-      seq("dictsort:", $.value),
-      seq("dictsortreversed:", $.value),
-      seq("divisibleby:", $.value),
-      "escape",
-      "escapejs",
-      "filesizeformat",
-      "first",
-      choice(seq("floatformat:", $.value), "floatformat"),
-      "force_escape",
-      seq("get_digit:", $.value),
-      "iriencode",
-      seq("join:", $.value),
-      choice(seq("json_script:", $.value), "json_script"),
-      "last",
-      "length",
-      seq("length_is:", $.value),
-      "linebreaks",
-      "linebreaksbr",
-      "linenumbers",
-      seq("ljust:", $.value),
-      "lower",
-      "make_list",
-      "phone2numeric",
-      choice(seq("pluralize:", $.value), "pluralize"),
-      "pprint",
-      "random",
-      seq("rjust:", $.value),
-      "safe",
-      "safeseq",
-      seq("slice:", $.value),
-      "slugify",
-      seq("stringformat:", $.value),
-      "striptags",
-      choice(seq("time:", $.value), "time"),
-      choice(seq("timesince:", $.value), "timesince"),
-      choice(seq("timeuntil:", $.value), "timeuntil"),
-      "title",
-      seq("truncatechars:", $.value),
-      seq("truncatechars_html:", $.value),
-      seq("truncatewords:", $.value),
-      seq("truncatewords_html:", $.value),
-      "unordered_list",
-      "upper",
-      choice(seq("urlencode:", $.value), "urlencode"),
-      "urlize",
-      seq("urlizetrunc:", $.value),
-      "wordcount",
-      seq("wordwrap:", $.value),
-      choice(seq("yesno:", $.value), "yesno"),
-    ),
+    filter: ($) =>
+      choice(
+        seq("add:", $.value),
+        "addslashes",
+        "capfirst",
+        seq("center:", $.value),
+        seq("cut:", $.value),
+        choice(seq("date:", $.value), "date"),
+        seq("default:", $.value),
+        seq("default_if_none:", $.value),
+        seq("dictsort:", $.value),
+        seq("dictsortreversed:", $.value),
+        seq("divisibleby:", $.value),
+        "escape",
+        "escapejs",
+        "filesizeformat",
+        "first",
+        choice(seq("floatformat:", $.value), "floatformat"),
+        "force_escape",
+        seq("get_digit:", $.value),
+        "iriencode",
+        seq("join:", $.value),
+        choice(seq("json_script:", $.value), "json_script"),
+        "last",
+        "length",
+        seq("length_is:", $.value),
+        "linebreaks",
+        "linebreaksbr",
+        "linenumbers",
+        seq("ljust:", $.value),
+        "lower",
+        "make_list",
+        "phone2numeric",
+        choice(seq("pluralize:", $.value), "pluralize"),
+        "pprint",
+        "random",
+        seq("rjust:", $.value),
+        "safe",
+        "safeseq",
+        seq("slice:", $.value),
+        "slugify",
+        seq("stringformat:", $.value),
+        "striptags",
+        choice(seq("time:", $.value), "time"),
+        choice(seq("timesince:", $.value), "timesince"),
+        choice(seq("timeuntil:", $.value), "timeuntil"),
+        "title",
+        seq("truncatechars:", $.value),
+        seq("truncatechars_html:", $.value),
+        seq("truncatewords:", $.value),
+        seq("truncatewords_html:", $.value),
+        "unordered_list",
+        "upper",
+        choice(seq("urlencode:", $.value), "urlencode"),
+        "urlize",
+        seq("urlizetrunc:", $.value),
+        "wordcount",
+        seq("wordwrap:", $.value),
+        choice(seq("yesno:", $.value), "yesno"),
+      ),
     autoescape_group: ($) =>
-      seq(block("autoescape", choice("on", "off")), optional($.template), block("endautoescape")),
+      seq(
+        block("autoescape", choice("on", "off")),
+        optional($.template),
+        block("endautoescape"),
+      ),
     block_group: ($) =>
       seq(
         block("block", field("name", $.push_block)),
         optional($.template),
-        block("endblock", $.pop_block)
+        block("endblock", $.pop_block),
       ),
     comment_group: ($) =>
       seq(
         block("comment", optional($.string)),
         optional($.comment_content),
-        prec(1, block("endcomment"))
+        block("endcomment"),
       ),
     csrf_token: ($) => block("csrf_token"),
     cycle: ($) =>
       block(
         "cycle",
         repeat1($.filtered_value),
-        optional(seq("as", field("name", $.identifier))),
-        optional("silent")
+        optional(seq("as", field("variable", $.identifier))),
+        optional("silent"),
       ),
     debug: ($) => block("debug"),
     extends: ($) => block("extends", $.filtered_value),
     filter_group: ($) =>
-      seq(block("filter", $.filter_expression), optional($.template), block("endfilter")),
-    firstof: ($) => block("firstof", repeat1($.filtered_value), optional(seq("as", $.identifier))),
+      seq(
+        block("filter", $.filter_expression),
+        optional($.template),
+        block("endfilter"),
+      ),
+    firstof: ($) =>
+      block(
+        "firstof",
+        repeat1($.filtered_value),
+        optional(seq("as", $.identifier)),
+      ),
+    for_scope: ($) =>
+      prec.left(
+        seq(
+          block(
+            "for",
+            field("variable", $.identifier),
+            repeat(seq(",", field("variable", $.identifier))),
+            "in",
+            $.filtered_value,
+          ),
+          optional($.template),
+        ),
+      ),
     for_group: ($) =>
       seq(
-        block(
-          "for",
-          field("variables", $.identifier),
-          repeat(seq(",", field("variables", $.identifier))),
-          "in",
-          $.filtered_value
-        ),
-        optional($.template),
+        $.for_scope,
         optional(seq(block("empty"), optional($.template))),
-        block("endfor")
+        block("endfor"),
       ),
     if_group: ($) =>
       seq(
@@ -207,44 +225,61 @@ const django = grammar({
         optional($.template),
         repeat(seq(block("elif", $.predicate), optional($.template))),
         optional(seq(block("else"), optional($.template))),
-        block("endif")
+        block("endif"),
       ),
     ifchanged_group: ($) =>
       seq(
         block("ifchanged", repeat($.filtered_value)),
         optional($.template),
-        block("endifchanged")
+        block("endifchanged"),
       ),
     include: ($) => block("include", $.filtered_value),
+    library: ($) =>
+      prec(
+        -1,
+        seq($.identifier, optional(seq(token.immediate("."), $.identifier))),
+      ),
     load: ($) =>
       block(
         "load",
         choice(
-          repeat1($.variable_attribute),
-          seq(repeat1($.identifier), "from", $.variable_attribute)
-        )
+          seq(repeat1($.identifier), "from", $.library),
+          repeat1($.library),
+        ),
       ),
-    lorem: ($) => block("lorem", $.filtered_value, choice("w", "p", "b"), optional("random")),
-    now: ($) => block("now", $.string, optional(seq("as", field("variable", $.identifier)))),
-    partial: ($) => block("partial", field("name", $.identifier)),
+    lorem: ($) =>
+      block(
+        "lorem",
+        $.filtered_value,
+        choice("w", "p", "b"),
+        optional("random"),
+      ),
+    now: ($) =>
+      block("now", $.string, optional(seq("as", field("name", $.identifier)))),
+    partial: ($) => block("partial", $.identifier),
     partialdef_group: ($) =>
       seq(
-        block("partialdef", field("name", $.push_partial), optional("inline")),
+        block("partialdef", $.push_partial, optional("inline")),
         optional($.template),
-        block("endpartialdef", $.pop_partial)
+        block("endpartialdef", $.pop_partial),
       ),
     query_string: ($) =>
-      block("querystring", repeat($.identifier), repeat(seq($.identifier, "=", $.filtered_value))),
+      block(
+        "querystring",
+        repeat($.identifier),
+        repeat(seq($.identifier, "=", $.filtered_value)),
+      ),
     regroup: ($) =>
       block(
         "regroup",
         $.filtered_value,
         "by",
         $.attribute,
-        optional(seq("as", field("variable", $.identifier)))
+        optional(seq("as", field("variable", $.identifier))),
       ),
     reset_cycle: ($) => block("resetcycle", optional($.identifier)),
-    spaceless_group: ($) => seq(block("spaceless"), optional($.template), block("endspaceless")),
+    spaceless_group: ($) =>
+      seq(block("spaceless"), optional($.template), block("endspaceless")),
     template_tag_block: ($) =>
       block(
         "templatetag",
@@ -256,33 +291,43 @@ const django = grammar({
           "openbrace",
           "closebrace",
           "opencomment",
-          "closecomment"
-        )
-      ),
-    url_block: $ => block(
-      "url",
-      choice($.string, $.identifier),
-      optional(
-        choice(
-          repeat1($.filtered_value),
-          repeat1(seq($.identifier, '=', $.filtered_value)),
+          "closecomment",
         ),
       ),
-      optional(
-        seq("as", field("variable", $.identifier)),
+    url_block: ($) =>
+      block(
+        "url",
+        choice($.string, $.identifier),
+        optional(
+          choice(
+            repeat1($.filtered_value),
+            repeat1(seq($.identifier, "=", $.filtered_value)),
+          ),
+        ),
+        optional(seq("as", field("variable", $.identifier))),
       ),
-    ),
     verbatim_group: ($) =>
       seq(
-        block("verbatim", field("name", $.push_verbatim)),
+        block("verbatim", $.push_verbatim),
         optional($.verbatim_content),
         block("endverbatim", $.pop_verbatim),
       ),
+    width_ratio: ($) =>
+      block(
+        "widthratio",
+        $.filtered_value,
+        $.filtered_value,
+        $.filtered_value,
+        optional(seq("as", field("variable", $.identifier))),
+      ),
     with_group: ($) =>
       seq(
-        block("with", field("variables", repeat1(seq(field("name", $.identifier), "=", $.filtered_value)))),
+        block(
+          "with",
+          repeat1(seq(field("variable", $.identifier), "=", $.filtered_value)),
+        ),
         optional($.template),
-        block("endwith")
+        block("endwith"),
       ),
   },
 });

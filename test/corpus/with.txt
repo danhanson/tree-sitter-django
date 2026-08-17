@@ -11,8 +11,8 @@ With Basic
 (template
   (content)
   (with_group
-    name: (identifier)
-    variables: (filtered_value
+    variable: (identifier)
+    (filtered_value
       (value
         (variable_attribute
           (identifier)
@@ -40,13 +40,13 @@ With Multiple Variables
 (template
   (content)
   (with_group
-    name: (identifier)
-    variables: (filtered_value
+    variable: (identifier)
+    (filtered_value
       (value
         (literal
           (number))))
-    name: (identifier)
-    variables: (filtered_value
+    variable: (identifier)
+    (filtered_value
       (value
         (literal
           (number))))

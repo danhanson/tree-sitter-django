@@ -13,19 +13,20 @@ For Basic
 (template
   (content)
   (for_group
-    variables: (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (template
-      (content)
-      (template_variable
-        (filtered_value
-          (value
-            (variable_attribute
-              (identifier)))))
-      (content)))
+    (for_scope
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content)
+        (template_variable
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier)))))
+        (content))))
   (content))
 
 ==================
@@ -43,20 +44,21 @@ For With Multiple Variables
 (template
   (content)
   (for_group
-    variables: (identifier)
-    variables: (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (template
-      (content)
-      (template_variable
-        (filtered_value
-          (value
-            (variable_attribute
-              (identifier)))))
-      (content)))
+    (for_scope
+      variable: (identifier)
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content)
+        (template_variable
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier)))))
+        (content))))
   (content))
 
 ==================
@@ -76,19 +78,20 @@ For With Empty
 (template
   (content)
   (for_group
-    variables: (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (template
-      (content)
-      (template_variable
-        (filtered_value
-          (value
-            (variable_attribute
-              (identifier)))))
-      (content))
+    (for_scope
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content)
+        (template_variable
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier)))))
+        (content)))
     (template
       (content)))
   (content))

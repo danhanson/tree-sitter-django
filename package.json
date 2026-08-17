@@ -12,6 +12,8 @@
     "parser-test": "tree-sitter test",
     "parser-generate": "tree-sitter generate",
     "parser-build": "tree-sitter build --wasm",
+    "highlight": "tree-sitter highlight",
+    "tag": "tree-sitter tag",
     "playground": "tree-sitter playground"
   },
   "dependencies": {

@@ -1,27 +1,32 @@
+{% load greet from custom.tags %}
+{% partialdef url %}
+  <li>{% greet %} {{ user }}</li>
+{% endpartialdef %}
 <body>
   {# hello this is an example file #}
   <header>
     <h1>{{ page.title|title }}</h1>
     <nav>
-{% if page.links|length > 0 %}
+      {% if page.links|length > 0 %}
       <ul>
-  {% for label, link in page.links %}
+        {% for label, link in page.links %}
         <li>
-  {% url 'nav-pages' link as href %}
+          {% url 'nav-pages' link as href %}
           <a href="{{href}}">{{label}}</a>
         </li>
-  {% endfor %}
+        {% endfor %}
       </ul>
-{% endif %}
+      {% endif %}
     </nav>
   </header>
 
-{% block content %}
-
-{% endblock %}
+  {% block content %}
+  <h1>EMPTY</h1>
+  {% endblock %}
 
   <footer>
-{% for foot in page.footer %}
+{% for user in page.footer %}
+{% partial url %}
 {% endfor %}
   </footer>
 </body>

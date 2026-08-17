@@ -8,7 +8,10 @@
       "scope": "source.django",
       "file-types": ["html", "txt", "md"],
       "injection-regex": "^django$",
-      "class-name": "TreeSitterDjango"
+      "class-name": "TreeSitterDjango",
+      "highlights": "queries/highlights.scm",
+      "locals": "queries/locals.scm",
+      "injections": "queries/injections.scm"
     }
   ],
   "bindings": {
@@ -17,10 +20,13 @@
   "metadata": {
     "version": "0.0.1",
     "description": "DJango grammar for tree-sitter",
-    "authors": [{
-      "name": "Daniel Hanson",
-      "url": "https://github.com/danhanson"
-    }],
+    "license": "MIT",
+    "authors": [
+      {
+        "name": "Daniel Hanson",
+        "url": "https://github.com/danhanson"
+      }
+    ],
     "links": {
       "repository": "https://github.com/danhanson/tree-sitter-django"
     }
