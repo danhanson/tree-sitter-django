@@ -141,3 +141,14 @@ yes
     (template
       (content)))
   (content))
+
+==================
+If Operator Adjacent To Value
+:error
+==================
+
+{% if 1and 2 %}yes{% endif %}
+
+---
+
+(ERROR)

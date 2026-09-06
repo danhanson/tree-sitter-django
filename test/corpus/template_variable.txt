@@ -200,3 +200,14 @@ Template Variable Number With Filter Argument
             (literal
               (number)))))))
   (content))
+
+==================
+Template Variable Literal Adjacent To Name
+:error
+==================
+
+{{ 1x }}
+
+---
+
+(ERROR)

@@ -11,12 +11,33 @@ function block(tag, ...args) {
   return seq("{%", field("tag", tag), ...args, "%}");
 }
 
+/**
+ * A keyword that must be separated from the token before it by whitespace.
+ * Django splits tag contents on whitespace, so "{% cycle 1as x %}" is one
+ * token and an error, not "1" followed by "as". Nothing in the lexer enforces
+ * that on its own: two keywords cannot run together (the lexer would read one
+ * longer identifier), but a literal can run into the keyword after it, and
+ * extras can never be made mandatory. The separator is therefore a zero-width
+ * external token that the scanner only emits when whitespace really precedes
+ * its keyword.
+ *
+ * @param {RuleOrLiteral} separator
+ * @param {string} keyword
+ * @param {...RuleOrLiteral} args
+ * @returns {SeqRule}
+ */
+function spaced(separator, keyword, ...args) {
+  return seq(separator, keyword, ...args);
+}
+
 const django = grammar({
   name: "django",
   extras: ($) => [/[ \t]/],
+  word: ($) => $.identifier,
   conflicts: ($) => [[$.template]],
   supertypes: ($) => [$.template_tag, $.template_block_groups],
   externals: ($) => [
+    $.matcher_error,
     $.pop_block,
     $.pop_partial,
     $.pop_verbatim,
@@ -25,7 +46,18 @@ const django = grammar({
     $.push_verbatim,
     $.verbatim_content,
     $.comment_content,
-    $.matcher_error,
+    $._before_and,
+    $._before_as,
+    $._before_b,
+    $._before_by,
+    $._before_in,
+    $._before_is,
+    $._before_not,
+    $._before_or,
+    $._before_p,
+    $._before_random,
+    $._before_w,
+    $._after_literal,
   ],
   reserved: {
     global: ($) => ["not", "if", "in", "is", "as", "for", "from"],
@@ -40,7 +72,7 @@ const django = grammar({
     filter_expression: ($) =>
       seq($.filter, repeat(seq(token.immediate("|"), $.filter))),
     value: ($) => choice($.literal, $.variable_attribute),
-    literal: ($) => choice($.number, $.string),
+    literal: ($) => seq(choice($.number, $.string), $._after_literal),
     number: ($) => /-?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE]-?[0-9]+)?/,
     string: ($) => /"(?:[^"\\]|\\\\|\\")*"|'(?:[^'\\]|\\\\|\\')*'/,
     attribute: ($) => /[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*/,
@@ -49,24 +81,30 @@ const django = grammar({
     identifier: ($) => /[a-zA-Z][a-zA-Z0-9_]*/,
     binaryOperator: ($) =>
       choice(
-        "and",
-        "or",
+        spaced($._before_and, "and"),
+        spaced($._before_or, "or"),
         "==",
         "!=",
         "<",
         ">",
         "<=",
         ">=",
-        "in",
-        prec(1, seq("not", "in")),
-        "is",
-        prec(1, seq("is", "not")),
+        spaced($._before_in, "in"),
+        prec(1, spaced($._before_not, "not", "in")),
+        spaced($._before_is, "is"),
+        prec(1, spaced($._before_is, "is", "not")),
       ),
     predicate: ($) =>
       seq(
-        optional("not"),
+        optional(spaced($._before_not, "not")),
         $.filtered_value,
-        repeat(seq($.binaryOperator, optional("not"), $.filtered_value)),
+        repeat(
+          seq(
+            $.binaryOperator,
+            optional(spaced($._before_not, "not")),
+            $.filtered_value,
+          ),
+        ),
       ),
     template_variable: ($) => seq("{{", $.filtered_value, "}}"),
     template_comment: ($) => seq("{#", /(?:[^#]|#[^}])*/, "#}"),
@@ -183,8 +221,16 @@ const django = grammar({
       block(
         "cycle",
         repeat1($.filtered_value),
-        optional(seq("as", field("variable", $.identifier))),
-        optional("silent"),
+        optional(
+          spaced(
+            $._before_as,
+            "as",
+            field("variable", $.identifier),
+            // only the as-form takes the flag, and an identifier can never run
+            // into it, so "silent" needs no separator of its own
+            optional("silent"),
+          ),
+        ),
       ),
     debug: ($) => block("debug"),
     extends: ($) => block("extends", $.filtered_value),
@@ -198,7 +244,7 @@ const django = grammar({
       block(
         "firstof",
         repeat1($.filtered_value),
-        optional(seq("as", $.identifier)),
+        optional(spaced($._before_as, "as", $.identifier)),
       ),
     for_scope: ($) =>
       prec.left(
@@ -251,11 +297,19 @@ const django = grammar({
       block(
         "lorem",
         $.filtered_value,
-        choice("w", "p", "b"),
-        optional("random"),
+        choice(
+          spaced($._before_w, "w"),
+          spaced($._before_p, "p"),
+          spaced($._before_b, "b"),
+        ),
+        optional(spaced($._before_random, "random")),
       ),
     now: ($) =>
-      block("now", $.string, optional(seq("as", field("name", $.identifier)))),
+      block(
+        "now",
+        $.string,
+        optional(spaced($._before_as, "as", field("name", $.identifier))),
+      ),
     partial: ($) => block("partial", $.identifier),
     partialdef_group: ($) =>
       seq(
@@ -273,9 +327,9 @@ const django = grammar({
       block(
         "regroup",
         $.filtered_value,
-        "by",
+        spaced($._before_by, "by"),
         $.attribute,
-        optional(seq("as", field("variable", $.identifier))),
+        optional(spaced($._before_as, "as", field("variable", $.identifier))),
       ),
     reset_cycle: ($) => block("resetcycle", optional($.identifier)),
     spaceless_group: ($) =>
@@ -304,7 +358,7 @@ const django = grammar({
             repeat1(seq($.identifier, "=", $.filtered_value)),
           ),
         ),
-        optional(seq("as", field("variable", $.identifier))),
+        optional(spaced($._before_as, "as", field("variable", $.identifier))),
       ),
     verbatim_group: ($) =>
       seq(
@@ -318,7 +372,7 @@ const django = grammar({
         $.filtered_value,
         $.filtered_value,
         $.filtered_value,
-        optional(seq("as", field("variable", $.identifier))),
+        optional(spaced($._before_as, "as", field("variable", $.identifier))),
       ),
     with_group: ($) =>
       seq(

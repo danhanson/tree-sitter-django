@@ -16,3 +16,14 @@ Regroup Basic
     (attribute)
     variable: (identifier))
   (content))
+
+==================
+Regroup By Adjacent To Value
+:error
+==================
+
+{% regroup 1by gender as grouped %}
+
+---
+
+(ERROR)

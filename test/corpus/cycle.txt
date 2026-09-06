@@ -91,3 +91,25 @@ Cycle Referencing Existing Variable
         (variable_attribute
           (identifier)))))
   (content))
+
+==================
+Cycle With As Adjacent To Value
+:error
+==================
+
+{% cycle 1 2as rowcolors %}
+
+---
+
+(ERROR)
+
+==================
+Cycle Value Adjacent To Value
+:error
+==================
+
+{% cycle 'row1'rowcolors %}
+
+---
+
+(ERROR)

@@ -31,3 +31,14 @@ Lorem Paragraphs Random
         (literal
           (number)))))
   (content))
+
+==================
+Lorem Method Adjacent To Count
+:error
+==================
+
+{% lorem 5w %}
+
+---
+
+(ERROR)

@@ -1,6 +1,7 @@
 #include "tree_sitter/parser.h"
 #include "tree_sitter/alloc.h"
 #include "tree_sitter/array.h"
+#include <string.h>
 
 #define ERROR_SIZE 64
 #define STACK_COUNT 3
@@ -8,6 +9,8 @@
 #define STACK_SEP '\n'
 
 enum TokenType {
+  /* indicates that an error occurred */
+  MatcherError,
   /* push name on stack to match with later */
   PopBlock,     // [ name ] %}
   PopPartial,   // [ name ] %}
@@ -20,9 +23,31 @@ enum TokenType {
   VerbatimContent,
   /* raw text inside a comment block, up through (but excluding) the endcomment tag */
   CommentContent,
-  /* indicates that an error occurred */
-  MatcherError,
+  /* zero-width markers for the whitespace preceding a keyword, in the same
+   * order as separated_keywords below */
+  BeforeAnd,
+  BeforeAs,
+  BeforeB,
+  BeforeBy,
+  BeforeIn,
+  BeforeIs,
+  BeforeNot,
+  BeforeOr,
+  BeforeP,
+  BeforeRandom,
+  BeforeW,
+  /* zero-width marker for the end of a literal */
+  AfterLiteral,
 };
+
+/* Keywords Django only reads as keywords when whitespace separates them from
+ * the token before, listed in BeforeAnd..BeforeW order. */
+static const char *const separated_keywords[] = {
+  "and", "as", "b", "by", "in", "is", "not", "or", "p", "random", "w",
+};
+
+#define KEYWORD_COUNT (sizeof(separated_keywords) / sizeof(*separated_keywords))
+#define KEYWORD_SIZE 6 // "random", the longest of them
 
 typedef Array(int32_t) Name;
 typedef Array(Name) Stack;
@@ -36,10 +61,11 @@ struct Scanner {
 };
 
 static Stack* get_stack_for_token(struct Scanner *scanner, enum TokenType token) {
-  if (token >= MatcherError) {
+  if (token < PopBlock || token > PushVerbatim) {
     return NULL;
   }
-  return &scanner->stacks[token % STACK_COUNT];
+  // the pop and push tokens are in the same order, so each pair shares a stack
+  return &scanner->stacks[(token - PopBlock) % STACK_COUNT];
 }
 
 static void reset_scanner(struct Scanner *const scanner) {
@@ -406,6 +432,66 @@ static bool scan_verbatim_content(struct Scanner *const scanner, TSLexer *const 
   }
 }
 
+/* Emits a zero-width token at the whitespace that separates one of the
+ * separated_keywords from the token before it. Django splits tag contents on
+ * whitespace, so those words are only keywords when something separates them;
+ * without this, "{% cycle 1as x %}" would parse as a cycle over 1 bound to x.
+ * Two keywords cannot run together (the lexer reads one longer identifier
+ * instead), but a literal can run into the keyword after it, and the grammar's
+ * extras can never be made mandatory.
+ *
+ * Reads the whole word that follows and only fires when it is a keyword the
+ * parser is currently expecting, since the whitespace after a value is equally
+ * the whitespace before another value ("{% cycle a b %}"). */
+/* Emits a zero-width token at the end of a literal, and fails when the
+ * literal runs straight into whatever follows it. Django splits tag contents
+ * on whitespace, so "{% cycle 1a %}" is the single token "1a" and an error,
+ * not the number 1 followed by the variable a. A literal ends wherever its
+ * own pattern ends, so unlike an identifier it cannot swallow the text after
+ * it, which leaves this the only place to catch the run-on. */
+static bool scan_after_literal(TSLexer *const lexer) {
+  int32_t next = lexer->lookahead;
+  if (check_name_char(next) || next == '\'' || next == '"' || next == '-') {
+    return false;
+  }
+  lexer->mark_end(lexer);
+  lexer->result_symbol = AfterLiteral;
+  return true;
+}
+
+static bool scan_separator(TSLexer *const lexer, const bool *const valid_symbols) {
+  bool separated = false;
+  while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+    lexer->advance(lexer, true);
+    separated = true;
+  }
+  if (!separated) {
+    return false;
+  }
+  // the token ends here, before the keyword itself, which the grammar lexes
+  lexer->mark_end(lexer);
+
+  char word[KEYWORD_SIZE + 1];
+  unsigned length = 0;
+  while (check_name_char(lexer->lookahead)) {
+    if (length == KEYWORD_SIZE) {
+      // too long to be one of them, and a prefix match would be wrong anyway
+      return false;
+    }
+    word[length++] = (char) lexer->lookahead;
+    lexer->advance(lexer, false);
+  }
+  word[length] = '\0';
+
+  for (unsigned i = 0; i < KEYWORD_COUNT; ++i) {
+    if (valid_symbols[BeforeAnd + i] && strcmp(word, separated_keywords[i]) == 0) {
+      lexer->result_symbol = BeforeAnd + i;
+      return true;
+    }
+  }
+  return false;
+}
+
 const char endcomment_chars[] = "endcomment";
 
 /* Called right after consuming "{%"; checks whether what follows closes the
@@ -486,6 +572,24 @@ bool tree_sitter_django_external_scanner_scan(
   if (valid_symbols[CommentContent]) {
     return scan_comment_content(lexer);
   }
+  if (valid_symbols[AfterLiteral]) {
+    return scan_after_literal(lexer);
+  }
+  bool separator = false;
+  for (unsigned i = 0; i < KEYWORD_COUNT; ++i) {
+    separator |= valid_symbols[BeforeAnd + i];
+  }
+  if (separator) {
+    bool matching_name = false;
+    for (unsigned token = PopBlock; token <= PushVerbatim; ++token) {
+      matching_name |= valid_symbols[token];
+    }
+    /* these keywords never follow a tag name that opens or closes a named
+     * block, so the two scans never compete over the same position */
+    if (!matching_name) {
+      return scan_separator(lexer, valid_symbols);
+    }
+  }
   while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
     lexer->advance(lexer, true);
   }
@@ -542,7 +646,7 @@ bool tree_sitter_django_external_scanner_scan(
       most_matched_name = name;
     }
   }
-  for (unsigned token = PushBlock; token < MatcherError; ++token) {
+  for (unsigned token = PushBlock; token <= PushVerbatim; ++token) {
     if (valid_symbols[token]) {
       Stack *stack = get_stack_for_token(scanner, token);
       if (is_empty && token == PushVerbatim) {
