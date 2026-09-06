@@ -1,0 +1,64 @@
+==================
+Load Single Library
+==================
+
+{% load static %}
+
+---
+
+(template
+  (content)
+  (load
+    (library
+      (identifier)))
+  (content))
+
+==================
+Load Multiple Libraries
+==================
+
+{% load i18n static %}
+
+---
+
+(template
+  (content)
+  (load
+    (library
+      (identifier))
+    (library
+      (identifier)))
+  (content))
+
+==================
+Load Dotted Library
+==================
+
+{% load django.contrib %}
+
+---
+
+(template
+  (content)
+  (load
+    (library
+      (identifier)
+      (identifier)))
+  (content))
+
+==================
+Load Names From Library
+==================
+
+{% load humanize naturaltime from django %}
+
+---
+
+(template
+  (content)
+  (load
+    (identifier)
+    (identifier)
+    (library
+      (identifier)))
+  (content))

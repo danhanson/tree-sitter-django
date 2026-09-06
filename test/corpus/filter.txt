@@ -40,3 +40,27 @@ HELLO WORLD
     (template
       (content)))
   (content))
+
+==================
+Filter With Spaced Chain
+==================
+
+<p>
+{% filter lower
+   | title %}
+HELLO WORLD
+{% endfilter %}
+</p>
+
+---
+
+(template
+  (content)
+  (filter_group
+    (filter_expression
+      (filter)
+      (filter))
+    (template
+      (content)))
+  (content))
+

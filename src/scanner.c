@@ -21,31 +21,7 @@ enum TokenType {
   VerbatimContent,
   /* raw text inside a comment block, up through (but excluding) the endcomment tag */
   CommentContent,
-  /* zero-width markers for the whitespace preceding a keyword, in the same
-   * order as separated_keywords below */
-  BeforeAnd,
-  BeforeAs,
-  BeforeB,
-  BeforeBy,
-  BeforeIn,
-  BeforeIs,
-  BeforeNot,
-  BeforeOr,
-  BeforeP,
-  BeforeRandom,
-  BeforeW,
-  /* zero-width marker for the end of a literal */
-  AfterLiteral,
 };
-
-/* Keywords Django only reads as keywords when whitespace separates them from
- * the token before, listed in BeforeAnd..BeforeW order. */
-static const char *const separated_keywords[] = {
-  "and", "as", "b", "by", "in", "is", "not", "or", "p", "random", "w",
-};
-
-#define KEYWORD_COUNT (sizeof(separated_keywords) / sizeof(*separated_keywords))
-#define KEYWORD_SIZE 6 // "random", the longest of them
 
 typedef Array(int32_t) Name;
 
@@ -215,6 +191,13 @@ static unsigned read_code(const char *iter, int32_t *result) {
   return 0; // invalid UTF-8 leading byte
 }
 
+/* The characters SEP matches in the grammar: whitespace separating the parts
+ * of a tag, a newline among them. */
+static bool check_space(const int32_t character) {
+  return character == ' ' || character == '\t'
+      || character == '\n' || character == '\r';
+}
+
 static bool check_name_start_char(const int32_t letter) {
   return 'a' <= letter && letter <= 'z' || 'A' <= letter && letter <= 'Z';
 }
@@ -331,7 +314,7 @@ static unsigned check_name(TSLexer *const lexer, const Name *const name) {
 }
 
 static bool check_close_block(TSLexer *const lexer) {
-  while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+  while (check_space(lexer->lookahead)) {
     lexer->advance(lexer, false);
   }
   if (lexer->lookahead != '%') {
@@ -359,8 +342,8 @@ static bool check_inline(TSLexer *const lexer) {
   return check_close_block(lexer);
 }
 
-static void skip_horizontal_whitespace(TSLexer *const lexer) {
-  while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+static void skip_whitespace(TSLexer *const lexer) {
+  while (check_space(lexer->lookahead)) {
     lexer->advance(lexer, false);
   }
 }
@@ -372,14 +355,14 @@ const char endverbatim_chars[] = "endverbatim";
  * `name` is empty, an unnamed "{% endverbatim %}"). Consumes input either
  * way, since a failed match still belongs in the verbatim block's raw text. */
 static bool check_endverbatim_close(TSLexer *const lexer, const Name *const name) {
-  skip_horizontal_whitespace(lexer);
+  skip_whitespace(lexer);
   for (unsigned i = 0; i < sizeof(endverbatim_chars) - 1; ++i) {
     if (lexer->lookahead != endverbatim_chars[i]) {
       return false;
     }
     lexer->advance(lexer, false);
   }
-  skip_horizontal_whitespace(lexer);
+  skip_whitespace(lexer);
   if (name->size > 0) {
     for (unsigned i = 0; i < name->size; ++i) {
       if (lexer->lookahead != name->contents[i]) {
@@ -390,7 +373,7 @@ static bool check_endverbatim_close(TSLexer *const lexer, const Name *const name
     if (check_name_char(lexer->lookahead)) {
       return false;
     }
-    skip_horizontal_whitespace(lexer);
+    skip_whitespace(lexer);
   }
   if (lexer->lookahead != '%') {
     return false;
@@ -445,82 +428,20 @@ static bool scan_verbatim_content(struct Scanner *const scanner, TSLexer *const 
   }
 }
 
-/* Emits a zero-width token at the whitespace that separates one of the
- * separated_keywords from the token before it. Django splits tag contents on
- * whitespace, so those words are only keywords when something separates them;
- * without this, "{% cycle 1as x %}" would parse as a cycle over 1 bound to x.
- * Two keywords cannot run together (the lexer reads one longer identifier
- * instead), but a literal can run into the keyword after it, and the grammar's
- * extras can never be made mandatory.
- *
- * Reads the whole word that follows and only fires when it is a keyword the
- * parser is currently expecting, since the whitespace after a value is equally
- * the whitespace before another value ("{% cycle a b %}"). */
-/* Emits a zero-width token at the end of a literal, and fails when the
- * literal runs straight into whatever follows it. Django splits tag contents
- * on whitespace, so "{% cycle 1a %}" is the single token "1a" and an error,
- * not the number 1 followed by the variable a. A literal ends wherever its
- * own pattern ends, so unlike an identifier it cannot swallow the text after
- * it, which leaves this the only place to catch the run-on. */
-static bool scan_after_literal(TSLexer *const lexer) {
-  int32_t next = lexer->lookahead;
-  // anything that could begin another value: a name, a quote, or a sign or
-  // point that would start a second number ("{% cycle 1.2.3 %}")
-  if (check_name_char(next) || next == '\'' || next == '"' || next == '-' || next == '+' || next == '.') {
-    return false;
-  }
-  lexer->mark_end(lexer);
-  lexer->result_symbol = AfterLiteral;
-  return true;
-}
-
-static bool scan_separator(TSLexer *const lexer, const bool *const valid_symbols) {
-  bool separated = false;
-  while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
-    lexer->advance(lexer, true);
-    separated = true;
-  }
-  if (!separated) {
-    return false;
-  }
-  // the token ends here, before the keyword itself, which the grammar lexes
-  lexer->mark_end(lexer);
-
-  char word[KEYWORD_SIZE + 1];
-  unsigned length = 0;
-  while (check_name_char(lexer->lookahead)) {
-    if (length == KEYWORD_SIZE) {
-      // too long to be one of them, and a prefix match would be wrong anyway
-      return false;
-    }
-    word[length++] = (char) lexer->lookahead;
-    lexer->advance(lexer, false);
-  }
-  word[length] = '\0';
-
-  for (unsigned i = 0; i < KEYWORD_COUNT; ++i) {
-    if (valid_symbols[BeforeAnd + i] && strcmp(word, separated_keywords[i]) == 0) {
-      lexer->result_symbol = BeforeAnd + i;
-      return true;
-    }
-  }
-  return false;
-}
-
 const char endcomment_chars[] = "endcomment";
 
 /* Called right after consuming "{%"; checks whether what follows closes the
  * comment block. Unlike verbatim, comment blocks have no name to match and
  * cannot be nested, so any "{% endcomment %}" closes the innermost one. */
 static bool check_endcomment_close(TSLexer *const lexer) {
-  skip_horizontal_whitespace(lexer);
+  skip_whitespace(lexer);
   for (unsigned i = 0; i < sizeof(endcomment_chars) - 1; ++i) {
     if (lexer->lookahead != endcomment_chars[i]) {
       return false;
     }
     lexer->advance(lexer, false);
   }
-  skip_horizontal_whitespace(lexer);
+  skip_whitespace(lexer);
   if (lexer->lookahead != '%') {
     return false;
   }
@@ -587,25 +508,7 @@ bool tree_sitter_django_external_scanner_scan(
   if (valid_symbols[CommentContent]) {
     return scan_comment_content(lexer);
   }
-  if (valid_symbols[AfterLiteral]) {
-    return scan_after_literal(lexer);
-  }
-  bool separator = false;
-  for (unsigned i = 0; i < KEYWORD_COUNT; ++i) {
-    separator |= valid_symbols[BeforeAnd + i];
-  }
-  if (separator) {
-    bool matching_name = false;
-    for (unsigned token = PopBlock; token <= PushVerbatim; ++token) {
-      matching_name |= valid_symbols[token];
-    }
-    /* these keywords never follow a tag name that opens or closes a named
-     * block, so the two scans never compete over the same position */
-    if (!matching_name) {
-      return scan_separator(lexer, valid_symbols);
-    }
-  }
-  while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+  while (check_space(lexer->lookahead)) {
     lexer->advance(lexer, true);
   }
   bool is_empty = false;

@@ -124,3 +124,27 @@ Cycle Number Run On To Number
 ---
 
 (ERROR)
+
+==================
+Cycle Spanning Lines
+==================
+
+{% cycle 1
+  2 as x %}
+
+---
+
+(template
+  (content)
+  (cycle
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    variable: (identifier))
+  (content))
+

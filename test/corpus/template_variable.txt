@@ -323,3 +323,45 @@ Template Variable Translated String With Spaces
 
 (ERROR)
 
+==================
+Template Variable Spanning Lines
+==================
+
+{{ value
+  |floatformat:2 }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter
+          (value
+            (literal
+              (number)))))))
+  (content))
+
+==================
+Template Variable With Spaced Filter
+==================
+
+{{ value | upper }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter))))
+  (content))
+
