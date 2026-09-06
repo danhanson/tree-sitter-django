@@ -127,6 +127,10 @@
             {
               "type": "SYMBOL",
               "name": "string"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "translated_string"
             }
           ]
         },
@@ -143,6 +147,34 @@
     "string": {
       "type": "PATTERN",
       "value": "\"(?:[^\"\\\\]|\\\\[^\\n])*\"|'(?:[^'\\\\]|\\\\[^\\n])*'"
+    },
+    "translated_string": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "_("
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "IMMEDIATE_TOKEN",
+            "content": {
+              "type": "PATTERN",
+              "value": "\"(?:[^\"\\\\]|\\\\[^\\n])*\"|'(?:[^'\\\\]|\\\\[^\\n])*'"
+            }
+          },
+          "named": true,
+          "value": "string"
+        },
+        {
+          "type": "IMMEDIATE_TOKEN",
+          "content": {
+            "type": "STRING",
+            "value": ")"
+          }
+        }
+      ]
     },
     "attribute": {
       "type": "PATTERN",

@@ -34,6 +34,8 @@ variable: (identifier) @variable.parameter
     ("}}")
     ("#}")
     ("%}")
+    ("_(")
+    (")")
     (",")] @punctuation
 
 (number) @number

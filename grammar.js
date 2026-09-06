@@ -30,6 +30,9 @@ function spaced(separator, keyword, ...args) {
   return seq(separator, keyword, ...args);
 }
 
+/** Django's string constant, which takes any escape but a line break. */
+const STRING = /"(?:[^"\\]|\\[^\n])*"|'(?:[^'\\]|\\[^\n])*'/;
+
 const django = grammar({
   name: "django",
   extras: ($) => [/[ \t]/],
@@ -72,12 +75,20 @@ const django = grammar({
     filter_expression: ($) =>
       seq($.filter, repeat(seq(token.immediate("|"), $.filter))),
     value: ($) => choice($.literal, $.variable_attribute),
-    literal: ($) => seq(choice($.number, $.string), $._after_literal),
+    literal: ($) =>
+      seq(choice($.number, $.string, $.translated_string), $._after_literal),
     // digits, with single underscores allowed between them, as Python's
     // int() and float() accept ("1_000") and Django's Variable relies on
     number: ($) =>
       /[-+]?(?:[0-9](?:_?[0-9])*(?:\.(?:[0-9](?:_?[0-9])*)?)?|\.[0-9](?:_?[0-9])*)(?:[eE][0-9](?:_?[0-9])*)?/,
-    string: ($) => /"(?:[^"\\]|\\[^\n])*"|'(?:[^'\\]|\\[^\n])*'/,
+    string: ($) => STRING,
+    /**
+     * A string to translate at render time. Django matches "_(" and ")" as
+     * part of the constant itself, so nothing may come between them and the
+     * string: "_( 'a' )" is a syntax error there, not a translated literal.
+     */
+    translated_string: ($) =>
+      seq("_(", alias(token.immediate(STRING), $.string), token.immediate(")")),
     attribute: ($) => /[a-zA-Z0-9][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9][a-zA-Z0-9_]*)*/,
     variable_attribute: ($) =>
       seq($.identifier, optional(seq(token.immediate("."), $.attribute))),

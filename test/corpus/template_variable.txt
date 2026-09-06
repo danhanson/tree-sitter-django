@@ -274,3 +274,52 @@ Template Variable Attribute Beginning With Underscore
 
 (ERROR)
 
+==================
+Template Variable Translated String
+==================
+
+{{ _("Hello") }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (translated_string
+            (string))))))
+  (content))
+
+==================
+Template Variable Translated String With Filter
+==================
+
+{{ _('Hello')|upper }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (translated_string
+            (string))))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Template Variable Translated String With Spaces
+:error
+==================
+
+{{ _( "Hello" ) }}
+
+---
+
+(ERROR)
+

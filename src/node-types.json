@@ -657,6 +657,10 @@
         {
           "type": "string",
           "named": true
+        },
+        {
+          "type": "translated_string",
+          "named": true
         }
       ]
     }
@@ -1019,6 +1023,21 @@
     }
   },
   {
+    "type": "translated_string",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "url_block",
     "named": true,
     "fields": {
@@ -1231,6 +1250,10 @@
     "named": false
   },
   {
+    "type": ")",
+    "named": false
+  },
+  {
     "type": ",",
     "named": false
   },
@@ -1260,6 +1283,10 @@
   },
   {
     "type": ">=",
+    "named": false
+  },
+  {
+    "type": "_(",
     "named": false
   },
   {
