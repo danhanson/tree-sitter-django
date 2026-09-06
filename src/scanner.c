@@ -110,13 +110,6 @@ static void reset_scanner(struct Scanner *const scanner) {
   /*strncat(_scanner->error, string, ERROR_SIZE - 1);*/\
 } while(0)
 
-#define min(a, b)\
-  ({\
-    typeof(a) _a = (a);\
-    typeof(b) _b = (b);\
-    _a > _b ? _a : _b;\
-  })
-
 void * tree_sitter_django_external_scanner_create() {
   return ts_calloc(1, sizeof(struct Scanner));
 }
