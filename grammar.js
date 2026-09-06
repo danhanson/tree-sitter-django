@@ -73,9 +73,12 @@ const django = grammar({
       seq($.filter, repeat(seq(token.immediate("|"), $.filter))),
     value: ($) => choice($.literal, $.variable_attribute),
     literal: ($) => seq(choice($.number, $.string), $._after_literal),
-    number: ($) => /[-+]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][0-9]+)?/,
+    // digits, with single underscores allowed between them, as Python's
+    // int() and float() accept ("1_000") and Django's Variable relies on
+    number: ($) =>
+      /[-+]?(?:[0-9](?:_?[0-9])*(?:\.(?:[0-9](?:_?[0-9])*)?)?|\.[0-9](?:_?[0-9])*)(?:[eE][0-9](?:_?[0-9])*)?/,
     string: ($) => /"(?:[^"\\]|\\[^\n])*"|'(?:[^'\\]|\\[^\n])*'/,
-    attribute: ($) => /[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*/,
+    attribute: ($) => /[a-zA-Z0-9][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9][a-zA-Z0-9_]*)*/,
     variable_attribute: ($) =>
       seq($.identifier, optional(seq(token.immediate("."), $.attribute))),
     identifier: ($) => /[a-zA-Z][a-zA-Z0-9_]*/,

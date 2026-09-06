@@ -246,3 +246,31 @@ Template Variable Signed Number
           (number)))))
   (content))
 
+==================
+Template Variable Underscore Separated Number
+==================
+
+{{ 1_000 }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Template Variable Attribute Beginning With Underscore
+:error
+==================
+
+{{ user._private }}
+
+---
+
+(ERROR)
+
