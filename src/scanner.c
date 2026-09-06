@@ -4,9 +4,7 @@
 #include <string.h>
 
 #define ERROR_SIZE 64
-#define STACK_COUNT 3
 #define NAME_SEP ' '
-#define STACK_SEP '\n'
 
 enum TokenType {
   /* indicates that an error occurred */
@@ -50,36 +48,57 @@ static const char *const separated_keywords[] = {
 #define KEYWORD_SIZE 6 // "random", the longest of them
 
 typedef Array(int32_t) Name;
-typedef Array(Name) Stack;
+
+/* The kinds of tag that open a named region. PushBlock..PushVerbatim and
+ * PopBlock..PopVerbatim are declared in this order, so a kind is the offset of
+ * its token within either run. */
+typedef enum {
+  BlockTag,
+  PartialTag,
+  VerbatimTag,
+} TagKind;
+
+/* one letter per kind, in TagKind order, used to serialize an open tag */
+static const char tag_kind_chars[] = "bpv";
+
+typedef struct {
+  TagKind kind;
+  Name name;
+} OpenTag;
+
+/* The open tags, innermost last. Only one stack is needed because the grammar
+ * nests these regions: a tag can only be closed by the tag that matches the
+ * innermost open one, so its pop token is the only one the parser ever asks
+ * for at a close tag. */
+typedef Array(OpenTag) Stack;
 
 struct Scanner {
   bool has_error;
   union {
-    Stack stacks [STACK_COUNT];
+    Stack stack;
     char error [ERROR_SIZE];
   };
 };
 
-static Stack* get_stack_for_token(struct Scanner *scanner, enum TokenType token) {
-  if (token < PopBlock || token > PushVerbatim) {
-    return NULL;
-  }
-  // the pop and push tokens are in the same order, so each pair shares a stack
-  return &scanner->stacks[(token - PopBlock) % STACK_COUNT];
+static TagKind kind_for_push(enum TokenType token) {
+  return (TagKind) (token - PushBlock);
+}
+
+static enum TokenType pop_token_for_kind(TagKind kind) {
+  return (enum TokenType) (PopBlock + kind);
 }
 
 static void reset_scanner(struct Scanner *const scanner) {
   if (scanner->has_error) {
     scanner->error[0] = '\0';
     scanner->has_error = false;
+    // the error shares storage with the stack, which is now meaningless
+    memset(&scanner->stack, 0, sizeof(scanner->stack));
   } else {
-    for (unsigned i = 0; i < STACK_COUNT; ++i) {
-      Stack *stack = &scanner->stacks[i];
-      for (unsigned i = 0; i < stack->size; ++i) {
-        array_delete(array_get(stack, i));
-      }
-      array_delete(stack);
+    for (unsigned i = 0; i < scanner->stack.size; ++i) {
+      array_delete(&array_get(&scanner->stack, i)->name);
     }
+    array_delete(&scanner->stack);
   }
 }
 
@@ -162,23 +181,20 @@ write_serialization_error:;
       }
     }
   } else {
-    // Ok scanner requires copying its stack
-    for (unsigned i = 0; i < STACK_COUNT; ++i) {
-      Stack *stack = &scanner->stacks[i];
-      for (unsigned i = 0; i < stack->size; ++i) {
-        Name *name = array_get(stack, i);
-        for (unsigned j = 0; j < name->size; ++j) {
-          int32_t code = *array_get(name, j);
-          unsigned write_amt = write_code(code, iter);
-          if (write_amt == 0) {
-            scanner_error(scanner, "bad code from name");
-            goto write_serialization_error;
-          }
-          iter += write_amt;
+    // Ok scanner requires copying its stack, as "<kind><name> " per open tag
+    for (unsigned i = 0; i < scanner->stack.size; ++i) {
+      OpenTag *tag = array_get(&scanner->stack, i);
+      iter += write_code(tag_kind_chars[tag->kind], iter);
+      for (unsigned j = 0; j < tag->name.size; ++j) {
+        int32_t code = *array_get(&tag->name, j);
+        unsigned write_amt = write_code(code, iter);
+        if (write_amt == 0) {
+          scanner_error(scanner, "bad code from name");
+          goto write_serialization_error;
         }
-        iter += write_code(NAME_SEP, iter);
+        iter += write_amt;
       }
-      iter += write_code(STACK_SEP, iter);
+      iter += write_code(NAME_SEP, iter);
     }
   }
   return iter - buffer;
@@ -253,11 +269,10 @@ void tree_sitter_django_external_scanner_deserialize(
     case '0': {
       scanner->has_error = false;
       const char *end = buffer + length - bytes_read;
-      Stack *stack = scanner->stacks;
-      Stack *stack_end = stack + STACK_COUNT;
+      // NULL between tags, and the name being read inside one
       Name *name = NULL;
 
-      while (stack < stack_end) {
+      while (buffer < end) {
         bytes_read = read_code(buffer, &code);
         if (bytes_read == 0) {
           scanner_error(scanner, "Bad utf8 byte");
@@ -268,34 +283,30 @@ void tree_sitter_django_external_scanner_deserialize(
           scanner_error(scanner, "Scanner truncated by length");
           return;
         }
-        if (code == STACK_SEP) {
-          ++stack;
-          name = NULL;
-          continue;
-        } else if (code == NAME_SEP) {
-          if (name == NULL) {
-            // an empty name was pushed (e.g. an anonymous verbatim block)
-            array_push(stack, (Name) array_new());
-          } else {
-            name = NULL;
+        if (name == NULL) {
+          // a tag starts with the letter for its kind
+          const char *kind = code > 0 && code < 128 ? strchr(tag_kind_chars, code) : NULL;
+          if (kind == NULL) {
+            scanner_error(scanner, "Invalid tag kind");
+            return;
           }
+          OpenTag tag = { (TagKind) (kind - tag_kind_chars), array_new() };
+          array_push(&scanner->stack, tag);
+          name = &array_back(&scanner->stack)->name;
+        } else if (code == NAME_SEP) {
+          // an empty name means an unnamed tag (e.g. an anonymous verbatim)
+          name = NULL;
         } else {
-          if (name == NULL) {
-            if (!check_name_start_char(code)) {
-              scanner_error(scanner, "Invalid name, must start with letter");
-              return;
-            }
-            array_push(stack, (Name) array_new());
-            name = array_back(stack);
-          } else if (!check_name_char(code)) {
+          bool valid = name->size ? check_name_char(code) : check_name_start_char(code);
+          if (!valid) {
             scanner_error(scanner, "Invalid character in name");
             return;
           }
           array_push(name, code);
         }
       }
-      if (buffer != end) {
-        scanner_error(scanner, "Scanner deserialization finished with left over length");
+      if (name != NULL) {
+        scanner_error(scanner, "Scanner deserialization finished mid-name");
       }
     }
   }
@@ -335,6 +346,12 @@ static bool check_close_block(TSLexer *const lexer) {
   }
   lexer->advance(lexer, false);
   return lexer->lookahead == '}';
+}
+
+/* Marks the name just read as the token, then checks that only "%}" follows. */
+static bool check_close_block_from(TSLexer *const lexer) {
+  lexer->mark_end(lexer);
+  return check_close_block(lexer);
 }
 
 const char inline_chars[] = "inline";
@@ -396,11 +413,14 @@ static bool check_endverbatim_close(TSLexer *const lexer, const Name *const name
  * unrelated (e.g. unnamed) "{% verbatim %}...{% endverbatim %}" pair appear
  * unparsed inside a named verbatim block. */
 static bool scan_verbatim_content(struct Scanner *const scanner, TSLexer *const lexer) {
-  Stack *stack = get_stack_for_token(scanner, PopVerbatim);
-  if (stack->size == 0) {
+  if (scanner->stack.size == 0) {
     return false;
   }
-  Name *name = array_back(stack);
+  OpenTag *tag = array_back(&scanner->stack);
+  if (tag->kind != VerbatimTag) {
+    return false;
+  }
+  Name *name = &tag->name;
   bool consumed_any = false;
   while (true) {
     if (lexer->eof(lexer)) {
@@ -603,68 +623,49 @@ bool tree_sitter_django_external_scanner_scan(
     is_empty = true;
   }
 
-  // save most matched name in case we need to reread characters
-  Name *most_matched_name;
-  unsigned most_matched_amt = 0;
-  for (unsigned token = PopBlock; token < PushBlock; ++token) {
-    Stack *stack = get_stack_for_token(scanner, token);
-    if (valid_symbols[token] && stack->size > 0) {
-      Name *name = array_back(stack);
+  /* Only the innermost open tag can be closed here, so it is the one and only
+   * candidate: there is never a second name to try, and so never any input to
+   * reread. */
+  if (scanner->stack.size > 0) {
+    OpenTag *tag = array_back(&scanner->stack);
+    enum TokenType token = pop_token_for_kind(tag->kind);
+    if (valid_symbols[token]) {
       if (is_empty) {
         // we matched a close block without an id
-        array_delete(name);
-        array_pop(stack);
+        array_delete(&tag->name);
+        array_pop(&scanner->stack);
         lexer->result_symbol = token;
         return true;
       }
-      if (most_matched_amt > name->size) {
-        continue;
+      unsigned match_amt = check_name(lexer, &tag->name);
+      bool has_next_char = tag->name.size ? check_name_char(lexer->lookahead) : check_name_start_char(lexer->lookahead);
+      if (match_amt == tag->name.size && !has_next_char && check_close_block_from(lexer)) {
+        array_delete(&tag->name);
+        array_pop(&scanner->stack);
+        lexer->result_symbol = token;
+        return true;
       }
-      if (most_matched_amt > 0) {
-        for (int i = 0; i < most_matched_amt; ++i) {
-          if (*array_get(most_matched_name, i) != *array_get(name, i)) {
-            continue;
-          }
-        }
-      }
-      unsigned match_amt = check_name(lexer, name) + most_matched_amt;
-      bool has_next_char = name->size ? check_name_char(lexer->lookahead) : check_name_start_char(lexer->lookahead);
-      if (match_amt == name->size && !has_next_char) {
-        // name matches and there are no remaining name chars from lexer
-        lexer->mark_end(lexer);
-        if (check_close_block(lexer)) {
-          array_delete(name);
-          array_pop(stack);
-          lexer->result_symbol = token;
-          return true;
-        } else {
-          // bad close block means no matches
-          return false;
-        }
-      }
-      most_matched_amt = match_amt;
-      most_matched_name = name;
+      // the close tag names something other than the tag it would close
+      return false;
     }
   }
   for (unsigned token = PushBlock; token <= PushVerbatim; ++token) {
     if (valid_symbols[token]) {
-      Stack *stack = get_stack_for_token(scanner, token);
+      TagKind kind = kind_for_push(token);
       if (is_empty && token == PushVerbatim) {
         // use empty string for name to indicate empty push
-        array_push(stack, (Name) array_new());
+        OpenTag tag = { kind, array_new() };
+        array_push(&scanner->stack, tag);
         lexer->result_symbol = token;
         return true;
       }
-      // do not push stack until we are done with most_matched_name
       Name name = array_new();
-      if (most_matched_amt > 0) {
-        array_extend(&name, most_matched_amt, most_matched_name);
-      }
       if (read_name(lexer, &name)) {
         // validate tokens after name
         lexer->mark_end(lexer);
         if (check_close_block(lexer) || token == PushPartial && check_inline(lexer)) {
-          array_push(stack, name);
+          OpenTag tag = { kind, name };
+          array_push(&scanner->stack, tag);
           lexer->result_symbol = token;
           return true;
         }
