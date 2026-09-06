@@ -211,3 +211,38 @@ Template Variable Literal Adjacent To Name
 ---
 
 (ERROR)
+
+==================
+Template Variable With Escaped String
+==================
+
+{{ "a\nb\"c" }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Template Variable Signed Number
+==================
+
+{{ +1.5 }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+

@@ -471,7 +471,9 @@ static bool scan_verbatim_content(struct Scanner *const scanner, TSLexer *const 
  * it, which leaves this the only place to catch the run-on. */
 static bool scan_after_literal(TSLexer *const lexer) {
   int32_t next = lexer->lookahead;
-  if (check_name_char(next) || next == '\'' || next == '"' || next == '-') {
+  // anything that could begin another value: a name, a quote, or a sign or
+  // point that would start a second number ("{% cycle 1.2.3 %}")
+  if (check_name_char(next) || next == '\'' || next == '"' || next == '-' || next == '+' || next == '.') {
     return false;
   }
   lexer->mark_end(lexer);

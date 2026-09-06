@@ -113,3 +113,14 @@ Cycle Value Adjacent To Value
 ---
 
 (ERROR)
+
+==================
+Cycle Number Run On To Number
+:error
+==================
+
+{% cycle 1.2.3 %}
+
+---
+
+(ERROR)

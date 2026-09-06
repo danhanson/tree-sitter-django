@@ -73,8 +73,8 @@ const django = grammar({
       seq($.filter, repeat(seq(token.immediate("|"), $.filter))),
     value: ($) => choice($.literal, $.variable_attribute),
     literal: ($) => seq(choice($.number, $.string), $._after_literal),
-    number: ($) => /-?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE]-?[0-9]+)?/,
-    string: ($) => /"(?:[^"\\]|\\\\|\\")*"|'(?:[^'\\]|\\\\|\\')*'/,
+    number: ($) => /[-+]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][0-9]+)?/,
+    string: ($) => /"(?:[^"\\]|\\[^\n])*"|'(?:[^'\\]|\\[^\n])*'/,
     attribute: ($) => /[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*/,
     variable_attribute: ($) =>
       seq($.identifier, optional(seq(token.immediate("."), $.attribute))),
