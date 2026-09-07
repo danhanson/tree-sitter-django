@@ -50,6 +50,8 @@ tag: [
     ("endautoescape")
     ("block")
     ("endblock")
+    ("cache")
+    ("endcache")
     ("comment")
     ("endcomment")
     ("csp_nonce_attr")

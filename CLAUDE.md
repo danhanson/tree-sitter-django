@@ -106,7 +106,7 @@ which Django itself enforces while it parses the template ("add requires 2 argum
 ### First-party libraries
 
 Django ships `i18n`, `l10n`, `static`, `cache` and `tz` as libraries rather than builtins. Their tags are
-modelled as ordinary tags (so far: `static`, `l10n`, `tz`), and the grammar **never requires the `{% load %}`**, because
+modelled as ordinary tags (so far: `static`, `l10n`, `tz`, `cache`), and the grammar **never requires the `{% load %}`**, because
 an engine can preload a library through `OPTIONS: {"builtins": [...]}`, which makes `{% static "a" %}` valid
 with no load at all.
 
@@ -205,5 +205,10 @@ documentation or memory. Both checks are worth repeating whenever tags, filters 
   bits from the end, so `{% static "a" junk %}` and `{% static "a" as u v %}` are accepted there and
   rejected here, and `PrefixNode.handle_token` raises `IndexError` rather than `TemplateSyntaxError` on
   `{% get_static_prefix as %}`.
+- Django's `{% cache %}` takes its fragment name as the raw word in that position and finds the cache to
+  use by testing whether the last word starts with `using=`, and only when something precedes it. So
+  `{% cache 500 sidebar.name %}` names a fragment there, `{% cache 500 using="c" %}` names a fragment
+  called `using="c"` rather than choosing a cache, and `{% cache 500 sidebar using= %}` takes an empty
+  name. All three are errors here.
 - `partial`/`partialdef` are Django builtins as of Django 6; `elif`/`else`/`empty` are modelled as parts of
   their enclosing tag rather than as separate tags.

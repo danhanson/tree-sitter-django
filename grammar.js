@@ -247,6 +247,7 @@ const NAMES_INSIDE_A_TAG_GROUP = [
   "empty",
   "endautoescape",
   "endblock",
+  "endcache",
   "endcomment",
   "endfilter",
   "endfor",
@@ -378,6 +379,7 @@ const django = grammar({
       choice(
         $.autoescape_group,
         $.block_group,
+        $.cache_group,
         $.comment_group,
         $.csp_nonce_attr,
         $.csrf_token,
@@ -460,6 +462,18 @@ const django = grammar({
         block("block", field("name", $.push_block)),
         optional($.template),
         block("endblock", $.pop_block),
+      ),
+    cache_group: ($) =>
+      seq(
+        block(
+          "cache",
+          part($.filtered_value),
+          part(choice($.identifier, $.string)),
+          repeat(part($.filtered_value)),
+          optional(part(seq("using=", $.filtered_value))),
+        ),
+        optional($.template),
+        block("endcache"),
       ),
     comment_group: ($) =>
       seq(

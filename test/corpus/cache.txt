@@ -1,0 +1,235 @@
+==================
+Cache
+==================
+
+{% cache 500 sidebar %}x{% endcache %}
+
+---
+
+(template
+  (content)
+  (cache_group
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (identifier)
+    (template
+      (content)))
+  (content))
+
+==================
+Cache With A Variable Timeout
+==================
+
+{% cache t sidebar %}x{% endcache %}
+
+---
+
+(template
+  (content)
+  (cache_group
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (identifier)
+    (template
+      (content)))
+  (content))
+
+==================
+Cache With A Filtered Timeout
+==================
+
+{% cache 500|add:1 sidebar %}x{% endcache %}
+
+---
+
+(template
+  (content)
+  (cache_group
+    (filtered_value
+      (value
+        (literal
+          (number)))
+      (filter_expression
+        (filter
+          argument: (value
+            (literal
+              (number))))))
+    (identifier)
+    (template
+      (content)))
+  (content))
+
+==================
+Cache With A Quoted Fragment Name
+==================
+
+{% cache 500 "sidebar" %}x{% endcache %}
+
+---
+
+(template
+  (content)
+  (cache_group
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (string)
+    (template
+      (content)))
+  (content))
+
+==================
+Cache Varying On Arguments
+==================
+
+{% cache 500 sidebar a b %}x{% endcache %}
+
+---
+
+(template
+  (content)
+  (cache_group
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (template
+      (content)))
+  (content))
+
+==================
+Cache Varying On A Filtered Argument
+==================
+
+{% cache 500 sidebar a|upper %}x{% endcache %}
+
+---
+
+(template
+  (content)
+  (cache_group
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter)))
+    (template
+      (content)))
+  (content))
+
+==================
+Cache Using A Named Cache
+==================
+
+{% cache 500 sidebar using="c" %}x{% endcache %}
+
+---
+
+(template
+  (content)
+  (cache_group
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (template
+      (content)))
+  (content))
+
+==================
+Cache Using An Unquoted Cache Name
+==================
+
+{% cache 500 sidebar using=c %}x{% endcache %}
+
+---
+
+(template
+  (content)
+  (cache_group
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (template
+      (content)))
+  (content))
+
+==================
+Cache Without A Fragment Name
+:error
+==================
+
+{% cache 500 %}x{% endcache %}
+
+---
+
+
+==================
+Cache With Anything After Using
+:error
+==================
+
+{% cache 500 sidebar using="c" extra %}x{% endcache %}
+
+---
+
+
+==================
+Cache With An Empty Using
+:error
+==================
+
+{% cache 500 sidebar using= %}x{% endcache %}
+
+---
+
+
+==================
+Cache With An Attribute Fragment Name
+:error
+==================
+
+{% cache 500 sidebar.name %}x{% endcache %}
+
+---
+
+
+==================
+Cache With Using As Its Fragment Name
+:error
+==================
+
+{% cache 500 using="c" %}x{% endcache %}
+
+---

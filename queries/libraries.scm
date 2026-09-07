@@ -24,6 +24,9 @@
 (get_media_prefix
   tag: ("get_media_prefix") @library.static)
 
+(cache_group
+  tag: ("cache") @library.cache)
+
 (localize_group
   tag: ("localize") @library.l10n)
 

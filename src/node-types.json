@@ -12,6 +12,10 @@
         "named": true
       },
       {
+        "type": "cache_group",
+        "named": true
+      },
+      {
         "type": "comment_group",
         "named": true
       },
@@ -237,6 +241,48 @@
       "types": [
         {
           "type": "pop_block",
+          "named": true
+        },
+        {
+          "type": "template",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "cache_group",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "cache",
+            "named": false
+          },
+          {
+            "type": "endcache",
+            "named": false
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "filtered_value",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "string",
           "named": true
         },
         {
@@ -1929,6 +1975,10 @@
     "named": false
   },
   {
+    "type": "cache",
+    "named": false
+  },
+  {
     "type": "capfirst",
     "named": false
   },
@@ -2026,6 +2076,10 @@
   },
   {
     "type": "endblock",
+    "named": false
+  },
+  {
+    "type": "endcache",
     "named": false
   },
   {
@@ -2446,6 +2500,10 @@
   },
   {
     "type": "urlizetrunc",
+    "named": false
+  },
+  {
+    "type": "using=",
     "named": false
   },
   {
