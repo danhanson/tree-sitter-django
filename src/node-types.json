@@ -52,6 +52,10 @@
         "named": true
       },
       {
+        "type": "get_current_timezone",
+        "named": true
+      },
+      {
         "type": "get_media_prefix",
         "named": true
       },
@@ -77,6 +81,10 @@
       },
       {
         "type": "localize_group",
+        "named": true
+      },
+      {
+        "type": "localtime_group",
         "named": true
       },
       {
@@ -117,6 +125,10 @@
       },
       {
         "type": "template_tag_block",
+        "named": true
+      },
+      {
+        "type": "timezone_group",
         "named": true
       },
       {
@@ -577,6 +589,10 @@
             "named": false
           },
           {
+            "type": "localtime",
+            "named": false
+          },
+          {
             "type": "lower",
             "named": false
           },
@@ -641,6 +657,10 @@
             "named": false
           },
           {
+            "type": "timezone",
+            "named": false
+          },
+          {
             "type": "title",
             "named": false
           },
@@ -682,6 +702,10 @@
           },
           {
             "type": "urlizetrunc",
+            "named": false
+          },
+          {
+            "type": "utc",
             "named": false
           },
           {
@@ -876,6 +900,32 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "get_current_timezone",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "get_current_timezone",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -1118,6 +1168,36 @@
           },
           {
             "type": "localize",
+            "named": false
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "template",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "localtime_group",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "endlocaltime",
+            "named": false
+          },
+          {
+            "type": "localtime",
             "named": false
           }
         ]
@@ -1502,6 +1582,40 @@
       "types": [
         {
           "type": "filtered_value",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "timezone_group",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "endtimezone",
+            "named": false
+          },
+          {
+            "type": "timezone",
+            "named": false
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "filtered_value",
+          "named": true
+        },
+        {
+          "type": "template",
           "named": true
         }
       ]
@@ -1939,11 +2053,19 @@
     "named": false
   },
   {
+    "type": "endlocaltime",
+    "named": false
+  },
+  {
     "type": "endpartialdef",
     "named": false
   },
   {
     "type": "endspaceless",
+    "named": false
+  },
+  {
+    "type": "endtimezone",
     "named": false
   },
   {
@@ -2000,6 +2122,10 @@
   },
   {
     "type": "from",
+    "named": false
+  },
+  {
+    "type": "get_current_timezone",
     "named": false
   },
   {
@@ -2084,6 +2210,10 @@
   },
   {
     "type": "localize",
+    "named": false
+  },
+  {
+    "type": "localtime",
     "named": false
   },
   {
@@ -2267,6 +2397,10 @@
     "named": false
   },
   {
+    "type": "timezone",
+    "named": false
+  },
+  {
     "type": "title",
     "named": false
   },
@@ -2312,6 +2446,10 @@
   },
   {
     "type": "urlizetrunc",
+    "named": false
+  },
+  {
+    "type": "utc",
     "named": false
   },
   {

@@ -32,6 +32,21 @@
     ("localize")
     ("unlocalize")] @library.l10n)
 
+(localtime_group
+  tag: ("localtime") @library.tz)
+
+(timezone_group
+  tag: ("timezone") @library.tz)
+
+(get_current_timezone
+  tag: ("get_current_timezone") @library.tz)
+
+(filter
+  name: [
+    ("localtime")
+    ("timezone")
+    ("utc")] @library.tz)
+
 ; "{% load static %}" makes every name in the library available; "{% load
 ; static from staticfiles %}" makes only the names listed available.
 (load

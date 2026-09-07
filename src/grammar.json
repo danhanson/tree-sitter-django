@@ -584,6 +584,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "get_current_timezone"
+        },
+        {
+          "type": "SYMBOL",
           "name": "get_media_prefix"
         },
         {
@@ -609,6 +613,10 @@
         {
           "type": "SYMBOL",
           "name": "localize_group"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "localtime_group"
         },
         {
           "type": "SYMBOL",
@@ -649,6 +657,10 @@
         {
           "type": "SYMBOL",
           "name": "template_tag_block"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "timezone_group"
         },
         {
           "type": "SYMBOL",
@@ -796,6 +808,14 @@
               {
                 "type": "STRING",
                 "value": "unlocalize"
+              },
+              {
+                "type": "STRING",
+                "value": "localtime"
+              },
+              {
+                "type": "STRING",
+                "value": "utc"
               }
             ]
           }
@@ -888,6 +908,10 @@
                   {
                     "type": "STRING",
                     "value": "wordwrap"
+                  },
+                  {
+                    "type": "STRING",
+                    "value": "timezone"
                   }
                 ]
               }
@@ -2441,6 +2465,81 @@
         }
       ]
     },
+    "get_current_timezone": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "{%"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "PATTERN",
+              "value": "[ \\t\\r\\n]+"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "FIELD",
+          "name": "tag",
+          "content": {
+            "type": "STRING",
+            "value": "get_current_timezone"
+          }
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "PATTERN",
+              "value": "[ \\t\\r\\n]+"
+            },
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "as"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "[ \\t\\r\\n]+"
+                },
+                {
+                  "type": "FIELD",
+                  "name": "variable",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "identifier"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "PATTERN",
+              "value": "[ \\t\\r\\n]+"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "STRING",
+          "value": "%}"
+        }
+      ]
+    },
     "get_media_prefix": {
       "type": "SEQ",
       "members": [
@@ -3384,6 +3483,143 @@
               "content": {
                 "type": "STRING",
                 "value": "endlocalize"
+              }
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "PATTERN",
+                  "value": "[ \\t\\r\\n]+"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "STRING",
+              "value": "%}"
+            }
+          ]
+        }
+      ]
+    },
+    "localtime_group": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "{%"
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "PATTERN",
+                  "value": "[ \\t\\r\\n]+"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "FIELD",
+              "name": "tag",
+              "content": {
+                "type": "STRING",
+                "value": "localtime"
+              }
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "PATTERN",
+                      "value": "[ \\t\\r\\n]+"
+                    },
+                    {
+                      "type": "CHOICE",
+                      "members": [
+                        {
+                          "type": "STRING",
+                          "value": "on"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "off"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "PATTERN",
+                  "value": "[ \\t\\r\\n]+"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "STRING",
+              "value": "%}"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "template"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "{%"
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "PATTERN",
+                  "value": "[ \\t\\r\\n]+"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "FIELD",
+              "name": "tag",
+              "content": {
+                "type": "STRING",
+                "value": "endlocaltime"
               }
             },
             {
@@ -4411,6 +4647,126 @@
         }
       ]
     },
+    "timezone_group": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "{%"
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "PATTERN",
+                  "value": "[ \\t\\r\\n]+"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "FIELD",
+              "name": "tag",
+              "content": {
+                "type": "STRING",
+                "value": "timezone"
+              }
+            },
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "PATTERN",
+                  "value": "[ \\t\\r\\n]+"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "filtered_value"
+                }
+              ]
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "PATTERN",
+                  "value": "[ \\t\\r\\n]+"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "STRING",
+              "value": "%}"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "template"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "{%"
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "PATTERN",
+                  "value": "[ \\t\\r\\n]+"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "FIELD",
+              "name": "tag",
+              "content": {
+                "type": "STRING",
+                "value": "endtimezone"
+              }
+            },
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "PATTERN",
+                  "value": "[ \\t\\r\\n]+"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            },
+            {
+              "type": "STRING",
+              "value": "%}"
+            }
+          ]
+        }
+      ]
+    },
     "url_block": {
       "type": "SEQ",
       "members": [
@@ -5093,11 +5449,19 @@
       },
       {
         "type": "STRING",
+        "value": "endlocaltime"
+      },
+      {
+        "type": "STRING",
         "value": "endpartialdef"
       },
       {
         "type": "STRING",
         "value": "endspaceless"
+      },
+      {
+        "type": "STRING",
+        "value": "endtimezone"
       },
       {
         "type": "STRING",

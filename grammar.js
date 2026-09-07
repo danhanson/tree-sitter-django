@@ -229,6 +229,10 @@ const FILTERS_WITH_OPTIONAL_ARGUMENT = [
  */
 const L10N_FILTERS_WITHOUT_ARGUMENT = ["localize", "unlocalize"];
 
+/** django.templatetags.tz. */
+const TZ_FILTERS_WITHOUT_ARGUMENT = ["localtime", "utc"];
+const TZ_FILTERS_WITH_ARGUMENT = ["timezone"];
+
 /**
  * The words that head an end tag or a part of a tag group. Each is a token
  * only inside the group it belongs to, so anywhere else the lexer reads it as
@@ -249,8 +253,10 @@ const NAMES_INSIDE_A_TAG_GROUP = [
   "endif",
   "endifchanged",
   "endlocalize",
+  "endlocaltime",
   "endpartialdef",
   "endspaceless",
+  "endtimezone",
   "endverbatim",
   "endwith",
 ];
@@ -382,6 +388,7 @@ const django = grammar({
         $.filter_group,
         $.firstof,
         $.for_group,
+        $.get_current_timezone,
         $.get_media_prefix,
         $.get_static_prefix,
         $.if_group,
@@ -389,6 +396,7 @@ const django = grammar({
         $.include,
         $.load,
         $.localize_group,
+        $.localtime_group,
         $.lorem,
         $.now,
         $.partial,
@@ -399,6 +407,7 @@ const django = grammar({
         $.spaceless_group,
         $.static,
         $.template_tag_block,
+        $.timezone_group,
         $.url_block,
         $.verbatim_group,
         $.width_ratio,
@@ -414,10 +423,17 @@ const django = grammar({
       choice(
         field(
           "name",
-          choice(...FILTERS_WITHOUT_ARGUMENT, ...L10N_FILTERS_WITHOUT_ARGUMENT),
+          choice(
+            ...FILTERS_WITHOUT_ARGUMENT,
+            ...L10N_FILTERS_WITHOUT_ARGUMENT,
+            ...TZ_FILTERS_WITHOUT_ARGUMENT,
+          ),
         ),
         seq(
-          field("name", choice(...FILTERS_WITH_ARGUMENT)),
+          field(
+            "name",
+            choice(...FILTERS_WITH_ARGUMENT, ...TZ_FILTERS_WITH_ARGUMENT),
+          ),
           ":",
           field("argument", $.value),
         ),
@@ -519,6 +535,12 @@ const django = grammar({
         optional(seq(block("empty"), optional($.template))),
         block("endfor"),
       ),
+    /**
+     * django.templatetags.tz. get_current_timezone_tag requires exactly
+     * "as <name>", so unlike get_static_prefix the clause is not optional and
+     * nothing may follow it.
+     */
+    get_current_timezone: ($) => block("get_current_timezone", asVariable($)),
     get_media_prefix: ($) => block("get_media_prefix", optional(asVariable($))),
     get_static_prefix: ($) =>
       block("get_static_prefix", optional(asVariable($))),
@@ -556,6 +578,13 @@ const django = grammar({
         block("localize", optional(part(choice("on", "off")))),
         optional($.template),
         block("endlocalize"),
+      ),
+    /** django.templatetags.tz, taking "on" or "off" as localize does. */
+    localtime_group: ($) =>
+      seq(
+        block("localtime", optional(part(choice("on", "off")))),
+        optional($.template),
+        block("endlocaltime"),
       ),
     lorem: ($) =>
       block(
@@ -602,6 +631,13 @@ const django = grammar({
             "closecomment",
           ),
         ),
+      ),
+    /** django.templatetags.tz. timezone_tag takes the one argument. */
+    timezone_group: ($) =>
+      seq(
+        block("timezone", part($.filtered_value)),
+        optional($.template),
+        block("endtimezone"),
       ),
     url_block: ($) =>
       block(

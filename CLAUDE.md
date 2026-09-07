@@ -106,7 +106,7 @@ which Django itself enforces while it parses the template ("add requires 2 argum
 ### First-party libraries
 
 Django ships `i18n`, `l10n`, `static`, `cache` and `tz` as libraries rather than builtins. Their tags are
-modelled as ordinary tags (so far: `static`, `l10n`), and the grammar **never requires the `{% load %}`**, because
+modelled as ordinary tags (so far: `static`, `l10n`, `tz`), and the grammar **never requires the `{% load %}`**, because
 an engine can preload a library through `OPTIONS: {"builtins": [...]}`, which makes `{% static "a" %}` valid
 with no load at all.
 
@@ -121,8 +121,8 @@ no ordering predicate to express it. What such a tool needs to know about Django
   this one.
 - `{% load trans from i18n %}` makes only `trans` available, not the rest of the library.
 
-A library's filters go in their own arity table (`L10N_FILTERS_WITHOUT_ARGUMENT`) rather than into the
-builtin ones, so that the builtin parity check still has an exact list to compare against.
+A library's filters go in their own arity tables (`L10N_FILTERS_WITHOUT_ARGUMENT`,
+`TZ_FILTERS_WITH_ARGUMENT`, …) rather than into the builtin ones, so that the builtin parity check still has an exact list to compare against.
 
 Modelling a library name makes it keyword-extracted, so it no longer reaches `custom_tag`. A project that
 registers its own tag under one of these names and a different signature therefore gets a parse error. That

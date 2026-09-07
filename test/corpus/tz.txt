@@ -1,0 +1,256 @@
+==================
+Localtime
+==================
+
+{% localtime %}x{% endlocaltime %}
+
+---
+
+(template
+  (content)
+  (localtime_group
+    (template
+      (content)))
+  (content))
+
+==================
+Localtime On
+==================
+
+{% localtime on %}x{% endlocaltime %}
+
+---
+
+(template
+  (content)
+  (localtime_group
+    (template
+      (content)))
+  (content))
+
+==================
+Localtime Off
+==================
+
+{% localtime off %}x{% endlocaltime %}
+
+---
+
+(template
+  (content)
+  (localtime_group
+    (template
+      (content)))
+  (content))
+
+==================
+Localtime With Another Argument
+:error
+==================
+
+{% localtime maybe %}x{% endlocaltime %}
+
+---
+
+
+==================
+Localtime With Two Arguments
+:error
+==================
+
+{% localtime on off %}x{% endlocaltime %}
+
+---
+
+
+==================
+Timezone
+==================
+
+{% timezone "Europe/Paris" %}x{% endtimezone %}
+
+---
+
+(template
+  (content)
+  (timezone_group
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (template
+      (content)))
+  (content))
+
+==================
+Timezone With A Variable
+==================
+
+{% timezone tz %}x{% endtimezone %}
+
+---
+
+(template
+  (content)
+  (timezone_group
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (template
+      (content)))
+  (content))
+
+==================
+Timezone With A Filtered Argument
+==================
+
+{% timezone tz|upper %}x{% endtimezone %}
+
+---
+
+(template
+  (content)
+  (timezone_group
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter)))
+    (template
+      (content)))
+  (content))
+
+==================
+Timezone Without An Argument
+:error
+==================
+
+{% timezone %}x{% endtimezone %}
+
+---
+
+
+==================
+Timezone With Two Arguments
+:error
+==================
+
+{% timezone "a" "b" %}x{% endtimezone %}
+
+---
+
+
+==================
+Get Current Timezone
+==================
+
+{% get_current_timezone as tz %}
+
+---
+
+(template
+  (content)
+  (get_current_timezone
+    variable: (identifier))
+  (content))
+
+==================
+Get Current Timezone Without As
+:error
+==================
+
+{% get_current_timezone %}
+
+---
+
+
+==================
+Get Current Timezone With Anything After As
+:error
+==================
+
+{% get_current_timezone as tz junk %}
+
+---
+
+
+==================
+Localtime Filter
+==================
+
+{{ x|localtime }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Utc Filter
+==================
+
+{{ x|utc }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Timezone Filter
+==================
+
+{{ x|timezone:"Europe/Paris" }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter
+          argument: (value
+            (literal
+              (string)))))))
+  (content))
+
+==================
+Timezone Filter Without Its Argument
+:error
+==================
+
+{{ x|timezone }}
+
+---
+
+
+==================
+Localtime Filter With An Argument
+:error
+==================
+
+{{ x|localtime:1 }}
+
+---
