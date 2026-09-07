@@ -93,7 +93,7 @@ function walk(chosen, rest, spellings) {
  */
 function arrangements(items) {
   if (items.length >= 5) {
-    throw new Error(`Too many items for arrangement: ${items.length}`);
+    throw new Error(`Too many items for arrangements: ${items.length}`);
   }
   /**
    * @type {RuleOrLiteral[]}
