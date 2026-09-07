@@ -1,0 +1,440 @@
+==================
+Blocktrans
+==================
+
+{% blocktrans %}hi{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    (content))
+  (content))
+
+==================
+Blocktranslate
+==================
+
+{% blocktranslate %}hi{% endblocktranslate %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    (content))
+  (content))
+
+==================
+Blocktrans Empty
+==================
+
+{% blocktrans %}{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group)
+  (content))
+
+==================
+Blocktrans With A Placeholder
+==================
+
+{% blocktrans %}hi {{ name }}{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    (content)
+    (template_variable
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))))
+  (content))
+
+==================
+Blocktrans Trimmed
+==================
+
+{% blocktrans trimmed %}hi{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    (content))
+  (content))
+
+==================
+Blocktrans With
+==================
+
+{% blocktrans with a=b %}hi{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    variable: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (content))
+  (content))
+
+==================
+Blocktrans With Several Bindings
+==================
+
+{% blocktrans with a=b c=d %}hi{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    variable: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    variable: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (content))
+  (content))
+
+==================
+Blocktrans With A Filtered Binding
+==================
+
+{% blocktrans with a=b|upper %}hi{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    variable: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter)))
+    (content))
+  (content))
+
+==================
+Blocktrans With Context
+==================
+
+{% blocktrans context "menu" %}hi{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (content))
+  (content))
+
+==================
+Blocktrans With Asvar
+==================
+
+{% blocktrans asvar out %}hi{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    variable: (identifier)
+    (content))
+  (content))
+
+==================
+Blocktrans With Count And Plural
+==================
+
+{% blocktrans count n=x %}one{% plural %}many{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    variable: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (content)
+    (content))
+  (content))
+
+==================
+Blocktrans With Every Option
+==================
+
+{% blocktrans trimmed with a=b count n=x context "menu" asvar out %}s{% plural %}p{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    variable: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    variable: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier)
+    (content)
+    (content))
+  (content))
+
+==================
+Blocktrans With Its Options Reordered
+==================
+
+{% blocktrans asvar out trimmed %}hi{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    variable: (identifier)
+    (content))
+  (content))
+
+==================
+Blocktrans Closed By The Other Spelling
+:error
+==================
+
+{% blocktrans %}hi{% endblocktranslate %}
+
+---
+
+
+==================
+Blocktranslate Closed By The Other Spelling
+:error
+==================
+
+{% blocktranslate %}hi{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans With Count And No Plural
+:error
+==================
+
+{% blocktrans count n=x %}one{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans With Plural And No Count
+:error
+==================
+
+{% blocktrans %}one{% plural %}many{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans Counting Two Bindings
+:error
+==================
+
+{% blocktrans count n=x c=d %}one{% plural %}many{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans With Nothing To Bind
+:error
+==================
+
+{% blocktrans with %}hi{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans With An Unknown Option
+:error
+==================
+
+{% blocktrans bogus %}hi{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans With Asvar And No Name
+:error
+==================
+
+{% blocktrans asvar %}hi{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans Holding A Tag
+:error
+==================
+
+{% blocktrans %}a{% if x %}b{% endif %}{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans Holding A Comment
+:error
+==================
+
+{% blocktrans %}a{# c #}b{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans Holding Another Blocktrans
+:error
+==================
+
+{% blocktrans %}a{% blocktrans %}b{% endblocktrans %}{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans With Two Plurals
+:error
+==================
+
+{% blocktrans count n=x %}one{% plural %}many{% plural %}x{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans With An Argument On Plural
+:error
+==================
+
+{% blocktrans count n=x %}one{% plural extra %}many{% endblocktrans %}
+
+---
+
+==================
+Blocktrans With Trimmed Twice
+:error
+==================
+
+{% blocktrans trimmed trimmed %}hi{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans With With Twice
+:error
+==================
+
+{% blocktrans with a=b with c=d %}hi{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans With Context Twice
+:error
+==================
+
+{% blocktrans context "a" context "b" %}hi{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans With Asvar Twice
+:error
+==================
+
+{% blocktrans asvar x asvar y %}hi{% endblocktrans %}
+
+---
+
+
+==================
+Blocktrans With Count Twice
+:error
+==================
+
+{% blocktrans count n=x count m=y %}a{% plural %}b{% endblocktrans %}
+
+---
+
+
+==================
+Blocktranslate With Trimmed Twice
+:error
+==================
+
+{% blocktranslate trimmed trimmed %}hi{% endblocktranslate %}
+
+---
+
+
+==================
+Blocktrans Repeating An Option Of The Tag Before It
+==================
+
+{% blocktrans trimmed %}a{% endblocktrans %}{% blocktrans trimmed %}b{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    (content))
+  (blocktranslate_group
+    (content))
+  (content))

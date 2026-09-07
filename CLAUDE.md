@@ -106,8 +106,7 @@ which Django itself enforces while it parses the template ("add requires 2 argum
 ### First-party libraries
 
 Django ships `i18n`, `l10n`, `static`, `cache` and `tz` as libraries rather than builtins. Their tags are
-modelled as ordinary tags (so far: `static`, `l10n`, `tz`, `cache`, and `i18n` apart from
-`blocktrans`/`blocktranslate`), and the grammar **never requires the `{% load %}`**, because
+modelled as ordinary tags (so far: `static`, `l10n`, `tz`, `cache` and `i18n`), and the grammar **never requires the `{% load %}`**, because
 an engine can preload a library through `OPTIONS: {"builtins": [...]}`, which makes `{% static "a" %}` valid
 with no load at all.
 
@@ -131,29 +130,50 @@ is accepted: these names are common enough that shadowing them is the mistake.
 
 ### External scanner (`src/scanner.c`)
 
-Nine external tokens, for the constraints a context-free grammar cannot express:
+Eleven external tokens, for the constraints a context-free grammar cannot express:
 
 - `push_block`/`push_partial`/`push_verbatim` and the matching `pop_*` — name matching for
   `{% block a %}…{% endblock a %}`. They share **one** stack of `{kind, name}` entries, not one stack per
   kind: the grammar already guarantees nesting, so only the innermost open tag can be closed, and there is
   never a second candidate name to try. Serialized as `<kind><name> ` per entry (`tag_kind_chars`).
 - `verbatim_content`, `comment_content` — raw text up to the matching close tag.
+- `_bt_open`, `_bt_option` — which options a `{% blocktranslate %}` has already been given, so that a
+  repeated one is refused. Both are zero width and hidden, so no tree changes. The state is one byte of
+  flags, not a stack, because the tag cannot nest: its body admits no tags. It lives outside the
+  `stack`/`error` union, is cleared in both branches of `reset_scanner`, and is serialized after the
+  status character, so a GLR stack split copies it like everything else.
 - `matcher_error` — used by no rule; returned only if the scanner reaches an error state.
 
 `check_space()` defines whitespace for the scanner and **must stay in sync with `SEP`**, because the
 scanner skips whitespace itself while matching names.
 
 Prefer the grammar over the scanner. A useful test: does the constraint change how the input _parses_?
-Block-name matching does (it decides which close tag closes what). Things like "this keyword may not repeat"
-do not, and belong in a linter instead.
+Block-name matching does — it decides which close tag closes what.
+
+"This keyword may not repeat" normally does not, and belongs in a linter. `blocktranslate` is the exception,
+and the reason is worth keeping straight: its five options are a fixed set, so uniqueness _is_ expressible —
+`arrangements` expresses exactly that — and the scanner is standing in for a grammar that would be correct
+but takes minutes to build. Where the set is open, as with `{% querystring %}`'s `**kwargs`, no grammar
+can express it — but the scanner still could, by remembering the names a tag has been given rather than a
+fixed mask of them. That is not done, and it is what the `{% querystring page=2 page=3 %}` divergence below
+is waiting on.
+
+Zero-width guards carry one hazard: `recover_with_missing` can supply one without the scanner running. The
+`if (valid_symbols[MatcherError]) return false;` near the top of `scan` is what stops a guard being scanned
+during tree-sitter's mark-everything-valid recovery pass, so new guards go **below** it — and above the
+whitespace loop, which skips the separator the grammar still has to match. A guard must also never be valid
+where `content` is: a zero-width token at a content boundary preempts the internal lexer and `content` stops
+matching.
 
 ### Queries
 
 `queries/highlights.scm` lists tag and filter names explicitly, so adding either to the grammar means
 adding it there too; filter names appear there without their colon. A name the grammar does not know is
-captured through its field instead (`(filter name: (identifier))`, `(custom_tag tag: (identifier))`). `queries/libraries.scm` is not a query editors run themselves; it is data for a linter, and every tag
-or filter added from a library belongs in it. `queries/locals.scm` relies on the `variable:` field to tell a binding from a
-reference — another reason to keep `asVariable` uniform.
+captured through its field instead (`(filter name: (identifier))`, `(custom_tag tag: (identifier))`).
+
+`queries/libraries.scm` is not a query editors run themselves; it is data for a linter, and every tag or
+filter added from a library belongs in it. `queries/locals.scm` relies on the `variable:` field to tell a
+binding from a reference — another reason to keep `asVariable` uniform.
 
 ## Testing
 

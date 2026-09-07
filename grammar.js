@@ -255,6 +255,8 @@ const NAMES_INSIDE_A_TAG_GROUP = [
   "empty",
   "endautoescape",
   "endblock",
+  "endblocktrans",
+  "endblocktranslate",
   "endcache",
   "endcomment",
   "endfilter",
@@ -269,6 +271,7 @@ const NAMES_INSIDE_A_TAG_GROUP = [
   "endtimezone",
   "endverbatim",
   "endwith",
+  "plural",
 ];
 
 /** Django's string constant, which takes any escape but a line break. */
@@ -284,6 +287,7 @@ const django = grammar({
     [$.template],
     [$.predicate],
     [$.library, $.load],
+    [$._translate_option],
     [$._filtered_value_spaced],
     [$._filter_expression_spaced],
   ],
@@ -298,6 +302,8 @@ const django = grammar({
     $.push_verbatim,
     $.verbatim_content,
     $.comment_content,
+    $._bt_open,
+    $._bt_option,
   ],
   reserved: {
     global: ($) => ["not", "if", "in", "is", "as", "for", "from"],
@@ -388,6 +394,7 @@ const django = grammar({
       choice(
         $.autoescape_group,
         $.block_group,
+        $.blocktranslate_group,
         $.cache_group,
         $.comment_group,
         $.csp_nonce_attr,
@@ -479,6 +486,60 @@ const django = grammar({
         block("block", field("name", $.push_block)),
         optional($.template),
         block("endblock", $.pop_block),
+      ),
+    blocktranslate_group: ($) =>
+      choice(
+        ...["blocktrans", "blocktranslate"].map((name) =>
+          choice(
+            seq(
+              block(name, $._bt_open, repeat($._translate_option)),
+              optional($._translate_body),
+              block("end" + name),
+            ),
+            seq(
+              block(
+                name,
+                $._bt_open,
+                repeat($._translate_option),
+                $._translate_count,
+                repeat($._translate_option),
+              ),
+              $._translate_body,
+              block("plural"),
+              optional($._translate_body),
+              block("end" + name),
+            ),
+          ),
+        ),
+      ),
+    /**
+     * The scanner reads the name of the option before the grammar does, so it
+     * can refuse one the tag has already been given: do_block_translate keeps
+     * the options it has seen in a dict and raises on a repeat.
+     */
+    _translate_option: ($) =>
+      seq(
+        $._bt_option,
+        choice(
+          seq(part("with"), $._translate_kwargs),
+          part("context", $.filtered_value),
+          part("trimmed"),
+          part("asvar", field("variable", $.identifier)),
+        ),
+      ),
+    _translate_count: ($) =>
+      seq(
+        $._bt_option,
+        part(
+          "count",
+          seq(field("variable", $.identifier), "=", $.filtered_value),
+        ),
+      ),
+    _translate_body: ($) => repeat1(choice($.content, $.template_variable)),
+    /** The "with" option of blocktranslate takes at least one of these. */
+    _translate_kwargs: ($) =>
+      repeat1(
+        part(seq(field("variable", $.identifier), "=", $.filtered_value)),
       ),
     cache_group: ($) =>
       seq(

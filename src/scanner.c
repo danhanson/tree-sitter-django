@@ -21,6 +21,18 @@ enum TokenType {
   VerbatimContent,
   /* raw text inside a comment block, up through (but excluding) the endcomment tag */
   CommentContent,
+  /* zero width, at the start of a blocktranslate tag: forget the options seen */
+  TranslateOpen,
+  /* zero width, before an option of a blocktranslate tag: record it, and fail
+   * if that option has already been written once */
+  TranslateOption,
+};
+
+/* The options blocktranslate takes, in the order of the bits recording them.
+ * do_block_translate keeps the ones it has seen in a dict and refuses a repeat,
+ * so a bit per option is the whole of the state this needs. */
+static const char *const translate_options[] = {
+  "with", "count", "context", "trimmed", "asvar",
 };
 
 typedef Array(int32_t) Name;
@@ -50,6 +62,10 @@ typedef Array(OpenTag) Stack;
 
 struct Scanner {
   bool has_error;
+  /* one bit per option of the blocktranslate tag being read, by the order of
+   * translate_options. Kept out of the union below, whose members share their
+   * storage with each other. */
+  uint8_t translate_seen;
   union {
     Stack stack;
     char error [ERROR_SIZE];
@@ -65,6 +81,7 @@ static enum TokenType pop_token_for_kind(TagKind kind) {
 }
 
 static void reset_scanner(struct Scanner *const scanner) {
+  scanner->translate_seen = 0;
   if (scanner->has_error) {
     scanner->error[0] = '\0';
     scanner->has_error = false;
@@ -141,6 +158,8 @@ write_serialization_error:;
   char *iter = buffer;
 
   iter += write_code(scanner->has_error + '0', iter);
+  // five options fit in five bits, which stays inside printable ASCII
+  iter += write_code(scanner->translate_seen + '0', iter);
   if (scanner->has_error) {
     for (int i = 0; i < ERROR_SIZE; ++i) {
       char value = scanner->error[i];
@@ -227,13 +246,33 @@ void tree_sitter_django_external_scanner_deserialize(
     return;
   }
   buffer += bytes_read;
+  unsigned consumed = bytes_read;
+
+  int32_t seen;
+  bytes_read = read_code(buffer, &seen);
+  if (!bytes_read) {
+    scanner_error(scanner, "received invalid utf8 byte");
+    return;
+  }
+  consumed += bytes_read;
+  if (consumed > length) {
+    scanner_error(scanner, "option mask truncated by length");
+    return;
+  }
+  buffer += bytes_read;
+  if (seen < '0' || seen > '0' + 0x1F) {
+    scanner_error(scanner, "received unrecognized option mask");
+    return;
+  }
+  scanner->translate_seen = (uint8_t) (seen - '0');
+
   switch (code) {
     default:
       scanner_error(scanner, "received unrecognized scanner status");
       return;
     case '1': {
       scanner->has_error = true;
-      for (unsigned i = 0; i < length - bytes_read; ++i) {
+      for (unsigned i = 0; i < length - consumed; ++i) {
         char value = *(buffer++);
         scanner->error[i] = value;
         if (value == '\0') {
@@ -244,7 +283,7 @@ void tree_sitter_django_external_scanner_deserialize(
     }
     case '0': {
       scanner->has_error = false;
-      const char *end = buffer + length - bytes_read;
+      const char *end = buffer + length - consumed;
       // NULL between tags, and the name being read inside one
       Name *name = NULL;
 
@@ -346,6 +385,37 @@ static void skip_whitespace(TSLexer *const lexer) {
   while (check_space(lexer->lookahead)) {
     lexer->advance(lexer, false);
   }
+}
+
+/* The longest name in translate_options, "context" and "trimmed", is 7. */
+#define TRANSLATE_OPTION_MAX 8
+
+/* Reads the word naming a blocktranslate option and returns its index, or -1
+ * for anything else, which includes the end of the tag. Consumes nothing the
+ * caller keeps: it is called after the end has been marked. */
+static int read_translate_option(TSLexer *const lexer) {
+  char word[TRANSLATE_OPTION_MAX + 1];
+  unsigned size = 0;
+  if (!check_name_start_char(lexer->lookahead)) {
+    return -1;
+  }
+  while (check_name_char(lexer->lookahead)) {
+    if (size < TRANSLATE_OPTION_MAX) {
+      word[size] = (char) lexer->lookahead;
+    }
+    ++size;
+    lexer->advance(lexer, false);
+  }
+  if (size > TRANSLATE_OPTION_MAX) {
+    return -1;
+  }
+  word[size] = '\0';
+  for (unsigned i = 0; i < sizeof(translate_options) / sizeof(*translate_options); ++i) {
+    if (strcmp(word, translate_options[i]) == 0) {
+      return (int) i;
+    }
+  }
+  return -1;
 }
 
 const char endverbatim_chars[] = "endverbatim";
@@ -507,6 +577,35 @@ bool tree_sitter_django_external_scanner_scan(
   }
   if (valid_symbols[CommentContent]) {
     return scan_comment_content(lexer);
+  }
+  /* Both of these are zero width, so the end is marked before anything is
+   * read. They belong above the loop below, which skips the separator the
+   * grammar still has to match, and below the MatcherError check, which is what
+   * keeps them from being scanned during error recovery. */
+  if (valid_symbols[TranslateOpen]) {
+    lexer->mark_end(lexer);
+    scanner->translate_seen = 0;
+    lexer->result_symbol = TranslateOpen;
+    return true;
+  }
+  if (valid_symbols[TranslateOption]) {
+    lexer->mark_end(lexer);
+    if (!check_space(lexer->lookahead)) {
+      return false;
+    }
+    skip_whitespace(lexer);
+    int option = read_translate_option(lexer);
+    if (option < 0) {
+      return false;
+    }
+    uint8_t bit = (uint8_t) (1 << option);
+    if (scanner->translate_seen & bit) {
+      // the option is already written once in this tag
+      return false;
+    }
+    scanner->translate_seen |= bit;
+    lexer->result_symbol = TranslateOption;
+    return true;
   }
   while (check_space(lexer->lookahead)) {
     lexer->advance(lexer, true);

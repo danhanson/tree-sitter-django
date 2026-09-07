@@ -12,6 +12,10 @@
         "named": true
       },
       {
+        "type": "blocktranslate_group",
+        "named": true
+      },
+      {
         "type": "cache_group",
         "named": true
       },
@@ -273,6 +277,66 @@
         },
         {
           "type": "template",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "blocktranslate_group",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "blocktrans",
+            "named": false
+          },
+          {
+            "type": "blocktranslate",
+            "named": false
+          },
+          {
+            "type": "endblocktrans",
+            "named": false
+          },
+          {
+            "type": "endblocktranslate",
+            "named": false
+          },
+          {
+            "type": "plural",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "content",
+          "named": true
+        },
+        {
+          "type": "filtered_value",
+          "named": true
+        },
+        {
+          "type": "template_variable",
           "named": true
         }
       ]
@@ -2223,6 +2287,10 @@
     "named": false
   },
   {
+    "type": "asvar",
+    "named": false
+  },
+  {
     "type": "attribute",
     "named": true
   },
@@ -2236,6 +2304,14 @@
   },
   {
     "type": "block",
+    "named": false
+  },
+  {
+    "type": "blocktrans",
+    "named": false
+  },
+  {
+    "type": "blocktranslate",
     "named": false
   },
   {
@@ -2284,6 +2360,10 @@
   },
   {
     "type": "context",
+    "named": false
+  },
+  {
+    "type": "count",
     "named": false
   },
   {
@@ -2348,6 +2428,14 @@
   },
   {
     "type": "endblock",
+    "named": false
+  },
+  {
+    "type": "endblocktrans",
+    "named": false
+  },
+  {
+    "type": "endblocktranslate",
     "named": false
   },
   {
@@ -2663,6 +2751,10 @@
     "named": false
   },
   {
+    "type": "plural",
+    "named": false
+  },
+  {
     "type": "pluralize",
     "named": false
   },
@@ -2784,6 +2876,10 @@
   },
   {
     "type": "translate",
+    "named": false
+  },
+  {
+    "type": "trimmed",
     "named": false
   },
   {
