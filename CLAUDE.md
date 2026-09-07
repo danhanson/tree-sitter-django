@@ -87,6 +87,14 @@ arity, or whether a tag is a block tag. Two fallback rules accept them:
   a tag is registered unless it needs the parser itself.
 - the last alternative of `filter`, whose name is `$.identifier` rather than one of the builtin literals.
 
+**A name that only exists inside a tag group has to be reserved instead.** `endif`, `else`, `empty` and
+the rest are tokens only in the state their group opens, so where a tag is named the lexer reads them as an
+identifier and `custom_tag` takes them: `{% endif %}` on its own parsed as a tag from some library. They are
+listed in `NAMES_INSIDE_A_TAG_GROUP` and applied through the `tag_name` reserved context, which wraps
+`custom_tag`'s name **and nothing else** — a reserved context replaces the global one inside whatever it
+wraps, so wrapping the whole rule would un-reserve `as` and reject `{% mytag endif %}`. Adding a tag group
+with a new part or end tag means adding its name there too.
+
 **Builtin names must stay keyword-extractable, or the fallbacks swallow them.** `word: $.identifier` turns
 each builtin's name into its own token, which the lexer prefers wherever it is valid, so a builtin commits
 to its own alternative and its argument rules still apply. This is why a filter's name and its `:` are
@@ -98,7 +106,7 @@ which Django itself enforces while it parses the template ("add requires 2 argum
 ### First-party libraries
 
 Django ships `i18n`, `l10n`, `static`, `cache` and `tz` as libraries rather than builtins. Their tags are
-modelled as ordinary tags (so far: `static`), and the grammar **never requires the `{% load %}`**, because
+modelled as ordinary tags (so far: `static`, `l10n`), and the grammar **never requires the `{% load %}`**, because
 an engine can preload a library through `OPTIONS: {"builtins": [...]}`, which makes `{% static "a" %}` valid
 with no load at all.
 
@@ -112,6 +120,9 @@ no ordering predicate to express it. What such a tool needs to know about Django
 - Loading is **per file**: a `{% load %}` does not reach a template that `{% extends %}` or `{% include %}`
   this one.
 - `{% load trans from i18n %}` makes only `trans` available, not the rest of the library.
+
+A library's filters go in their own arity table (`L10N_FILTERS_WITHOUT_ARGUMENT`) rather than into the
+builtin ones, so that the builtin parity check still has an exact list to compare against.
 
 Modelling a library name makes it keyword-extracted, so it no longer reaches `custom_tag`. A project that
 registers its own tag under one of these names and a different signature therefore gets a parse error. That

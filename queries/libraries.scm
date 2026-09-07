@@ -11,10 +11,26 @@
 ; that extends or includes this one, and a tag written before the load is an
 ; error even though the load is in the same file.
 
-[
-  (static)
-  (get_static_prefix)
-  (get_media_prefix)] @library.static
+; Each pattern captures the name a library registered, rather than the node it
+; heads, so that the capture is both the name to look up and the range to
+; report. A paired tag names the opening tag only.
+
+(static
+  tag: ("static") @library.static)
+
+(get_static_prefix
+  tag: ("get_static_prefix") @library.static)
+
+(get_media_prefix
+  tag: ("get_media_prefix") @library.static)
+
+(localize_group
+  tag: ("localize") @library.l10n)
+
+(filter
+  name: [
+    ("localize")
+    ("unlocalize")] @library.l10n)
 
 ; "{% load static %}" makes every name in the library available; "{% load
 ; static from staticfiles %}" makes only the names listed available.

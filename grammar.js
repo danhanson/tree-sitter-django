@@ -221,6 +221,40 @@ const FILTERS_WITH_OPTIONAL_ARGUMENT = [
   "yesno",
 ];
 
+/**
+ * django.templatetags.l10n. A library's filters need the same arity treatment
+ * as a builtin's, but are kept apart from them so that the builtin parity
+ * check has a list to compare against. queries/libraries.scm records which
+ * library a name came from.
+ */
+const L10N_FILTERS_WITHOUT_ARGUMENT = ["localize", "unlocalize"];
+
+/**
+ * The words that head an end tag or a part of a tag group. Each is a token
+ * only inside the group it belongs to, so anywhere else the lexer reads it as
+ * an identifier and custom_tag accepts it: "{% endif %}" on its own parsed as
+ * a tag some library registered. Reserving them where a tag is named makes
+ * them an error again, while leaving them usable as ordinary words elsewhere
+ * ("{{ endif }}" is a variable, and "{% mytag endif %}" an argument).
+ */
+const NAMES_INSIDE_A_TAG_GROUP = [
+  "elif",
+  "else",
+  "empty",
+  "endautoescape",
+  "endblock",
+  "endcomment",
+  "endfilter",
+  "endfor",
+  "endif",
+  "endifchanged",
+  "endlocalize",
+  "endpartialdef",
+  "endspaceless",
+  "endverbatim",
+  "endwith",
+];
+
 /** Django's string constant, which takes any escape but a line break. */
 const STRING = /"(?:[^"\\]|\\[^\n])*"|'(?:[^'\\]|\\[^\n])*'/;
 
@@ -251,6 +285,7 @@ const django = grammar({
   ],
   reserved: {
     global: ($) => ["not", "if", "in", "is", "as", "for", "from"],
+    tag_name: ($) => NAMES_INSIDE_A_TAG_GROUP,
   },
   rules: {
     template: ($) => repeat1(choice($.template_tag, $.content)),
@@ -353,6 +388,7 @@ const django = grammar({
         $.ifchanged_group,
         $.include,
         $.load,
+        $.localize_group,
         $.lorem,
         $.now,
         $.partial,
@@ -376,7 +412,10 @@ const django = grammar({
      */
     filter: ($) =>
       choice(
-        field("name", choice(...FILTERS_WITHOUT_ARGUMENT)),
+        field(
+          "name",
+          choice(...FILTERS_WITHOUT_ARGUMENT, ...L10N_FILTERS_WITHOUT_ARGUMENT),
+        ),
         seq(
           field("name", choice(...FILTERS_WITH_ARGUMENT)),
           ":",
@@ -421,7 +460,7 @@ const django = grammar({
      * is accepted is what Library.simple_tag and Library.inclusion_tag take,
      * which is how a tag is registered unless it needs the parser itself.
      */
-    custom_tag: ($) => simpleTag($, $.identifier),
+    custom_tag: ($) => simpleTag($, reserved("tag_name", $.identifier)),
     cycle: ($) =>
       block(
         "cycle",
@@ -495,6 +534,7 @@ const django = grammar({
       seq(
         block("ifchanged", repeat(part($.filtered_value))),
         optional($.template),
+        optional(seq(block("else"), optional($.template))),
         block("endifchanged"),
       ),
     include: ($) => block("include", part($.filtered_value)),
@@ -506,6 +546,16 @@ const django = grammar({
           seq(repeat1(part($.identifier)), part("from"), part($.library)),
           repeat1(part($.library)),
         ),
+      ),
+    /**
+     * django.templatetags.l10n. The argument is optional and localize_tag
+     * rejects anything but "on" or "off", including a second word.
+     */
+    localize_group: ($) =>
+      seq(
+        block("localize", optional(part(choice("on", "off")))),
+        optional($.template),
+        block("endlocalize"),
       ),
     lorem: ($) =>
       block(

@@ -229,3 +229,58 @@ Builtin Filter With An Argument It Does Not Take
 {{ x|length:2 }}
 
 ---
+
+==================
+Custom Tag Does Not Cover An End Tag
+:error
+==================
+
+{% endif %}
+
+---
+
+
+==================
+Custom Tag Does Not Cover A Part Of A Tag Group
+:error
+==================
+
+{% else %}
+
+---
+
+
+==================
+A Name Reserved For A Tag Is Still A Variable
+==================
+
+{{ endif }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))))
+  (content))
+
+==================
+A Name Reserved For A Tag Is Still An Argument
+==================
+
+{% mytag endif %}
+
+---
+
+(template
+  (content)
+  (custom_tag
+    tag: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))))
+  (content))

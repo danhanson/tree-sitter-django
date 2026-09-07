@@ -1,0 +1,163 @@
+==================
+Localize
+==================
+
+{% localize %}x{% endlocalize %}
+
+---
+
+(template
+  (content)
+  (localize_group
+    (template
+      (content)))
+  (content))
+
+==================
+Localize On
+==================
+
+{% localize on %}x{% endlocalize %}
+
+---
+
+(template
+  (content)
+  (localize_group
+    (template
+      (content)))
+  (content))
+
+==================
+Localize Off
+==================
+
+{% localize off %}x{% endlocalize %}
+
+---
+
+(template
+  (content)
+  (localize_group
+    (template
+      (content)))
+  (content))
+
+==================
+Localize Hugging Its Delimiters
+==================
+
+{%localize%}x{%endlocalize%}
+
+---
+
+(template
+  (content)
+  (localize_group
+    (template
+      (content)))
+  (content))
+
+==================
+Localize Nested
+==================
+
+{% localize on %}{% localize off %}y{% endlocalize %}{% endlocalize %}
+
+---
+
+(template
+  (content)
+  (localize_group
+    (template
+      (localize_group
+        (template
+          (content)))))
+  (content))
+
+==================
+Localize With Another Argument
+:error
+==================
+
+{% localize maybe %}x{% endlocalize %}
+
+---
+
+
+==================
+Localize With Two Arguments
+:error
+==================
+
+{% localize on off %}x{% endlocalize %}
+
+---
+
+
+==================
+Localize Unclosed
+:error
+==================
+
+{% localize %}
+
+---
+
+
+==================
+Localize Filter
+==================
+
+{{ x|localize }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Unlocalize Filter
+==================
+
+{{ x|unlocalize }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Localize Filter With An Argument
+:error
+==================
+
+{{ x|localize:1 }}
+
+---
+
+
+==================
+Unlocalize Filter With An Argument
+:error
+==================
+
+{{ x|unlocalize:1 }}
+
+---

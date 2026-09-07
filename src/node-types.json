@@ -76,6 +76,10 @@
         "named": true
       },
       {
+        "type": "localize_group",
+        "named": true
+      },
+      {
         "type": "lorem",
         "named": true
       },
@@ -569,6 +573,10 @@
             "named": false
           },
           {
+            "type": "localize",
+            "named": false
+          },
+          {
             "type": "lower",
             "named": false
           },
@@ -650,6 +658,10 @@
           },
           {
             "type": "truncatewords_html",
+            "named": false
+          },
+          {
+            "type": "unlocalize",
             "named": false
           },
           {
@@ -969,6 +981,10 @@
         "required": true,
         "types": [
           {
+            "type": "else",
+            "named": false
+          },
+          {
             "type": "endifchanged",
             "named": false
           },
@@ -1083,6 +1099,36 @@
         },
         {
           "type": "library",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "localize_group",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "endlocalize",
+            "named": false
+          },
+          {
+            "type": "localize",
+            "named": false
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "template",
           "named": true
         }
       ]
@@ -1889,6 +1935,10 @@
     "named": false
   },
   {
+    "type": "endlocalize",
+    "named": false
+  },
+  {
     "type": "endpartialdef",
     "named": false
   },
@@ -2030,6 +2080,10 @@
   },
   {
     "type": "load",
+    "named": false
+  },
+  {
+    "type": "localize",
     "named": false
   },
   {
@@ -2230,6 +2284,10 @@
   },
   {
     "type": "truncatewords_html",
+    "named": false
+  },
+  {
+    "type": "unlocalize",
     "named": false
   },
   {

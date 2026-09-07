@@ -39,3 +39,132 @@ content
     (template
       (content)))
   (content))
+
+==================
+Ifchanged With Else
+==================
+
+{% ifchanged %}
+content
+{% else %}
+unchanged
+{% endifchanged %}
+
+---
+
+(template
+  (content)
+  (ifchanged_group
+    (template
+      (content))
+    (template
+      (content)))
+  (content))
+
+==================
+Ifchanged With Values And Else
+==================
+
+{% ifchanged x y|upper %}
+content
+{% else %}
+unchanged
+{% endifchanged %}
+
+---
+
+(template
+  (content)
+  (ifchanged_group
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter)))
+    (template
+      (content))
+    (template
+      (content)))
+  (content))
+
+==================
+Ifchanged With An Empty Else
+==================
+
+{% ifchanged %}
+content
+{% else %}{% endifchanged %}
+
+---
+
+(template
+  (content)
+  (ifchanged_group
+    (template
+      (content)))
+  (content))
+
+==================
+Ifchanged Nested In The Else Of Another
+==================
+
+{% ifchanged %}
+a
+{% else %}
+{% ifchanged %}
+b
+{% else %}
+c
+{% endifchanged %}
+{% endifchanged %}
+
+---
+
+(template
+  (content)
+  (ifchanged_group
+    (template
+      (content))
+    (template
+      (content)
+      (ifchanged_group
+        (template
+          (content))
+        (template
+          (content)))
+      (content)))
+  (content))
+
+==================
+Ifchanged With Two Elses
+:error
+==================
+
+{% ifchanged %}
+a
+{% else %}
+b
+{% else %}
+c
+{% endifchanged %}
+
+---
+
+
+==================
+Ifchanged With An Argument On Else
+:error
+==================
+
+{% ifchanged %}
+a
+{% else x %}
+b
+{% endifchanged %}
+
+---
