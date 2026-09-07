@@ -1,0 +1,81 @@
+==================
+Csp Nonce Attr
+==================
+
+{% csp_nonce_attr %}
+
+---
+
+(template
+  (content)
+  (csp_nonce_attr)
+  (content))
+
+==================
+Csp Nonce Attr With Argument And As
+==================
+
+{% csp_nonce_attr "script" as nonce %}
+
+---
+
+(template
+  (content)
+  (csp_nonce_attr
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier))
+  (content))
+
+==================
+Csp Nonce Attr With Media Keyword
+==================
+
+{% csp_nonce_attr media="script" %}
+
+---
+
+(template
+  (content)
+  (csp_nonce_attr
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Csp Nonce Attr Takes One Argument
+:error
+==================
+
+{% csp_nonce_attr "a" "b" %}
+
+---
+
+(ERROR)
+
+==================
+Csp Nonce Attr Rejects Unknown Keyword
+:error
+==================
+
+{% csp_nonce_attr other="b" %}
+
+---
+
+(ERROR)
+
+==================
+Csp Nonce Attr Rejects Repeated Keyword
+:error
+==================
+
+{% csp_nonce_attr media=1 media=2 %}
+
+---
+
+(ERROR)
+

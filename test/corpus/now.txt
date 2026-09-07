@@ -1,0 +1,28 @@
+==================
+Now Basic
+==================
+
+{% now "Y-m-d" %}
+
+---
+
+(template
+  (content)
+  (now
+    (string))
+  (content))
+
+==================
+Now With As
+==================
+
+{% now "Y" as today %}
+
+---
+
+(template
+  (content)
+  (now
+    (string)
+    variable: (identifier))
+  (content))

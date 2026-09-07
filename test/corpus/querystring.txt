@@ -40,10 +40,37 @@ Querystring With Identifier And Key Value
 (template
   (content)
   (query_string
-    (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
     (identifier)
     (filtered_value
       (value
         (literal
           (number)))))
+  (content))
+
+==================
+Querystring With Expression Argument And As
+==================
+
+{% querystring request.GET page=2 as qs %}
+
+---
+
+(template
+  (content)
+  (query_string
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)
+          (attribute))))
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    variable: (identifier))
   (content))

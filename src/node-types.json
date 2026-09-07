@@ -16,6 +16,10 @@
         "named": true
       },
       {
+        "type": "csp_nonce_attr",
+        "named": true
+      },
+      {
         "type": "csrf_token",
         "named": true
       },
@@ -245,6 +249,42 @@
     }
   },
   {
+    "type": "csp_nonce_attr",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "csp_nonce_attr",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "filtered_value",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "csrf_token",
     "named": true,
     "fields": {
@@ -434,6 +474,16 @@
             "named": false
           }
         ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
       }
     },
     "children": {
@@ -442,10 +492,6 @@
       "types": [
         {
           "type": "filtered_value",
-          "named": true
-        },
-        {
-          "type": "identifier",
           "named": true
         }
       ]
@@ -725,16 +771,6 @@
     "type": "now",
     "named": true,
     "fields": {
-      "name": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "identifier",
-            "named": true
-          }
-        ]
-      },
       "tag": {
         "multiple": false,
         "required": true,
@@ -742,6 +778,16 @@
           {
             "type": "now",
             "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
           }
         ]
       }
@@ -851,6 +897,16 @@
           {
             "type": "querystring",
             "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
           }
         ]
       }
@@ -1362,6 +1418,10 @@
     "named": true
   },
   {
+    "type": "csp_nonce_attr",
+    "named": false
+  },
+  {
     "type": "csrf_token",
     "named": false
   },
@@ -1470,6 +1530,10 @@
     "named": false
   },
   {
+    "type": "escapeseq",
+    "named": false
+  },
+  {
     "type": "extends",
     "named": false
   },
@@ -1566,10 +1630,6 @@
     "named": false
   },
   {
-    "type": "length_is:",
-    "named": false
-  },
-  {
     "type": "linebreaks",
     "named": false
   },
@@ -1599,6 +1659,10 @@
   },
   {
     "type": "make_list",
+    "named": false
+  },
+  {
+    "type": "media",
     "named": false
   },
   {

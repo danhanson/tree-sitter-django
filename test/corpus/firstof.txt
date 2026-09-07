@@ -42,5 +42,5 @@ Firstof With As
       (value
         (variable_attribute
           (identifier))))
-    (identifier))
+    variable: (identifier))
   (content))

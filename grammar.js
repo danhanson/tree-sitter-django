@@ -54,6 +54,101 @@ function block(tag, ...args) {
   );
 }
 
+/**
+ * The "as name" clause that binds a tag's result in the context. Django spells
+ * it the same way in every tag that takes one, so the grammar names the target
+ * the same way too, matching the bindings in "for" and "with".
+ * @param {GrammarSymbols<string>} $
+ * @returns {SeqRule}
+ */
+function asVariable($) {
+  return part("as", field("variable", $.identifier));
+}
+
+/**
+ * @param {RuleOrLiteral[]} chosen
+ * @param {RuleOrLiteral[]} rest
+ * @param {RuleOrLiteral[]} spellings
+ */
+function walk(chosen, rest, spellings) {
+  if (chosen.length > 0) {
+    spellings.push(chosen.length === 1 ? chosen[0] : seq(...chosen));
+  }
+  rest.forEach((item, i) =>
+    walk(
+      [...chosen, item],
+      rest.filter((_, j) => j !== i),
+      spellings,
+    ),
+  );
+};
+
+/**
+ * Every way of writing some of `items` in any order, using each at most once,
+ * which is how a tag's keyword arguments reach parse_bits(). There is no
+ * interleaving operator to say that directly, so the orderings are spelled
+ * out; a signature names a handful of arguments at most, and one that takes
+ * more takes them as **kwargs instead.
+ * @param {RuleOrLiteral[]} items
+ * @returns {ChoiceRule|RuleOrLiteral}
+ */
+function arrangements(items) {
+  if (items.length >= 5) {
+    throw new Error(`Too many items for arrangement: ${items.length}`);
+  }
+  /**
+   * @type {RuleOrLiteral[]}
+   */
+  const spellings = [];
+  walk([], items, spellings);
+  return spellings.length === 1 ? spellings[0] : choice(...spellings);
+}
+
+/**
+ * A tag registered with Django's simple_tag helper: positional filter
+ * expressions first, then "name=value" keyword arguments, then the "as name"
+ * clause that Library.simple_tag gives every such tag. The helper takes the
+ * whitespace between the parts itself, so a caller only describes what the
+ * tag's Python signature accepts.
+ *
+ * Django checks the rest of the signature when it parses the tag, so what is
+ * spelled here is what parse_bits() would allow: too many arguments, an
+ * unknown keyword or a repeated one are all syntax errors there.
+ *
+ * @param {GrammarSymbols<string>} $
+ * @param {boolean|number} args how many positional arguments the signature
+ *   takes: true for any number (*args), a count for at most that many, or
+ *   false for none
+ * @param {boolean|Record<string, RuleOrLiteral>} kwargs true for any
+ *   "name=value" pair (**kwargs), false for none, or the accepted names mapped
+ *   to their value rules, each of which may be given at most once
+ * @param {string} tag
+ * @returns {SeqRule}
+ */
+function simpleTag($, tag, args = true, kwargs = true) {
+  const parts = [];
+  if (args === true) {
+    parts.push(repeat(part($.filtered_value)));
+  } else if (typeof args === "number" && args > 0) {
+    // at most `args` of them, so each further one nests inside the last
+    let rule = part($.filtered_value);
+    for (let i = 1; i < args; ++i) {
+      rule = seq(part($.filtered_value), optional(rule));
+    }
+    parts.push(optional(rule));
+  }
+  if (kwargs === true) {
+    parts.push(repeat(part(seq($.identifier, "=", $.filtered_value))));
+  } else if (kwargs) {
+    // a known signature: any of the names it accepts, in any order, none twice
+    const named = Object.entries(kwargs).map(([name, value]) =>
+      part(seq(name, "=", value)),
+    );
+    parts.push(optional(arrangements(named)));
+  }
+  return block(tag, ...parts, optional(asVariable($)));
+}
+
 /** Django's string constant, which takes any escape but a line break. */
 const STRING = /"(?:[^"\\]|\\[^\n])*"|'(?:[^'\\]|\\[^\n])*'/;
 
@@ -171,6 +266,7 @@ const django = grammar({
         $.autoescape_group,
         $.block_group,
         $.comment_group,
+        $.csp_nonce_attr,
         $.csrf_token,
         $.cycle,
         $.debug,
@@ -211,6 +307,7 @@ const django = grammar({
         seq("divisibleby:", $.value),
         "escape",
         "escapejs",
+        "escapeseq",
         "filesizeformat",
         "first",
         choice(seq("floatformat:", $.value), "floatformat"),
@@ -221,7 +318,6 @@ const django = grammar({
         choice(seq("json_script:", $.value), "json_script"),
         "last",
         "length",
-        seq("length_is:", $.value),
         "linebreaks",
         "linebreaksbr",
         "linenumbers",
@@ -275,6 +371,9 @@ const django = grammar({
         optional($.comment_content),
         block("endcomment"),
       ),
+    // csp_nonce_attr(context, media=None)
+    csp_nonce_attr: ($) =>
+      simpleTag($, "csp_nonce_attr", 1, { media: $.filtered_value }),
     csrf_token: ($) => block("csrf_token"),
     cycle: ($) =>
       block(
@@ -282,7 +381,7 @@ const django = grammar({
         repeat1(part($.filtered_value)),
         optional(
           seq(
-            part("as", field("variable", $.identifier)),
+            asVariable($),
             // only the as-form takes the flag
             optional(part("silent")),
           ),
@@ -306,7 +405,7 @@ const django = grammar({
       block(
         "firstof",
         repeat1(part($.filtered_value)),
-        optional(part("as", $.identifier)),
+        optional(asVariable($)),
       ),
     for_scope: ($) =>
       prec.left(
@@ -365,12 +464,7 @@ const django = grammar({
         part(choice("w", "p", "b")),
         optional(part("random")),
       ),
-    now: ($) =>
-      block(
-        "now",
-        part($.string),
-        optional(part("as", field("name", $.identifier))),
-      ),
+    now: ($) => block("now", part($.string), optional(asVariable($))),
     partial: ($) => block("partial", part($.identifier)),
     partialdef_group: ($) =>
       seq(
@@ -378,19 +472,15 @@ const django = grammar({
         optional($.template),
         block("endpartialdef", $.pop_partial),
       ),
-    query_string: ($) =>
-      block(
-        "querystring",
-        repeat(part($.identifier)),
-        repeat(part(seq($.identifier, "=", $.filtered_value))),
-      ),
+    // querystring(context, *args, **kwargs)
+    query_string: ($) => simpleTag($, "querystring"),
     regroup: ($) =>
       block(
         "regroup",
         part($.filtered_value),
         part("by"),
         part($.attribute),
-        optional(part("as", field("variable", $.identifier))),
+        optional(asVariable($)),
       ),
     reset_cycle: ($) => block("resetcycle", optional(part($.identifier))),
     spaceless_group: ($) =>
@@ -421,7 +511,7 @@ const django = grammar({
             repeat1(part(seq($.identifier, "=", $.filtered_value))),
           ),
         ),
-        optional(part("as", field("variable", $.identifier))),
+        optional(asVariable($)),
       ),
     verbatim_group: ($) =>
       seq(
@@ -435,7 +525,7 @@ const django = grammar({
         part($.filtered_value),
         part($.filtered_value),
         part($.filtered_value),
-        optional(part("as", field("variable", $.identifier))),
+        optional(asVariable($)),
       ),
     with_group: ($) =>
       seq(
