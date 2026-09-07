@@ -347,6 +347,8 @@ const django = grammar({
         $.filter_group,
         $.firstof,
         $.for_group,
+        $.get_media_prefix,
+        $.get_static_prefix,
         $.if_group,
         $.ifchanged_group,
         $.include,
@@ -359,6 +361,7 @@ const django = grammar({
         $.regroup,
         $.reset_cycle,
         $.spaceless_group,
+        $.static,
         $.template_tag_block,
         $.url_block,
         $.verbatim_group,
@@ -477,6 +480,9 @@ const django = grammar({
         optional(seq(block("empty"), optional($.template))),
         block("endfor"),
       ),
+    get_media_prefix: ($) => block("get_media_prefix", optional(asVariable($))),
+    get_static_prefix: ($) =>
+      block("get_static_prefix", optional(asVariable($))),
     if_group: ($) =>
       seq(
         block("if", part($.predicate)),
@@ -529,6 +535,8 @@ const django = grammar({
     reset_cycle: ($) => block("resetcycle", optional(part($.identifier))),
     spaceless_group: ($) =>
       seq(block("spaceless"), optional($.template), block("endspaceless")),
+    static: ($) =>
+      block("static", part($.filtered_value), optional(asVariable($))),
     template_tag_block: ($) =>
       block(
         "templatetag",

@@ -95,6 +95,28 @@ identifier and reached the fallback, losing the arity check for all 20 filters t
 `FILTERS_WITHOUT_ARGUMENT` / `FILTERS_WITH_ARGUMENT` / `FILTERS_WITH_OPTIONAL_ARGUMENT` carry that arity,
 which Django itself enforces while it parses the template ("add requires 2 arguments, 1 provided").
 
+### First-party libraries
+
+Django ships `i18n`, `l10n`, `static`, `cache` and `tz` as libraries rather than builtins. Their tags are
+modelled as ordinary tags (so far: `static`), and the grammar **never requires the `{% load %}`**, because
+an engine can preload a library through `OPTIONS: {"builtins": [...]}`, which makes `{% static "a" %}` valid
+with no load at all.
+
+Whether a load is present is a question about the order of nodes, not about how the template parses, so it
+belongs in a tool. `queries/libraries.scm` supplies the halves — `@library.<name>` on each tag, and
+`@load.library` / `@load.name` on the loads — and the tool does the join, because tree-sitter queries have
+no ordering predicate to express it. What such a tool needs to know about Django's behaviour:
+
+- Loading is **positional**: `{% trans "x" %}{% load i18n %}` is an error, because the parser adds to its
+  tag dict as it walks tokens.
+- Loading is **per file**: a `{% load %}` does not reach a template that `{% extends %}` or `{% include %}`
+  this one.
+- `{% load trans from i18n %}` makes only `trans` available, not the rest of the library.
+
+Modelling a library name makes it keyword-extracted, so it no longer reaches `custom_tag`. A project that
+registers its own tag under one of these names and a different signature therefore gets a parse error. That
+is accepted: these names are common enough that shadowing them is the mistake.
+
 ### External scanner (`src/scanner.c`)
 
 Nine external tokens, for the constraints a context-free grammar cannot express:
@@ -117,7 +139,8 @@ do not, and belong in a linter instead.
 
 `queries/highlights.scm` lists tag and filter names explicitly, so adding either to the grammar means
 adding it there too; filter names appear there without their colon. A name the grammar does not know is
-captured through its field instead (`(filter name: (identifier))`, `(custom_tag tag: (identifier))`). `queries/locals.scm` relies on the `variable:` field to tell a binding from a
+captured through its field instead (`(filter name: (identifier))`, `(custom_tag tag: (identifier))`). `queries/libraries.scm` is not a query editors run themselves; it is data for a linter, and every tag
+or filter added from a library belongs in it. `queries/locals.scm` relies on the `variable:` field to tell a binding from a
 reference — another reason to keep `asVariable` uniform.
 
 ## Testing
@@ -141,6 +164,9 @@ documentation or memory. Both checks are worth repeating whenever tags, filters 
   `register.filters` against `grammar.js`. For filters also compare argument arity via
   `inspect.signature`, ignoring the framework-injected `autoescape` parameter, which is never written in a
   template. Note `querystring` and `csp_nonce_attr` register as `simple_tag`, not `@register.tag`.
+- **Library contents** — `django.templatetags.<name>.register` gives a library's `tags` and `filters`.
+  All of them are registered with `@register.tag`, so `inspect.signature` only reports `(parser, token)`
+  and a signature has to come from the differential below or from reading the compile function.
 - **Syntax differential** — run candidate snippets through `django.template.Template()` and through
   `tree-sitter parse`, and compare accept/reject. This is how the `simple_tag` argument rules, the `_()`
   literal, and the filter-pipe spacing were pinned down.
@@ -164,5 +190,9 @@ documentation or memory. Both checks are worth repeating whenever tags, filters 
   token and may parse anything, so `{% mytag <<>> %}` is rejected here and not by Django.
 - A library may override a builtin (`Parser.add_library` is `self.filters.update(...)`), so a project that
   redefines `length` with a different arity gets a false error here.
+- Django's `static` tags ignore what follows their argument: `StaticNode.handle_token` looks for `as` two
+  bits from the end, so `{% static "a" junk %}` and `{% static "a" as u v %}` are accepted there and
+  rejected here, and `PrefixNode.handle_token` raises `IndexError` rather than `TemplateSyntaxError` on
+  `{% get_static_prefix as %}`.
 - `partial`/`partialdef` are Django builtins as of Django 6; `elif`/`else`/`empty` are modelled as parts of
   their enclosing tag rather than as separate tags.

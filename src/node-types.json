@@ -52,6 +52,14 @@
         "named": true
       },
       {
+        "type": "get_media_prefix",
+        "named": true
+      },
+      {
+        "type": "get_static_prefix",
+        "named": true
+      },
+      {
         "type": "if_group",
         "named": true
       },
@@ -97,6 +105,10 @@
       },
       {
         "type": "spaceless_group",
+        "named": true
+      },
+      {
+        "type": "static",
         "named": true
       },
       {
@@ -855,6 +867,58 @@
     }
   },
   {
+    "type": "get_media_prefix",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "get_media_prefix",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "get_static_prefix",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "get_static_prefix",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "if_group",
     "named": true,
     "fields": {
@@ -1300,6 +1364,42 @@
       "types": [
         {
           "type": "template",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "static",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "static",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "filtered_value",
           "named": true
         }
       ]
@@ -1857,6 +1957,14 @@
     "named": false
   },
   {
+    "type": "get_media_prefix",
+    "named": false
+  },
+  {
+    "type": "get_static_prefix",
+    "named": false
+  },
+  {
     "type": "identifier",
     "named": true
   },
@@ -2070,6 +2178,10 @@
   },
   {
     "type": "spaceless",
+    "named": false
+  },
+  {
+    "type": "static",
     "named": false
   },
   {

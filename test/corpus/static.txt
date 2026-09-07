@@ -1,0 +1,181 @@
+==================
+Static
+==================
+
+{% static "a.css" %}
+
+---
+
+(template
+  (content)
+  (static
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Static With A Variable Path
+==================
+
+{% static path %}
+
+---
+
+(template
+  (content)
+  (static
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))))
+  (content))
+
+==================
+Static With A Filtered Path
+==================
+
+{% static "a.css"|upper %}
+
+---
+
+(template
+  (content)
+  (static
+    (filtered_value
+      (value
+        (literal
+          (string)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Static With As
+==================
+
+{% static "a.css" as url %}
+
+---
+
+(template
+  (content)
+  (static
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier))
+  (content))
+
+==================
+Static Without A Path
+:error
+==================
+
+{% static %}
+
+---
+
+
+==================
+Static With A Second Path
+:error
+==================
+
+{% static "a.css" "b.css" %}
+
+---
+
+
+==================
+Static With Anything After As
+:error
+==================
+
+{% static "a.css" as url junk %}
+
+---
+
+
+==================
+Get Static Prefix
+==================
+
+{% get_static_prefix %}
+
+---
+
+(template
+  (content)
+  (get_static_prefix)
+  (content))
+
+==================
+Get Static Prefix With As
+==================
+
+{% get_static_prefix as prefix %}
+
+---
+
+(template
+  (content)
+  (get_static_prefix
+    variable: (identifier))
+  (content))
+
+==================
+Get Media Prefix With As
+==================
+
+{% get_media_prefix as prefix %}
+
+---
+
+(template
+  (content)
+  (get_media_prefix
+    variable: (identifier))
+  (content))
+
+==================
+Get Static Prefix Without As
+:error
+==================
+
+{% get_static_prefix prefix %}
+
+---
+
+
+==================
+Get Static Prefix Without A Variable
+:error
+==================
+
+{% get_static_prefix as %}
+
+---
+
+
+==================
+Load Names The Library, Not The Tag
+==================
+
+{% load static %}{% static "a.css" %}
+
+---
+
+(template
+  (content)
+  (load
+    (library
+      (identifier)))
+  (static
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
