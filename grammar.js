@@ -233,6 +233,14 @@ const L10N_FILTERS_WITHOUT_ARGUMENT = ["localize", "unlocalize"];
 const TZ_FILTERS_WITHOUT_ARGUMENT = ["localtime", "utc"];
 const TZ_FILTERS_WITH_ARGUMENT = ["timezone"];
 
+/** django.templatetags.i18n. */
+const I18N_FILTERS_WITHOUT_ARGUMENT = [
+  "language_bidi",
+  "language_name",
+  "language_name_local",
+  "language_name_translated",
+];
+
 /**
  * The words that head an end tag or a part of a tag group. Each is a token
  * only inside the group it belongs to, so anywhere else the lexer reads it as
@@ -253,6 +261,7 @@ const NAMES_INSIDE_A_TAG_GROUP = [
   "endfor",
   "endif",
   "endifchanged",
+  "endlanguage",
   "endlocalize",
   "endlocaltime",
   "endpartialdef",
@@ -390,12 +399,18 @@ const django = grammar({
         $.filter_group,
         $.firstof,
         $.for_group,
+        $.get_available_languages,
+        $.get_current_language,
+        $.get_current_language_bidi,
         $.get_current_timezone,
+        $.get_language_info,
+        $.get_language_info_list,
         $.get_media_prefix,
         $.get_static_prefix,
         $.if_group,
         $.ifchanged_group,
         $.include,
+        $.language_group,
         $.load,
         $.localize_group,
         $.localtime_group,
@@ -410,6 +425,7 @@ const django = grammar({
         $.static,
         $.template_tag_block,
         $.timezone_group,
+        $.translate,
         $.url_block,
         $.verbatim_group,
         $.width_ratio,
@@ -427,6 +443,7 @@ const django = grammar({
           "name",
           choice(
             ...FILTERS_WITHOUT_ARGUMENT,
+            ...I18N_FILTERS_WITHOUT_ARGUMENT,
             ...L10N_FILTERS_WITHOUT_ARGUMENT,
             ...TZ_FILTERS_WITHOUT_ARGUMENT,
           ),
@@ -550,6 +567,23 @@ const django = grammar({
         block("endfor"),
       ),
     /**
+     * django.templatetags.i18n. Each of these requires exactly "as <name>",
+     * or "for <expression> as <name>", and rejects anything further.
+     */
+    get_available_languages: ($) =>
+      block("get_available_languages", asVariable($)),
+    get_current_language: ($) => block("get_current_language", asVariable($)),
+    get_current_language_bidi: ($) =>
+      block("get_current_language_bidi", asVariable($)),
+    get_language_info: ($) =>
+      block("get_language_info", part("for", $.filtered_value), asVariable($)),
+    get_language_info_list: ($) =>
+      block(
+        "get_language_info_list",
+        part("for", $.filtered_value),
+        asVariable($),
+      ),
+    /**
      * django.templatetags.tz. get_current_timezone_tag requires exactly
      * "as <name>", so unlike get_static_prefix the clause is not optional and
      * nothing may follow it.
@@ -574,6 +608,13 @@ const django = grammar({
         block("endifchanged"),
       ),
     include: ($) => block("include", part($.filtered_value)),
+    /** django.templatetags.i18n. The language tag takes the one argument. */
+    language_group: ($) =>
+      seq(
+        block("language", part($.filtered_value)),
+        optional($.template),
+        block("endlanguage"),
+      ),
     library: ($) => seq($.identifier, optional(seq(".", $.identifier))),
     load: ($) =>
       block(
@@ -652,6 +693,23 @@ const django = grammar({
         block("timezone", part($.filtered_value)),
         optional($.template),
         block("endtimezone"),
+      ),
+    /**
+     * django.templatetags.i18n, registered under both spellings. do_translate
+     * pops its options off one at a time and refuses one it has already seen,
+     * so they may be written in any order but none of them twice.
+     */
+    translate: ($) =>
+      block(
+        choice("trans", "translate"),
+        part($.filtered_value),
+        optional(
+          arrangements([
+            part("noop"),
+            part("context", $.filtered_value),
+            asVariable($),
+          ]),
+        ),
       ),
     url_block: ($) =>
       block(

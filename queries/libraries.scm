@@ -24,6 +24,36 @@
 (get_media_prefix
   tag: ("get_media_prefix") @library.static)
 
+(translate
+  tag: [
+    ("trans")
+    ("translate")] @library.i18n)
+
+(language_group
+  tag: ("language") @library.i18n)
+
+(get_available_languages
+  tag: ("get_available_languages") @library.i18n)
+
+(get_current_language
+  tag: ("get_current_language") @library.i18n)
+
+(get_current_language_bidi
+  tag: ("get_current_language_bidi") @library.i18n)
+
+(get_language_info
+  tag: ("get_language_info") @library.i18n)
+
+(get_language_info_list
+  tag: ("get_language_info_list") @library.i18n)
+
+(filter
+  name: [
+    ("language_bidi")
+    ("language_name")
+    ("language_name_local")
+    ("language_name_translated")] @library.i18n)
+
 (cache_group
   tag: ("cache") @library.cache)
 

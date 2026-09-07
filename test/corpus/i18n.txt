@@ -1,0 +1,488 @@
+==================
+Trans
+==================
+
+{% trans "hi" %}
+
+---
+
+(template
+  (content)
+  (translate
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Translate
+==================
+
+{% translate "hi" %}
+
+---
+
+(template
+  (content)
+  (translate
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Trans With A Variable
+==================
+
+{% trans greeting %}
+
+---
+
+(template
+  (content)
+  (translate
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))))
+  (content))
+
+==================
+Trans With A Filtered Message
+==================
+
+{% trans "hi"|upper %}
+
+---
+
+(template
+  (content)
+  (translate
+    (filtered_value
+      (value
+        (literal
+          (string)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Trans Noop
+==================
+
+{% trans "hi" noop %}
+
+---
+
+(template
+  (content)
+  (translate
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Trans With As
+==================
+
+{% trans "hi" as greeting %}
+
+---
+
+(template
+  (content)
+  (translate
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier))
+  (content))
+
+==================
+Trans With Context
+==================
+
+{% trans "hi" context "menu" %}
+
+---
+
+(template
+  (content)
+  (translate
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Trans With Every Option
+==================
+
+{% trans "hi" context "menu" noop as greeting %}
+
+---
+
+(template
+  (content)
+  (translate
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier))
+  (content))
+
+==================
+Trans With Its Options Reordered
+==================
+
+{% trans "hi" as greeting noop context "menu" %}
+
+---
+
+(template
+  (content)
+  (translate
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier)
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Trans Without A Message
+:error
+==================
+
+{% trans %}
+
+---
+
+
+==================
+Trans With An Option Twice
+:error
+==================
+
+{% trans "hi" noop noop %}
+
+---
+
+
+==================
+Trans With As Twice
+:error
+==================
+
+{% trans "hi" as x as y %}
+
+---
+
+
+==================
+Trans With An Unknown Option
+:error
+==================
+
+{% trans "hi" bogus %}
+
+---
+
+
+==================
+Trans With Context And No Value
+:error
+==================
+
+{% trans "hi" context %}
+
+---
+
+
+==================
+Get Available Languages
+==================
+
+{% get_available_languages as languages %}
+
+---
+
+(template
+  (content)
+  (get_available_languages
+    variable: (identifier))
+  (content))
+
+==================
+Get Available Languages Without As
+:error
+==================
+
+{% get_available_languages %}
+
+---
+
+
+==================
+Get Current Language
+==================
+
+{% get_current_language as language %}
+
+---
+
+(template
+  (content)
+  (get_current_language
+    variable: (identifier))
+  (content))
+
+==================
+Get Current Language Bidi
+==================
+
+{% get_current_language_bidi as bidi %}
+
+---
+
+(template
+  (content)
+  (get_current_language_bidi
+    variable: (identifier))
+  (content))
+
+==================
+Get Language Info
+==================
+
+{% get_language_info for "de" as info %}
+
+---
+
+(template
+  (content)
+  (get_language_info
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier))
+  (content))
+
+==================
+Get Language Info For A Variable
+==================
+
+{% get_language_info for code as info %}
+
+---
+
+(template
+  (content)
+  (get_language_info
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    variable: (identifier))
+  (content))
+
+==================
+Get Language Info Without As
+:error
+==================
+
+{% get_language_info for "de" %}
+
+---
+
+
+==================
+Get Language Info Without For
+:error
+==================
+
+{% get_language_info "de" as info %}
+
+---
+
+
+==================
+Get Language Info List
+==================
+
+{% get_language_info_list for codes as info %}
+
+---
+
+(template
+  (content)
+  (get_language_info_list
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    variable: (identifier))
+  (content))
+
+==================
+Language
+==================
+
+{% language "de" %}x{% endlanguage %}
+
+---
+
+(template
+  (content)
+  (language_group
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (template
+      (content)))
+  (content))
+
+==================
+Language With A Variable
+==================
+
+{% language code %}x{% endlanguage %}
+
+---
+
+(template
+  (content)
+  (language_group
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (template
+      (content)))
+  (content))
+
+==================
+Language Without An Argument
+:error
+==================
+
+{% language %}x{% endlanguage %}
+
+---
+
+
+==================
+Language With Two Arguments
+:error
+==================
+
+{% language "a" "b" %}x{% endlanguage %}
+
+---
+
+
+==================
+Language Name Filter
+==================
+
+{{ "de"|language_name }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (string)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Language Bidi Filter
+==================
+
+{{ "de"|language_bidi }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (string)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Language Name Local Filter
+==================
+
+{{ "de"|language_name_local }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (string)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Language Name Translated Filter
+==================
+
+{{ "de"|language_name_translated }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (string)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Language Name Filter With An Argument
+:error
+==================
+
+{{ "de"|language_name:1 }}
+
+---

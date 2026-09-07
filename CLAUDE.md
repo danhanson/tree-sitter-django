@@ -106,7 +106,8 @@ which Django itself enforces while it parses the template ("add requires 2 argum
 ### First-party libraries
 
 Django ships `i18n`, `l10n`, `static`, `cache` and `tz` as libraries rather than builtins. Their tags are
-modelled as ordinary tags (so far: `static`, `l10n`, `tz`, `cache`), and the grammar **never requires the `{% load %}`**, because
+modelled as ordinary tags (so far: `static`, `l10n`, `tz`, `cache`, and `i18n` apart from
+`blocktrans`/`blocktranslate`), and the grammar **never requires the `{% load %}`**, because
 an engine can preload a library through `OPTIONS: {"builtins": [...]}`, which makes `{% static "a" %}` valid
 with no load at all.
 
@@ -210,5 +211,7 @@ documentation or memory. Both checks are worth repeating whenever tags, filters 
   `{% cache 500 sidebar.name %}` names a fragment there, `{% cache 500 using="c" %}` names a fragment
   called `using="c"` rather than choosing a cache, and `{% cache 500 sidebar using= %}` takes an empty
   name. All three are errors here.
+- `do_translate` refuses `as` and `noop` as the value of its `context` option, so
+  `{% trans "hi" context noop %}` is an error there and a context named by the variable `noop` here.
 - `partial`/`partialdef` are Django builtins as of Django 6; `elif`/`else`/`empty` are modelled as parts of
   their enclosing tag rather than as separate tags.

@@ -56,7 +56,27 @@
         "named": true
       },
       {
+        "type": "get_available_languages",
+        "named": true
+      },
+      {
+        "type": "get_current_language",
+        "named": true
+      },
+      {
+        "type": "get_current_language_bidi",
+        "named": true
+      },
+      {
         "type": "get_current_timezone",
+        "named": true
+      },
+      {
+        "type": "get_language_info",
+        "named": true
+      },
+      {
+        "type": "get_language_info_list",
         "named": true
       },
       {
@@ -77,6 +97,10 @@
       },
       {
         "type": "include",
+        "named": true
+      },
+      {
+        "type": "language_group",
         "named": true
       },
       {
@@ -133,6 +157,10 @@
       },
       {
         "type": "timezone_group",
+        "named": true
+      },
+      {
+        "type": "translate",
         "named": true
       },
       {
@@ -607,6 +635,22 @@
             "named": false
           },
           {
+            "type": "language_bidi",
+            "named": false
+          },
+          {
+            "type": "language_name",
+            "named": false
+          },
+          {
+            "type": "language_name_local",
+            "named": false
+          },
+          {
+            "type": "language_name_translated",
+            "named": false
+          },
+          {
             "type": "last",
             "named": false
           },
@@ -949,6 +993,84 @@
     }
   },
   {
+    "type": "get_available_languages",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "get_available_languages",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "get_current_language",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "get_current_language",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "get_current_language_bidi",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "get_current_language_bidi",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "get_current_timezone",
     "named": true,
     "fields": {
@@ -972,6 +1094,78 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "get_language_info",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "get_language_info",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "filtered_value",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "get_language_info_list",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "get_language_info_list",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "filtered_value",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -1127,6 +1321,40 @@
       "types": [
         {
           "type": "filtered_value",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "language_group",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "endlanguage",
+            "named": false
+          },
+          {
+            "type": "language",
+            "named": false
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "filtered_value",
+          "named": true
+        },
+        {
+          "type": "template",
           "named": true
         }
       ]
@@ -1668,6 +1896,46 @@
     }
   },
   {
+    "type": "translate",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "trans",
+            "named": false
+          },
+          {
+            "type": "translate",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "filtered_value",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "translated_string",
     "named": true,
     "fields": {},
@@ -2015,6 +2283,10 @@
     "named": true
   },
   {
+    "type": "context",
+    "named": false
+  },
+  {
     "type": "csp_nonce_attr",
     "named": false
   },
@@ -2103,6 +2375,10 @@
     "named": false
   },
   {
+    "type": "endlanguage",
+    "named": false
+  },
+  {
     "type": "endlocalize",
     "named": false
   },
@@ -2179,11 +2455,31 @@
     "named": false
   },
   {
+    "type": "get_available_languages",
+    "named": false
+  },
+  {
+    "type": "get_current_language",
+    "named": false
+  },
+  {
+    "type": "get_current_language_bidi",
+    "named": false
+  },
+  {
     "type": "get_current_timezone",
     "named": false
   },
   {
     "type": "get_digit",
+    "named": false
+  },
+  {
+    "type": "get_language_info",
+    "named": false
+  },
+  {
+    "type": "get_language_info_list",
     "named": false
   },
   {
@@ -2232,6 +2528,26 @@
   },
   {
     "type": "json_script",
+    "named": false
+  },
+  {
+    "type": "language",
+    "named": false
+  },
+  {
+    "type": "language_bidi",
+    "named": false
+  },
+  {
+    "type": "language_name",
+    "named": false
+  },
+  {
+    "type": "language_name_local",
+    "named": false
+  },
+  {
+    "type": "language_name_translated",
     "named": false
   },
   {
@@ -2284,6 +2600,10 @@
   },
   {
     "type": "media",
+    "named": false
+  },
+  {
+    "type": "noop",
     "named": false
   },
   {
@@ -2456,6 +2776,14 @@
   },
   {
     "type": "title",
+    "named": false
+  },
+  {
+    "type": "trans",
+    "named": false
+  },
+  {
+    "type": "translate",
     "named": false
   },
   {
