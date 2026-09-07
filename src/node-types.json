@@ -24,6 +24,10 @@
         "named": true
       },
       {
+        "type": "custom_tag",
+        "named": true
+      },
+      {
         "type": "cycle",
         "named": true
       },
@@ -301,6 +305,46 @@
     }
   },
   {
+    "type": "custom_tag",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "variable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "filtered_value",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "cycle",
     "named": true,
     "fields": {
@@ -381,16 +425,255 @@
   {
     "type": "filter",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "value",
-          "named": true
-        }
-      ]
+    "fields": {
+      "argument": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "value",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "add",
+            "named": false
+          },
+          {
+            "type": "addslashes",
+            "named": false
+          },
+          {
+            "type": "capfirst",
+            "named": false
+          },
+          {
+            "type": "center",
+            "named": false
+          },
+          {
+            "type": "cut",
+            "named": false
+          },
+          {
+            "type": "date",
+            "named": false
+          },
+          {
+            "type": "default",
+            "named": false
+          },
+          {
+            "type": "default_if_none",
+            "named": false
+          },
+          {
+            "type": "dictsort",
+            "named": false
+          },
+          {
+            "type": "dictsortreversed",
+            "named": false
+          },
+          {
+            "type": "divisibleby",
+            "named": false
+          },
+          {
+            "type": "escape",
+            "named": false
+          },
+          {
+            "type": "escapejs",
+            "named": false
+          },
+          {
+            "type": "escapeseq",
+            "named": false
+          },
+          {
+            "type": "filesizeformat",
+            "named": false
+          },
+          {
+            "type": "first",
+            "named": false
+          },
+          {
+            "type": "floatformat",
+            "named": false
+          },
+          {
+            "type": "force_escape",
+            "named": false
+          },
+          {
+            "type": "get_digit",
+            "named": false
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "iriencode",
+            "named": false
+          },
+          {
+            "type": "join",
+            "named": false
+          },
+          {
+            "type": "json_script",
+            "named": false
+          },
+          {
+            "type": "last",
+            "named": false
+          },
+          {
+            "type": "length",
+            "named": false
+          },
+          {
+            "type": "linebreaks",
+            "named": false
+          },
+          {
+            "type": "linebreaksbr",
+            "named": false
+          },
+          {
+            "type": "linenumbers",
+            "named": false
+          },
+          {
+            "type": "ljust",
+            "named": false
+          },
+          {
+            "type": "lower",
+            "named": false
+          },
+          {
+            "type": "make_list",
+            "named": false
+          },
+          {
+            "type": "phone2numeric",
+            "named": false
+          },
+          {
+            "type": "pluralize",
+            "named": false
+          },
+          {
+            "type": "pprint",
+            "named": false
+          },
+          {
+            "type": "random",
+            "named": false
+          },
+          {
+            "type": "rjust",
+            "named": false
+          },
+          {
+            "type": "safe",
+            "named": false
+          },
+          {
+            "type": "safeseq",
+            "named": false
+          },
+          {
+            "type": "slice",
+            "named": false
+          },
+          {
+            "type": "slugify",
+            "named": false
+          },
+          {
+            "type": "stringformat",
+            "named": false
+          },
+          {
+            "type": "striptags",
+            "named": false
+          },
+          {
+            "type": "time",
+            "named": false
+          },
+          {
+            "type": "timesince",
+            "named": false
+          },
+          {
+            "type": "timeuntil",
+            "named": false
+          },
+          {
+            "type": "title",
+            "named": false
+          },
+          {
+            "type": "truncatechars",
+            "named": false
+          },
+          {
+            "type": "truncatechars_html",
+            "named": false
+          },
+          {
+            "type": "truncatewords",
+            "named": false
+          },
+          {
+            "type": "truncatewords_html",
+            "named": false
+          },
+          {
+            "type": "unordered_list",
+            "named": false
+          },
+          {
+            "type": "upper",
+            "named": false
+          },
+          {
+            "type": "urlencode",
+            "named": false
+          },
+          {
+            "type": "urlize",
+            "named": false
+          },
+          {
+            "type": "urlizetrunc",
+            "named": false
+          },
+          {
+            "type": "wordcount",
+            "named": false
+          },
+          {
+            "type": "wordwrap",
+            "named": false
+          },
+          {
+            "type": "yesno",
+            "named": false
+          }
+        ]
+      }
     }
   },
   {
@@ -1318,6 +1601,10 @@
     "named": false
   },
   {
+    "type": ":",
+    "named": false
+  },
+  {
     "type": "<",
     "named": false
   },
@@ -1346,7 +1633,7 @@
     "named": false
   },
   {
-    "type": "add:",
+    "type": "add",
     "named": false
   },
   {
@@ -1386,7 +1673,7 @@
     "named": false
   },
   {
-    "type": "center:",
+    "type": "center",
     "named": false
   },
   {
@@ -1426,7 +1713,7 @@
     "named": false
   },
   {
-    "type": "cut:",
+    "type": "cut",
     "named": false
   },
   {
@@ -1438,31 +1725,27 @@
     "named": false
   },
   {
-    "type": "date:",
-    "named": false
-  },
-  {
     "type": "debug",
     "named": false
   },
   {
-    "type": "default:",
+    "type": "default",
     "named": false
   },
   {
-    "type": "default_if_none:",
+    "type": "default_if_none",
     "named": false
   },
   {
-    "type": "dictsort:",
+    "type": "dictsort",
     "named": false
   },
   {
-    "type": "dictsortreversed:",
+    "type": "dictsortreversed",
     "named": false
   },
   {
-    "type": "divisibleby:",
+    "type": "divisibleby",
     "named": false
   },
   {
@@ -1558,10 +1841,6 @@
     "named": false
   },
   {
-    "type": "floatformat:",
-    "named": false
-  },
-  {
     "type": "for",
     "named": false
   },
@@ -1574,7 +1853,7 @@
     "named": false
   },
   {
-    "type": "get_digit:",
+    "type": "get_digit",
     "named": false
   },
   {
@@ -1610,15 +1889,11 @@
     "named": false
   },
   {
-    "type": "join:",
+    "type": "join",
     "named": false
   },
   {
     "type": "json_script",
-    "named": false
-  },
-  {
-    "type": "json_script:",
     "named": false
   },
   {
@@ -1642,7 +1917,7 @@
     "named": false
   },
   {
-    "type": "ljust:",
+    "type": "ljust",
     "named": false
   },
   {
@@ -1726,10 +2001,6 @@
     "named": false
   },
   {
-    "type": "pluralize:",
-    "named": false
-  },
-  {
     "type": "pop_block",
     "named": true
   },
@@ -1774,7 +2045,7 @@
     "named": false
   },
   {
-    "type": "rjust:",
+    "type": "rjust",
     "named": false
   },
   {
@@ -1790,7 +2061,7 @@
     "named": false
   },
   {
-    "type": "slice:",
+    "type": "slice",
     "named": false
   },
   {
@@ -1806,7 +2077,7 @@
     "named": true
   },
   {
-    "type": "stringformat:",
+    "type": "stringformat",
     "named": false
   },
   {
@@ -1822,15 +2093,7 @@
     "named": false
   },
   {
-    "type": "time:",
-    "named": false
-  },
-  {
     "type": "timesince",
-    "named": false
-  },
-  {
-    "type": "timesince:",
     "named": false
   },
   {
@@ -1838,27 +2101,23 @@
     "named": false
   },
   {
-    "type": "timeuntil:",
-    "named": false
-  },
-  {
     "type": "title",
     "named": false
   },
   {
-    "type": "truncatechars:",
+    "type": "truncatechars",
     "named": false
   },
   {
-    "type": "truncatechars_html:",
+    "type": "truncatechars_html",
     "named": false
   },
   {
-    "type": "truncatewords:",
+    "type": "truncatewords",
     "named": false
   },
   {
-    "type": "truncatewords_html:",
+    "type": "truncatewords_html",
     "named": false
   },
   {
@@ -1878,15 +2137,11 @@
     "named": false
   },
   {
-    "type": "urlencode:",
-    "named": false
-  },
-  {
     "type": "urlize",
     "named": false
   },
   {
-    "type": "urlizetrunc:",
+    "type": "urlizetrunc",
     "named": false
   },
   {
@@ -1914,15 +2169,11 @@
     "named": false
   },
   {
-    "type": "wordwrap:",
+    "type": "wordwrap",
     "named": false
   },
   {
     "type": "yesno",
-    "named": false
-  },
-  {
-    "type": "yesno:",
     "named": false
   },
   {

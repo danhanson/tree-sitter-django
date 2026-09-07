@@ -38,7 +38,7 @@ function part(first, ...rest) {
 
 /**
  * A tag, which may hug its delimiters ("{%cycle 1%}") or not.
- * @param {string} tag
+ * @param {RuleOrLiteral} tag
  * @param {...RuleOrLiteral} args
  * @returns {SeqRule}
  */
@@ -121,7 +121,7 @@ function arrangements(items) {
  * @param {boolean|Record<string, RuleOrLiteral>} kwargs true for any
  *   "name=value" pair (**kwargs), false for none, or the accepted names mapped
  *   to their value rules, each of which may be given at most once
- * @param {string} tag
+ * @param {RuleOrLiteral} tag
  * @returns {SeqRule}
  */
 function simpleTag($, tag, args = true, kwargs = true) {
@@ -147,6 +147,79 @@ function simpleTag($, tag, args = true, kwargs = true) {
   }
   return block(tag, ...parts, optional(asVariable($)));
 }
+
+/**
+ * Django checks a filter's argument count against the registered function
+ * while it parses the template, so the arity of a builtin is syntax here:
+ * "length:2" and a bare "add" are both errors.
+ */
+const FILTERS_WITHOUT_ARGUMENT = [
+  "addslashes",
+  "capfirst",
+  "escape",
+  "escapejs",
+  "escapeseq",
+  "filesizeformat",
+  "first",
+  "force_escape",
+  "iriencode",
+  "last",
+  "length",
+  "linebreaks",
+  "linebreaksbr",
+  "linenumbers",
+  "lower",
+  "make_list",
+  "phone2numeric",
+  "pprint",
+  "random",
+  "safe",
+  "safeseq",
+  "slugify",
+  "striptags",
+  "title",
+  "unordered_list",
+  "upper",
+  "urlize",
+  "wordcount",
+];
+
+/** Builtin filters that require an argument. */
+const FILTERS_WITH_ARGUMENT = [
+  "add",
+  "center",
+  "cut",
+  "default",
+  "default_if_none",
+  "dictsort",
+  "dictsortreversed",
+  "divisibleby",
+  "get_digit",
+  "join",
+  "ljust",
+  "rjust",
+  "slice",
+  "stringformat",
+  "truncatechars",
+  "truncatechars_html",
+  "truncatewords",
+  "truncatewords_html",
+  "urlizetrunc",
+  "wordwrap",
+];
+
+/** Builtin filters that take an argument or no argument. */
+const FILTERS_WITH_OPTIONAL_ARGUMENT = [
+  "date",
+  "floatformat",
+  "json_script",
+  "pluralize",
+  "time",
+  "timesince",
+  "timeuntil",
+  "urlencode",
+  "yesno",
+];
 
 /** Django's string constant, which takes any escape but a line break. */
 const STRING = /"(?:[^"\\]|\\[^\n])*"|'(?:[^'\\]|\\[^\n])*'/;
@@ -267,6 +340,7 @@ const django = grammar({
         $.comment_group,
         $.csp_nonce_attr,
         $.csrf_token,
+        $.custom_tag,
         $.cycle,
         $.debug,
         $.extends,
@@ -291,65 +365,30 @@ const django = grammar({
         $.width_ratio,
         $.with_group,
       ),
+    /**
+     * A filter is a name and, after a colon, at most one argument. The name is
+     * a token of its own rather than part of a "name:" token so that Django's
+     * builtins are keyword-extracted: a builtin written with the wrong arity
+     * then cannot be read as a filter from a loaded library instead.
+     */
     filter: ($) =>
       choice(
-        seq("add:", $.value),
-        "addslashes",
-        "capfirst",
-        seq("center:", $.value),
-        seq("cut:", $.value),
-        choice(seq("date:", $.value), "date"),
-        seq("default:", $.value),
-        seq("default_if_none:", $.value),
-        seq("dictsort:", $.value),
-        seq("dictsortreversed:", $.value),
-        seq("divisibleby:", $.value),
-        "escape",
-        "escapejs",
-        "escapeseq",
-        "filesizeformat",
-        "first",
-        choice(seq("floatformat:", $.value), "floatformat"),
-        "force_escape",
-        seq("get_digit:", $.value),
-        "iriencode",
-        seq("join:", $.value),
-        choice(seq("json_script:", $.value), "json_script"),
-        "last",
-        "length",
-        "linebreaks",
-        "linebreaksbr",
-        "linenumbers",
-        seq("ljust:", $.value),
-        "lower",
-        "make_list",
-        "phone2numeric",
-        choice(seq("pluralize:", $.value), "pluralize"),
-        "pprint",
-        "random",
-        seq("rjust:", $.value),
-        "safe",
-        "safeseq",
-        seq("slice:", $.value),
-        "slugify",
-        seq("stringformat:", $.value),
-        "striptags",
-        choice(seq("time:", $.value), "time"),
-        choice(seq("timesince:", $.value), "timesince"),
-        choice(seq("timeuntil:", $.value), "timeuntil"),
-        "title",
-        seq("truncatechars:", $.value),
-        seq("truncatechars_html:", $.value),
-        seq("truncatewords:", $.value),
-        seq("truncatewords_html:", $.value),
-        "unordered_list",
-        "upper",
-        choice(seq("urlencode:", $.value), "urlencode"),
-        "urlize",
-        seq("urlizetrunc:", $.value),
-        "wordcount",
-        seq("wordwrap:", $.value),
-        choice(seq("yesno:", $.value), "yesno"),
+        field("name", choice(...FILTERS_WITHOUT_ARGUMENT)),
+        seq(
+          field("name", choice(...FILTERS_WITH_ARGUMENT)),
+          ":",
+          field("argument", $.value),
+        ),
+        seq(
+          field("name", choice(...FILTERS_WITH_OPTIONAL_ARGUMENT)),
+          optional(seq(":", field("argument", $.value))),
+        ),
+        // a filter a "load" brought in: its name is not known here, and so
+        // neither is whether it takes an argument
+        seq(
+          field("name", $.identifier),
+          optional(seq(":", field("argument", $.value))),
+        ),
       ),
     autoescape_group: ($) =>
       seq(
@@ -374,6 +413,12 @@ const django = grammar({
     csp_nonce_attr: ($) =>
       simpleTag($, "csp_nonce_attr", 1, { media: $.filtered_value }),
     csrf_token: ($) => block("csrf_token"),
+    /**
+     * A tag a "load" brought in. Its arguments cannot be known here, so what
+     * is accepted is what Library.simple_tag and Library.inclusion_tag take,
+     * which is how a tag is registered unless it needs the parser itself.
+     */
+    custom_tag: ($) => simpleTag($, $.identifier),
     cycle: ($) =>
       block(
         "cycle",

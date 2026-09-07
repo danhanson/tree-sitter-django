@@ -1,0 +1,231 @@
+==================
+Custom Tag
+==================
+
+{% mytag %}
+
+---
+
+(template
+  (content)
+  (custom_tag
+    tag: (identifier))
+  (content))
+
+==================
+Custom Tag With Arguments
+==================
+
+{% mytag a "b" 3 %}
+
+---
+
+(template
+  (content)
+  (custom_tag
+    tag: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Custom Tag With Keyword Arguments
+==================
+
+{% mytag a b=1 %}
+
+---
+
+(template
+  (content)
+  (custom_tag
+    tag: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Custom Tag With As
+==================
+
+{% mytag a as result %}
+
+---
+
+(template
+  (content)
+  (custom_tag
+    tag: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    variable: (identifier))
+  (content))
+
+==================
+Custom Tag With Filtered Argument
+==================
+
+{% mytag a|upper %}
+
+---
+
+(template
+  (content)
+  (custom_tag
+    tag: (identifier)
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Custom Tag Does Not Nest
+==================
+
+{% mytag %}hi{% endmytag %}
+
+---
+
+(template
+  (content)
+  (custom_tag
+    tag: (identifier))
+  (content)
+  (custom_tag
+    tag: (identifier))
+  (content))
+
+==================
+Custom Tag Does Not Cover A Builtin Name
+:error
+==================
+
+{% cycle %}
+
+---
+
+
+==================
+Custom Filter
+==================
+
+{{ x|intcomma }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter
+          name: (identifier)))))
+  (content))
+
+==================
+Custom Filter With Argument
+==================
+
+{{ x|naturaltime:"y" }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter
+          name: (identifier)
+          argument: (value
+            (literal
+              (string)))))))
+  (content))
+
+==================
+Custom Filter In A Chain With A Builtin
+==================
+
+{{ x|intcomma|upper }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter
+          name: (identifier))
+        (filter))))
+  (content))
+
+==================
+Custom Filter In A Tag
+==================
+
+{% firstof a|intcomma %}
+
+---
+
+(template
+  (content)
+  (firstof
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter
+          name: (identifier)))))
+  (content))
+
+==================
+Builtin Filter Without Its Required Argument
+:error
+==================
+
+{{ x|add }}
+
+---
+
+
+==================
+Builtin Filter With An Argument It Does Not Take
+:error
+==================
+
+{{ x|length:2 }}
+
+---

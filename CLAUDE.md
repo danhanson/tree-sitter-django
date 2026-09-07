@@ -78,6 +78,23 @@ Django parses everything between `{{` and `}}` — and the entire remainder of `
 whitespace first, so a pipe there must be tight. Hence `_filtered_value_spaced` /
 `_filter_expression_spaced`, aliased back to the plain node names so the tree shape stays identical.
 
+### Names a `{% load %}` brought in
+
+A library's tags and filters are registered in Python, so the grammar cannot know their names, their
+arity, or whether a tag is a block tag. Two fallback rules accept them:
+
+- `custom_tag` — `simpleTag($, $.identifier)`, i.e. what `simple_tag`/`inclusion_tag` accept, which is how
+  a tag is registered unless it needs the parser itself.
+- the last alternative of `filter`, whose name is `$.identifier` rather than one of the builtin literals.
+
+**Builtin names must stay keyword-extractable, or the fallbacks swallow them.** `word: $.identifier` turns
+each builtin's name into its own token, which the lexer prefers wherever it is valid, so a builtin commits
+to its own alternative and its argument rules still apply. This is why a filter's name and its `:` are
+separate tokens: while the name was spelled `"add:"` it was not word-shaped, so a bare `add` lexed as an
+identifier and reached the fallback, losing the arity check for all 20 filters that require an argument.
+`FILTERS_WITHOUT_ARGUMENT` / `FILTERS_WITH_ARGUMENT` / `FILTERS_WITH_OPTIONAL_ARGUMENT` carry that arity,
+which Django itself enforces while it parses the template ("add requires 2 arguments, 1 provided").
+
 ### External scanner (`src/scanner.c`)
 
 Nine external tokens, for the constraints a context-free grammar cannot express:
@@ -99,7 +116,8 @@ do not, and belong in a linter instead.
 ### Queries
 
 `queries/highlights.scm` lists tag and filter names explicitly, so adding either to the grammar means
-adding it there too. `queries/locals.scm` relies on the `variable:` field to tell a binding from a
+adding it there too; filter names appear there without their colon. A name the grammar does not know is
+captured through its field instead (`(filter name: (identifier))`, `(custom_tag tag: (identifier))`). `queries/locals.scm` relies on the `variable:` field to tell a binding from a
 reference — another reason to keep `asVariable` uniform.
 
 ## Testing
@@ -137,5 +155,14 @@ documentation or memory. Both checks are worth repeating whenever tags, filters 
 - `{% querystring page=2 page=3 %}` (a repeated `**kwargs` key) is a Django error but is not expressible in
   a context-free grammar. Repeats _are_ rejected wherever the signature names its arguments.
 - `{% csp_nonce_attr "a" media="b" %}` is accepted, matching Django, which only rejects it at render time.
+- A misspelled tag or filter cannot be caught: `{{ x|lenght }}` is indistinguishable from a filter some
+  library registered. Cross-referencing names against `{% load %}` needs the project's Python, so it
+  belongs in a linter; the `load` rule already parses the library and `from` names for one to use.
+- `{% mytag %}…{% endmytag %}` parses as two sibling `custom_tag`s. Nesting them would mean guessing that
+  an unknown tag is a block tag.
+- A custom tag's contents are only assumed to be the `simple_tag` shape. `@register.tag` receives the raw
+  token and may parse anything, so `{% mytag <<>> %}` is rejected here and not by Django.
+- A library may override a builtin (`Parser.add_library` is `self.filters.update(...)`), so a project that
+  redefines `length` with a different arity gets a false error here.
 - `partial`/`partialdef` are Django builtins as of Django 6; `elif`/`else`/`empty` are modelled as parts of
   their enclosing tag rather than as separate tags.
