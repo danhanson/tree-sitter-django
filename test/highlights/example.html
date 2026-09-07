@@ -1,6 +1,5 @@
-{% load greet from custom.tags %}
-{% partialdef url %}
-  <li>{% greet %} {{ user }}</li>
+{% load greet from custom.tags %} {% partialdef url %}
+<li>{% greet %} {{ user }}</li>
 {% endpartialdef %}
 <body>
   {# hello this is an example file #}
@@ -24,9 +23,5 @@
   <h1>EMPTY</h1>
   {% endblock %}
 
-  <footer>
-{% for user in page.footer %}
-{% partial url %}
-{% endfor %}
-  </footer>
+  <footer>{% for user in page.footer %} {% partial url %} {% endfor %}</footer>
 </body>

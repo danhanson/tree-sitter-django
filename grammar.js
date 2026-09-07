@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /// <reference types="tree-sitter-cli/dsl" />
 // @ts-check
 
@@ -81,7 +80,7 @@ function walk(chosen, rest, spellings) {
       spellings,
     ),
   );
-};
+}
 
 /**
  * Every way of writing some of `items` in any order, using each at most once,

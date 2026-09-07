@@ -4555,22 +4555,11 @@
   },
   "extras": [],
   "conflicts": [
-    [
-      "template"
-    ],
-    [
-      "predicate"
-    ],
-    [
-      "library",
-      "load"
-    ],
-    [
-      "_filtered_value_spaced"
-    ],
-    [
-      "_filter_expression_spaced"
-    ]
+    ["template"],
+    ["predicate"],
+    ["library", "load"],
+    ["_filtered_value_spaced"],
+    ["_filter_expression_spaced"]
   ],
   "precedences": [],
   "externals": [
@@ -4612,10 +4601,7 @@
     }
   ],
   "inline": [],
-  "supertypes": [
-    "template_tag",
-    "template_block_groups"
-  ],
+  "supertypes": ["template_tag", "template_block_groups"],
   "reserved": {
     "global": [
       {
