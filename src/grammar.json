@@ -1383,7 +1383,7 @@
                     },
                     {
                       "type": "SYMBOL",
-                      "name": "_bt_open"
+                      "name": "_tag_open"
                     },
                     {
                       "type": "REPEAT",
@@ -1501,7 +1501,7 @@
                     },
                     {
                       "type": "SYMBOL",
-                      "name": "_bt_open"
+                      "name": "_tag_open"
                     },
                     {
                       "type": "REPEAT",
@@ -1684,7 +1684,7 @@
                     },
                     {
                       "type": "SYMBOL",
-                      "name": "_bt_open"
+                      "name": "_tag_open"
                     },
                     {
                       "type": "REPEAT",
@@ -1802,7 +1802,7 @@
                     },
                     {
                       "type": "SYMBOL",
-                      "name": "_bt_open"
+                      "name": "_tag_open"
                     },
                     {
                       "type": "REPEAT",
@@ -2689,6 +2689,10 @@
           }
         },
         {
+          "type": "SYMBOL",
+          "name": "_tag_open"
+        },
+        {
           "type": "REPEAT",
           "content": {
             "type": "SEQ",
@@ -2716,6 +2720,10 @@
               {
                 "type": "SEQ",
                 "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_kwarg_name"
+                  },
                   {
                     "type": "SYMBOL",
                     "name": "identifier"
@@ -5665,6 +5673,10 @@
           }
         },
         {
+          "type": "SYMBOL",
+          "name": "_tag_open"
+        },
+        {
           "type": "REPEAT",
           "content": {
             "type": "SEQ",
@@ -5692,6 +5704,10 @@
               {
                 "type": "SEQ",
                 "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_kwarg_name"
+                  },
                   {
                     "type": "SYMBOL",
                     "name": "identifier"
@@ -7869,11 +7885,15 @@
     },
     {
       "type": "SYMBOL",
-      "name": "_bt_open"
+      "name": "_tag_open"
     },
     {
       "type": "SYMBOL",
       "name": "_bt_option"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_kwarg_name"
     }
   ],
   "inline": [],

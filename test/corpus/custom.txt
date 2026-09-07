@@ -284,3 +284,64 @@ A Name Reserved For A Tag Is Still An Argument
         (variable_attribute
           (identifier)))))
   (content))
+
+==================
+Custom Tag With A Keyword Argument Twice
+:error
+==================
+
+{% mytag a=1 a=2 %}
+
+---
+
+
+==================
+Custom Tag With Keyword Arguments And As
+==================
+
+{% mytag a=1 b=2 as out %}
+
+---
+
+(template
+  (content)
+  (custom_tag
+    tag: (identifier)
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    variable: (identifier))
+  (content))
+
+==================
+Custom Tag Repeating A Keyword Of The Tag Before It
+==================
+
+{% mytag page=1 %}{% mytag page=2 %}
+
+---
+
+(template
+  (content)
+  (custom_tag
+    tag: (identifier)
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (custom_tag
+    tag: (identifier)
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))

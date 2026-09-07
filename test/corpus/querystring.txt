@@ -74,3 +74,45 @@ Querystring With Expression Argument And As
           (number))))
     variable: (identifier))
   (content))
+
+==================
+Querystring With Two Keys
+==================
+
+{% querystring page=2 size=3 %}
+
+---
+
+(template
+  (content)
+  (query_string
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Querystring With A Key Twice
+:error
+==================
+
+{% querystring page=2 page=3 %}
+
+---
+
+
+==================
+Querystring With A Key Repeated Later
+:error
+==================
+
+{% querystring a=1 b=2 a=3 %}
+
+---

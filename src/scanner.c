@@ -21,11 +21,14 @@ enum TokenType {
   VerbatimContent,
   /* raw text inside a comment block, up through (but excluding) the endcomment tag */
   CommentContent,
-  /* zero width, at the start of a blocktranslate tag: forget the options seen */
-  TranslateOpen,
+  /* zero width, at the start of a tag: forget what the tag before it held */
+  TagOpen,
   /* zero width, before an option of a blocktranslate tag: record it, and fail
    * if that option has already been written once */
   TranslateOption,
+  /* zero width, before the name of a "name=value" argument: record the name,
+   * and fail if the tag has already been given one by that name */
+  KwargName,
 };
 
 /* The options blocktranslate takes, in the order of the bits recording them.
@@ -66,6 +69,11 @@ struct Scanner {
    * translate_options. Kept out of the union below, whose members share their
    * storage with each other. */
   uint8_t translate_seen;
+  /* the "name=value" argument names the tag being read has been given, each
+   * followed by NAME_SEP. parse_bits refuses a repeated keyword argument, and
+   * the set of names is open, so this remembers the names rather than a mask
+   * of known ones. Kept out of the union, as translate_seen is. */
+  Name seen_kwargs;
   union {
     Stack stack;
     char error [ERROR_SIZE];
@@ -82,6 +90,7 @@ static enum TokenType pop_token_for_kind(TagKind kind) {
 
 static void reset_scanner(struct Scanner *const scanner) {
   scanner->translate_seen = 0;
+  array_delete(&scanner->seen_kwargs);
   if (scanner->has_error) {
     scanner->error[0] = '\0';
     scanner->has_error = false;
@@ -160,6 +169,17 @@ write_serialization_error:;
   iter += write_code(scanner->has_error + '0', iter);
   // five options fit in five bits, which stays inside printable ASCII
   iter += write_code(scanner->translate_seen + '0', iter);
+  for (unsigned i = 0; i < scanner->seen_kwargs.size; ++i) {
+    int32_t code = *array_get(&scanner->seen_kwargs, i);
+    unsigned write_amt = write_code(code, iter);
+    if (write_amt == 0) {
+      scanner_error(scanner, "bad code from keyword argument name");
+      goto write_serialization_error;
+    }
+    iter += write_amt;
+  }
+  // a name holds no newline, so this ends the list without escaping anything
+  iter += write_code('\n', iter);
   if (scanner->has_error) {
     for (int i = 0; i < ERROR_SIZE; ++i) {
       char value = scanner->error[i];
@@ -265,6 +285,29 @@ void tree_sitter_django_external_scanner_deserialize(
     return;
   }
   scanner->translate_seen = (uint8_t) (seen - '0');
+
+  for (;;) {
+    int32_t item;
+    bytes_read = read_code(buffer, &item);
+    if (!bytes_read) {
+      scanner_error(scanner, "received invalid utf8 byte");
+      return;
+    }
+    consumed += bytes_read;
+    if (consumed > length) {
+      scanner_error(scanner, "keyword argument names truncated by length");
+      return;
+    }
+    buffer += bytes_read;
+    if (item == '\n') {
+      break;
+    }
+    if (item != NAME_SEP && !check_name_char(item)) {
+      scanner_error(scanner, "invalid character in keyword argument name");
+      return;
+    }
+    array_push(&scanner->seen_kwargs, item);
+  }
 
   switch (code) {
     default:
@@ -416,6 +459,54 @@ static int read_translate_option(TSLexer *const lexer) {
     }
   }
   return -1;
+}
+
+/* Reads the name of a "name=value" argument, and reports whether the tag can
+ * still take it. A name not followed by "=" is not one of these arguments at
+ * all, which is what tells this apart from the "as name" clause or the end of
+ * the tag; the name is only kept once the "=" has been seen.
+ *
+ * The names are held end to end, each followed by NAME_SEP, which no name
+ * holds. The candidate is appended first and dropped again if it turns out to
+ * be a repeat, so nothing is kept unless the token is returned. */
+static bool scan_kwarg_name(struct Scanner *const scanner, TSLexer *const lexer) {
+  if (!check_name_start_char(lexer->lookahead)) {
+    return false;
+  }
+  const unsigned start = scanner->seen_kwargs.size;
+  while (check_name_char(lexer->lookahead)) {
+    array_push(&scanner->seen_kwargs, lexer->lookahead);
+    lexer->advance(lexer, false);
+  }
+  const unsigned size = scanner->seen_kwargs.size - start;
+  if (lexer->lookahead != '=') {
+    scanner->seen_kwargs.size = start;
+    return false;
+  }
+  for (unsigned i = 0; i < start;) {
+    unsigned end = i;
+    while (end < start && *array_get(&scanner->seen_kwargs, end) != NAME_SEP) {
+      ++end;
+    }
+    if (end - i == size) {
+      bool same = true;
+      for (unsigned j = 0; j < size; ++j) {
+        if (*array_get(&scanner->seen_kwargs, i + j)
+            != *array_get(&scanner->seen_kwargs, start + j)) {
+          same = false;
+          break;
+        }
+      }
+      if (same) {
+        // the tag already holds an argument by this name
+        scanner->seen_kwargs.size = start;
+        return false;
+      }
+    }
+    i = end + 1;
+  }
+  array_push(&scanner->seen_kwargs, NAME_SEP);
+  return true;
 }
 
 const char endverbatim_chars[] = "endverbatim";
@@ -582,10 +673,19 @@ bool tree_sitter_django_external_scanner_scan(
    * read. They belong above the loop below, which skips the separator the
    * grammar still has to match, and below the MatcherError check, which is what
    * keeps them from being scanned during error recovery. */
-  if (valid_symbols[TranslateOpen]) {
+  if (valid_symbols[TagOpen]) {
     lexer->mark_end(lexer);
     scanner->translate_seen = 0;
-    lexer->result_symbol = TranslateOpen;
+    array_delete(&scanner->seen_kwargs);
+    lexer->result_symbol = TagOpen;
+    return true;
+  }
+  if (valid_symbols[KwargName]) {
+    lexer->mark_end(lexer);
+    if (!scan_kwarg_name(scanner, lexer)) {
+      return false;
+    }
+    lexer->result_symbol = KwargName;
     return true;
   }
   if (valid_symbols[TranslateOption]) {

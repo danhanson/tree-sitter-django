@@ -137,7 +137,12 @@ function simpleTag($, tag, args = true, kwargs = true) {
     parts.push(optional(rule));
   }
   if (kwargs === true) {
-    parts.push(repeat(part(seq($.identifier, "=", $.filtered_value))));
+    // parse_bits refuses a keyword argument the tag already holds, whatever
+    // **kwargs it takes, so the scanner keeps the names rather than the grammar
+    parts.unshift($._tag_open);
+    parts.push(
+      repeat(part(seq($._kwarg_name, $.identifier, "=", $.filtered_value))),
+    );
   } else if (kwargs) {
     // a known signature: any of the names it accepts, in any order, none twice
     const named = Object.entries(kwargs).map(([name, value]) =>
@@ -302,8 +307,9 @@ const django = grammar({
     $.push_verbatim,
     $.verbatim_content,
     $.comment_content,
-    $._bt_open,
+    $._tag_open,
     $._bt_option,
+    $._kwarg_name,
   ],
   reserved: {
     global: ($) => ["not", "if", "in", "is", "as", "for", "from"],
@@ -492,14 +498,14 @@ const django = grammar({
         ...["blocktrans", "blocktranslate"].map((name) =>
           choice(
             seq(
-              block(name, $._bt_open, repeat($._translate_option)),
+              block(name, $._tag_open, repeat($._translate_option)),
               optional($._translate_body),
               block("end" + name),
             ),
             seq(
               block(
                 name,
-                $._bt_open,
+                $._tag_open,
                 repeat($._translate_option),
                 $._translate_count,
                 repeat($._translate_option),

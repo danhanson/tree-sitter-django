@@ -130,15 +130,19 @@ is accepted: these names are common enough that shadowing them is the mistake.
 
 ### External scanner (`src/scanner.c`)
 
-Eleven external tokens, for the constraints a context-free grammar cannot express:
+Twelve external tokens, for the constraints a context-free grammar cannot express:
 
 - `push_block`/`push_partial`/`push_verbatim` and the matching `pop_*` — name matching for
   `{% block a %}…{% endblock a %}`. They share **one** stack of `{kind, name}` entries, not one stack per
   kind: the grammar already guarantees nesting, so only the innermost open tag can be closed, and there is
   never a second candidate name to try. Serialized as `<kind><name> ` per entry (`tag_kind_chars`).
 - `verbatim_content`, `comment_content` — raw text up to the matching close tag.
-- `_bt_open`, `_bt_option` — which options a `{% blocktranslate %}` has already been given, so that a
-  repeated one is refused. Both are zero width and hidden, so no tree changes. The state is one byte of
+- `_tag_open`, `_bt_option`, `_kwarg_name` — what a tag has already been given, so that a repeated
+  argument is refused: `_bt_option` for `{% blocktranslate %}`'s five options, `_kwarg_name` for the
+  `name=value` arguments of a tag registered with `simple_tag`, whose names are open-ended and so are kept
+  as names rather than as a mask. `_kwarg_name` returns nothing unless the name is followed by `=`, which
+  is also what tells an argument apart from the `as name` clause or the end of the tag. `_tag_open` clears
+  both, and every rule that uses either has one. Both are zero width and hidden, so no tree changes. The state is one byte of
   flags, not a stack, because the tag cannot nest: its body admits no tags. It lives outside the
   `stack`/`error` union, is cleared in both branches of `reset_scanner`, and is serialized after the
   status character, so a GLR stack split copies it like everything else.
@@ -154,9 +158,11 @@ Block-name matching does — it decides which close tag closes what.
 and the reason is worth keeping straight: its five options are a fixed set, so uniqueness _is_ expressible —
 `arrangements` expresses exactly that — and the scanner is standing in for a grammar that would be correct
 but takes minutes to build. Where the set is open, as with `{% querystring %}`'s `**kwargs`, no grammar
-can express it — but the scanner still could, by remembering the names a tag has been given rather than a
-fixed mask of them. That is not done, and it is what the `{% querystring page=2 page=3 %}` divergence below
-is waiting on.
+can express it at all, and the scanner remembers the names the tag has been given instead of a mask of
+known ones. Which tags get that guard is itself a differential question: only `parse_bits` refuses a
+repeat, so `{% with a=1 a=2 %}`, `{% include "t" with a=1 a=2 %}` and `{% blocktranslate with a=1 a=2 %}`
+are all accepted by Django — `token_kwargs` builds a dict and the later value simply wins — and must not
+be guarded.
 
 Zero-width guards carry one hazard: `recover_with_missing` can supply one without the scanner running. The
 `if (valid_symbols[MatcherError]) return false;` near the top of `scan` is what stops a guard being scanned
@@ -210,8 +216,6 @@ documentation or memory. Both checks are worth repeating whenever tags, filters 
 
 - Django has no number token: `[\w.]+` is one lexeme and `int()`/`float()` decides whether it is a literal,
   so `1a`, `1e`, `0x1f`, `1.2.3`, `1__0` and `1.` are variable _lookups_ there and errors here.
-- `{% querystring page=2 page=3 %}` (a repeated `**kwargs` key) is a Django error but is not expressible in
-  a context-free grammar. Repeats _are_ rejected wherever the signature names its arguments.
 - `{% csp_nonce_attr "a" media="b" %}` is accepted, matching Django, which only rejects it at render time.
 - A misspelled tag or filter cannot be caught: `{{ x|lenght }}` is indistinguishable from a filter some
   library registered. Cross-referencing names against `{% load %}` needs the project's Python, so it
