@@ -2502,6 +2502,10 @@
           }
         },
         {
+          "type": "SYMBOL",
+          "name": "_tag_open"
+        },
+        {
           "type": "CHOICE",
           "members": [
             {
@@ -2523,38 +2527,42 @@
           ]
         },
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "PATTERN",
-                  "value": "[ \\t\\r\\n]+"
-                },
-                {
-                  "type": "SEQ",
-                  "members": [
-                    {
-                      "type": "STRING",
-                      "value": "media"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "="
-                    },
-                    {
-                      "type": "SYMBOL",
-                      "name": "filtered_value"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
+          "type": "REPEAT",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "PATTERN",
+                    "value": "[ \\t\\r\\n]+"
+                  },
+                  {
+                    "type": "SEQ",
+                    "members": [
+                      {
+                        "type": "SYMBOL",
+                        "name": "_kwarg_name"
+                      },
+                      {
+                        "type": "STRING",
+                        "value": "media"
+                      },
+                      {
+                        "type": "STRING",
+                        "value": "="
+                      },
+                      {
+                        "type": "SYMBOL",
+                        "name": "filtered_value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
         },
         {
           "type": "CHOICE",
@@ -7953,25 +7961,12 @@
   },
   "extras": [],
   "conflicts": [
-    [
-      "template"
-    ],
-    [
-      "predicate"
-    ],
-    [
-      "library",
-      "load"
-    ],
-    [
-      "_translate_option"
-    ],
-    [
-      "_filtered_value_spaced"
-    ],
-    [
-      "_filter_expression_spaced"
-    ]
+    ["template"],
+    ["predicate"],
+    ["library", "load"],
+    ["_translate_option"],
+    ["_filtered_value_spaced"],
+    ["_filter_expression_spaced"]
   ],
   "precedences": [],
   "externals": [
@@ -8025,10 +8020,7 @@
     }
   ],
   "inline": [],
-  "supertypes": [
-    "template_tag",
-    "template_block_groups"
-  ],
+  "supertypes": ["template_tag", "template_block_groups"],
   "reserved": {
     "global": [
       {

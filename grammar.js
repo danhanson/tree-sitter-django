@@ -144,11 +144,12 @@ function simpleTag($, tag, args = true, kwargs = true) {
       repeat(part(seq($._kwarg_name, $.identifier, "=", $.filtered_value))),
     );
   } else if (kwargs) {
+    parts.unshift($._tag_open);
     // a known signature: any of the names it accepts, in any order, none twice
     const named = Object.entries(kwargs).map(([name, value]) =>
-      part(seq(name, "=", value)),
+      part(seq($._kwarg_name, name, "=", value)),
     );
-    parts.push(optional(arrangements(named)));
+    parts.push(repeat(choice(...named)));
   }
   return block(tag, ...parts, optional(asVariable($)));
 }

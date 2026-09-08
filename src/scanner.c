@@ -68,14 +68,16 @@ struct Scanner {
   /* one bit per option of the blocktranslate tag being read, by the order of
    * translate_options. Kept out of the union below, whose members share their
    * storage with each other. */
-  uint8_t translate_seen;
   /* the "name=value" argument names the tag being read has been given, each
    * followed by NAME_SEP. parse_bits refuses a repeated keyword argument, and
    * the set of names is open, so this remembers the names rather than a mask
    * of known ones. Kept out of the union, as translate_seen is. */
-  Name seen_kwargs;
   union {
-    Stack stack;
+    struct {
+      uint8_t translate_seen;
+      Name seen_kwargs;
+      Stack stack;
+    };
     char error [ERROR_SIZE];
   };
 };
@@ -89,14 +91,12 @@ static enum TokenType pop_token_for_kind(TagKind kind) {
 }
 
 static void reset_scanner(struct Scanner *const scanner) {
-  scanner->translate_seen = 0;
-  array_delete(&scanner->seen_kwargs);
   if (scanner->has_error) {
-    scanner->error[0] = '\0';
-    scanner->has_error = false;
-    // the error shares storage with the stack, which is now meaningless
-    memset(&scanner->stack, 0, sizeof(scanner->stack));
+    // sets everything to 0 values: 0, '\0', false, null
+    memset(&scanner, 0, sizeof(scanner));
   } else {
+    scanner->translate_seen = 0;
+    array_delete(&scanner->seen_kwargs);
     for (unsigned i = 0; i < scanner->stack.size; ++i) {
       array_delete(&array_get(&scanner->stack, i)->name);
     }
