@@ -438,3 +438,12 @@ Blocktrans Repeating An Option Of The Tag Before It
   (blocktranslate_group
     (content))
   (content))
+
+==================
+Blocktrans With A Binding Twice
+:error
+==================
+
+{% blocktrans with a=1 a=2 %}x{% endblocktrans %}
+
+---

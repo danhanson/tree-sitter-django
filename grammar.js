@@ -545,13 +545,20 @@ const django = grammar({
     _translate_body: ($) => repeat1(choice($.content, $.template_variable)),
     /**
      * The "with" option of blocktranslate and of include takes at least one of
-     * these. Django lets a name repeat here — token_kwargs builds a dict and
-     * the later value wins — so unlike a simple_tag's arguments they are not
-     * guarded.
+     * these. Django lets a name repeat — token_kwargs builds a dict and the
+     * later value simply wins — but writing one twice has no use and is taken
+     * here to be a mistake, so the scanner guards these too.
      */
     _tag_kwargs: ($) =>
       repeat1(
-        part(seq(field("variable", $.identifier), "=", $.filtered_value)),
+        part(
+          seq(
+            $._kwarg_name,
+            field("variable", $.identifier),
+            "=",
+            $.filtered_value,
+          ),
+        ),
       ),
     cache_group: ($) =>
       seq(
@@ -689,6 +696,7 @@ const django = grammar({
     include: ($) =>
       block(
         "include",
+        $._tag_open,
         part($.filtered_value),
         optional(
           arrangements([seq(part("with"), $._tag_kwargs), part("only")]),
@@ -825,12 +833,7 @@ const django = grammar({
       ),
     with_group: ($) =>
       seq(
-        block(
-          "with",
-          repeat1(
-            part(seq(field("variable", $.identifier), "=", $.filtered_value)),
-          ),
-        ),
+        block("with", $._tag_open, $._tag_kwargs),
         optional($.template),
         block("endwith"),
       ),

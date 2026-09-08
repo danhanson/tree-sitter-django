@@ -2138,6 +2138,10 @@
             "type": "SEQ",
             "members": [
               {
+                "type": "SYMBOL",
+                "name": "_kwarg_name"
+              },
+              {
                 "type": "FIELD",
                 "name": "variable",
                 "content": {
@@ -4689,6 +4693,10 @@
             "type": "STRING",
             "value": "include"
           }
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_tag_open"
         },
         {
           "type": "SEQ",
@@ -7849,37 +7857,12 @@
               }
             },
             {
-              "type": "REPEAT1",
-              "content": {
-                "type": "SEQ",
-                "members": [
-                  {
-                    "type": "PATTERN",
-                    "value": "[ \\t\\r\\n]+"
-                  },
-                  {
-                    "type": "SEQ",
-                    "members": [
-                      {
-                        "type": "FIELD",
-                        "name": "variable",
-                        "content": {
-                          "type": "SYMBOL",
-                          "name": "identifier"
-                        }
-                      },
-                      {
-                        "type": "STRING",
-                        "value": "="
-                      },
-                      {
-                        "type": "SYMBOL",
-                        "name": "filtered_value"
-                      }
-                    ]
-                  }
-                ]
-              }
+              "type": "SYMBOL",
+              "name": "_tag_open"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_tag_kwargs"
             },
             {
               "type": "CHOICE",
@@ -7961,12 +7944,25 @@
   },
   "extras": [],
   "conflicts": [
-    ["template"],
-    ["predicate"],
-    ["library", "load"],
-    ["_translate_option"],
-    ["_filtered_value_spaced"],
-    ["_filter_expression_spaced"]
+    [
+      "template"
+    ],
+    [
+      "predicate"
+    ],
+    [
+      "library",
+      "load"
+    ],
+    [
+      "_translate_option"
+    ],
+    [
+      "_filtered_value_spaced"
+    ],
+    [
+      "_filter_expression_spaced"
+    ]
   ],
   "precedences": [],
   "externals": [
@@ -8020,7 +8016,10 @@
     }
   ],
   "inline": [],
-  "supertypes": ["template_tag", "template_block_groups"],
+  "supertypes": [
+    "template_tag",
+    "template_block_groups"
+  ],
   "reserved": {
     "global": [
       {

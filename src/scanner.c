@@ -65,13 +65,14 @@ typedef Array(OpenTag) Stack;
 
 struct Scanner {
   bool has_error;
-  /* one bit per option of the blocktranslate tag being read, by the order of
-   * translate_options. Kept out of the union below, whose members share their
-   * storage with each other. */
-  /* the "name=value" argument names the tag being read has been given, each
-   * followed by NAME_SEP. parse_bits refuses a repeated keyword argument, and
-   * the set of names is open, so this remembers the names rather than a mask
-   * of known ones. Kept out of the union, as translate_seen is. */
+  /* Everything below is readable only while has_error is false: the error
+   * string shares its storage with all of it.
+   *
+   * translate_seen holds one bit per option of the blocktranslate tag being
+   * read, by the order of translate_options. seen_kwargs holds the
+   * "name=value" argument names the tag has been given, each followed by
+   * NAME_SEP: parse_bits refuses a repeated keyword argument and the set of
+   * names is open, so the names are kept rather than a mask of known ones. */
   union {
     struct {
       uint8_t translate_seen;
@@ -92,8 +93,11 @@ static enum TokenType pop_token_for_kind(TagKind kind) {
 
 static void reset_scanner(struct Scanner *const scanner) {
   if (scanner->has_error) {
-    // sets everything to 0 values: 0, '\0', false, null
-    memset(&scanner, 0, sizeof(scanner));
+    /* The error shares its storage with the state below, so none of that is
+     * readable here and none of it holds a pointer to free: scanner_error
+     * resets before it sets has_error, which is what frees them. Zeroing the
+     * whole struct clears the error and the state it overlays at once. */
+    memset(scanner, 0, sizeof(*scanner));
   } else {
     scanner->translate_seen = 0;
     array_delete(&scanner->seen_kwargs);
@@ -167,9 +171,11 @@ write_serialization_error:;
   char *iter = buffer;
 
   iter += write_code(scanner->has_error + '0', iter);
+  /* Both of these overlay the error string, so they are only read when there is
+   * none; an error state serializes as the empty option mask and no names. */
   // five options fit in five bits, which stays inside printable ASCII
-  iter += write_code(scanner->translate_seen + '0', iter);
-  for (unsigned i = 0; i < scanner->seen_kwargs.size; ++i) {
+  iter += write_code((scanner->has_error ? 0 : scanner->translate_seen) + '0', iter);
+  for (unsigned i = 0; !scanner->has_error && i < scanner->seen_kwargs.size; ++i) {
     int32_t code = *array_get(&scanner->seen_kwargs, i);
     unsigned write_amt = write_code(code, iter);
     if (write_amt == 0) {

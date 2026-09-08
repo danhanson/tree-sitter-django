@@ -59,3 +59,51 @@ With Multiple Variables
               (identifier)))))
       (content)))
   (content))
+
+==================
+With A Binding Twice
+:error
+==================
+
+{% with a=1 a=2 %}x{% endwith %}
+
+---
+
+
+==================
+With A Binding Repeated Later
+:error
+==================
+
+{% with a=1 b=2 a=3 %}x{% endwith %}
+
+---
+
+
+==================
+With Repeating A Binding Of The Tag Before It
+==================
+
+{% with a=1 %}x{% endwith %}{% with a=2 %}y{% endwith %}
+
+---
+
+(template
+  (content)
+  (with_group
+    variable: (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (template
+      (content)))
+  (with_group
+    variable: (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (template
+      (content)))
+  (content))

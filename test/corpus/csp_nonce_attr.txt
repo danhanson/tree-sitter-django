@@ -79,3 +79,12 @@ Csp Nonce Attr Rejects Repeated Keyword
 
 (ERROR)
 
+
+==================
+Csp Nonce Attr With Media Twice
+:error
+==================
+
+{% csp_nonce_attr media="a" media="b" %}
+
+---

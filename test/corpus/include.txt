@@ -162,31 +162,14 @@ Include With Only Before With
   (content))
 
 ==================
-Include With A Repeated Binding
+Include With A Binding Twice
+:error
 ==================
 
 {% include "t.html" with a=1 a=2 %}
 
 ---
 
-(template
-  (content)
-  (include
-    (filtered_value
-      (value
-        (literal
-          (string))))
-    variable: (identifier)
-    (filtered_value
-      (value
-        (literal
-          (number))))
-    variable: (identifier)
-    (filtered_value
-      (value
-        (literal
-          (number)))))
-  (content))
 
 ==================
 Include Without A Name
