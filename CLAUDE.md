@@ -72,6 +72,45 @@ Consequences worth knowing before editing a rule:
   part boundary is `SEP` instead of the meaningful token, so LR(1) loses its discriminator. That is why
   `predicate` and `[$.library, $.load]` are listed there.
 
+### A tag group is a sequence of clauses
+
+Every group is split so that each tag that opens a body owns a node of its own:
+
+```js
+if_clause: ($) => seq(block("if", part($.predicate)), optional($.template)),
+if_group: ($) =>
+  seq($.if_clause, repeat($.elif_clause), optional($.else_clause), block("endif")),
+```
+
+**A clause is complete without the closing tag, and that is the point.** While a template is being edited
+the closer usually is not there yet, and a group rule cannot be reduced without it — so `{% if a %}{% x %}`
+used to produce a top-level `ERROR` with the body's `template` parented to nothing that says which tag
+opened it. A clause reduces anyway, so it survives error recovery and tooling can walk up from the cursor
+to find the enclosing tag. That is what makes completion of `{% elif %}`, `{% else %}`, `{% empty %}` and
+the end tags possible.
+
+The names themselves need no hand-maintained list either: in the generated `src/node-types.json`, a group's
+`children` are its clause types and its own `tag:` field holds the end tag, so the candidates for a group
+are its `tag:` plus the `tag:` of each clause it can hold. For `if_group` that is `endif` from the group and
+`if`, `elif`, `else` from its three clauses. Going the other way — from a clause the cursor sits in to the
+groups that can hold it — is the same table read backwards, which is what an unterminated tag needs, since
+the group node does not exist yet.
+
+Do not reach for lookahead to solve that instead: `ts_language_next_state` follows only the shift on `{%`,
+which lands in the "a tag starts here" state no matter how the tree is shaped.
+
+`else_clause` is shared by `if_group` and `ifchanged_group`. `comment_group` and `verbatim_group` have no
+clause — their bodies are raw scanner text that admits no tags — and neither does `blocktranslate_group`,
+whose body is `_translate_body`.
+
+**Every clause needs a `conflicts` entry.** The generator offers a left associativity instead; taking it is
+what broke `{% for %}` in `06aa870`, where `prec.left` resolved the shift/reduce on `{%` statically and
+silently discarded the parse in which the body continues, so every tag inside a loop became an `ERROR`.
+
+Sharing the clauses also made the table markedly smaller — 7,200 states and a 515KB library became 5,150
+and 383KB — for the same reason hoisting `blocktranslate`'s pieces into hidden rules did: the automaton
+stops duplicating the body states in every group's inline context.
+
 ### Filter pipes differ by context
 
 Django parses everything between `{{` and `}}` — and the entire remainder of `{% filter %}` — as one

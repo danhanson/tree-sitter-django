@@ -9,8 +9,9 @@ Localtime
 (template
   (content)
   (localtime_group
-    (template
-      (content)))
+    (localtime_clause
+      (template
+        (content))))
   (content))
 
 ==================
@@ -24,8 +25,9 @@ Localtime On
 (template
   (content)
   (localtime_group
-    (template
-      (content)))
+    (localtime_clause
+      (template
+        (content))))
   (content))
 
 ==================
@@ -39,8 +41,9 @@ Localtime Off
 (template
   (content)
   (localtime_group
-    (template
-      (content)))
+    (localtime_clause
+      (template
+        (content))))
   (content))
 
 ==================
@@ -74,12 +77,13 @@ Timezone
 (template
   (content)
   (timezone_group
-    (filtered_value
-      (value
-        (literal
-          (string))))
-    (template
-      (content)))
+    (timezone_clause
+      (filtered_value
+        (value
+          (literal
+            (string))))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -93,12 +97,13 @@ Timezone With A Variable
 (template
   (content)
   (timezone_group
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (template
-      (content)))
+    (timezone_clause
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -112,14 +117,15 @@ Timezone With A Filtered Argument
 (template
   (content)
   (timezone_group
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier)))
-      (filter_expression
-        (filter)))
-    (template
-      (content)))
+    (timezone_clause
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)))
+        (filter_expression
+          (filter)))
+      (template
+        (content))))
   (content))
 
 ==================

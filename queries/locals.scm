@@ -3,5 +3,5 @@
 
 variable: (identifier) @local.definition
 
-(with_group) @local.scope
-(for_scope) @local.scope
+(with_clause) @local.scope
+(for_clause) @local.scope

@@ -9,13 +9,14 @@ Cache
 (template
   (content)
   (cache_group
-    (filtered_value
-      (value
-        (literal
-          (number))))
-    (identifier)
-    (template
-      (content)))
+    (cache_clause
+      (filtered_value
+        (value
+          (literal
+            (number))))
+      (identifier)
+      (template
+        (content))))
   (content))
 
 ==================
@@ -29,13 +30,14 @@ Cache With A Variable Timeout
 (template
   (content)
   (cache_group
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (identifier)
-    (template
-      (content)))
+    (cache_clause
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (identifier)
+      (template
+        (content))))
   (content))
 
 ==================
@@ -49,18 +51,19 @@ Cache With A Filtered Timeout
 (template
   (content)
   (cache_group
-    (filtered_value
-      (value
-        (literal
-          (number)))
-      (filter_expression
-        (filter
-          argument: (value
-            (literal
-              (number))))))
-    (identifier)
-    (template
-      (content)))
+    (cache_clause
+      (filtered_value
+        (value
+          (literal
+            (number)))
+        (filter_expression
+          (filter
+            argument: (value
+              (literal
+                (number))))))
+      (identifier)
+      (template
+        (content))))
   (content))
 
 ==================
@@ -74,13 +77,14 @@ Cache With A Quoted Fragment Name
 (template
   (content)
   (cache_group
-    (filtered_value
-      (value
-        (literal
-          (number))))
-    (string)
-    (template
-      (content)))
+    (cache_clause
+      (filtered_value
+        (value
+          (literal
+            (number))))
+      (string)
+      (template
+        (content))))
   (content))
 
 ==================
@@ -94,21 +98,22 @@ Cache Varying On Arguments
 (template
   (content)
   (cache_group
-    (filtered_value
-      (value
-        (literal
-          (number))))
-    (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (template
-      (content)))
+    (cache_clause
+      (filtered_value
+        (value
+          (literal
+            (number))))
+      (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -122,19 +127,20 @@ Cache Varying On A Filtered Argument
 (template
   (content)
   (cache_group
-    (filtered_value
-      (value
-        (literal
-          (number))))
-    (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier)))
-      (filter_expression
-        (filter)))
-    (template
-      (content)))
+    (cache_clause
+      (filtered_value
+        (value
+          (literal
+            (number))))
+      (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)))
+        (filter_expression
+          (filter)))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -148,17 +154,18 @@ Cache Using A Named Cache
 (template
   (content)
   (cache_group
-    (filtered_value
-      (value
-        (literal
-          (number))))
-    (identifier)
-    (filtered_value
-      (value
-        (literal
-          (string))))
-    (template
-      (content)))
+    (cache_clause
+      (filtered_value
+        (value
+          (literal
+            (number))))
+      (identifier)
+      (filtered_value
+        (value
+          (literal
+            (string))))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -172,17 +179,18 @@ Cache Using An Unquoted Cache Name
 (template
   (content)
   (cache_group
-    (filtered_value
-      (value
-        (literal
-          (number))))
-    (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (template
-      (content)))
+    (cache_clause
+      (filtered_value
+        (value
+          (literal
+            (number))))
+      (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content))))
   (content))
 
 ==================

@@ -9,8 +9,9 @@ Localize
 (template
   (content)
   (localize_group
-    (template
-      (content)))
+    (localize_clause
+      (template
+        (content))))
   (content))
 
 ==================
@@ -24,8 +25,9 @@ Localize On
 (template
   (content)
   (localize_group
-    (template
-      (content)))
+    (localize_clause
+      (template
+        (content))))
   (content))
 
 ==================
@@ -39,8 +41,9 @@ Localize Off
 (template
   (content)
   (localize_group
-    (template
-      (content)))
+    (localize_clause
+      (template
+        (content))))
   (content))
 
 ==================
@@ -54,8 +57,9 @@ Localize Hugging Its Delimiters
 (template
   (content)
   (localize_group
-    (template
-      (content)))
+    (localize_clause
+      (template
+        (content))))
   (content))
 
 ==================
@@ -69,10 +73,12 @@ Localize Nested
 (template
   (content)
   (localize_group
-    (template
-      (localize_group
-        (template
-          (content)))))
+    (localize_clause
+      (template
+        (localize_group
+          (localize_clause
+            (template
+              (content)))))))
   (content))
 
 ==================

@@ -4,10 +4,10 @@
 variable: (identifier) @variable.parameter
 
 
-(block_group
+(block_clause
     (push_block) @type)
 
-(partialdef_group
+(partialdef_clause
     (push_partial) @type)
 
 (verbatim_group

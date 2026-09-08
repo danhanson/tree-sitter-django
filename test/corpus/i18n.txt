@@ -355,12 +355,13 @@ Language
 (template
   (content)
   (language_group
-    (filtered_value
-      (value
-        (literal
-          (string))))
-    (template
-      (content)))
+    (language_clause
+      (filtered_value
+        (value
+          (literal
+            (string))))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -374,12 +375,13 @@ Language With A Variable
 (template
   (content)
   (language_group
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (template
-      (content)))
+    (language_clause
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content))))
   (content))
 
 ==================

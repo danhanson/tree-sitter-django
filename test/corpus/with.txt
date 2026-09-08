@@ -11,20 +11,21 @@ With Basic
 (template
   (content)
   (with_group
-    variable: (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier)
-          (attribute))))
-    (template
-      (content)
-      (template_variable
-        (filtered_value
-          (value
-            (variable_attribute
-              (identifier)))))
-      (content)))
+    (with_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)
+            (attribute))))
+      (template
+        (content)
+        (template_variable
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier)))))
+        (content))))
   (content))
 
 ==================
@@ -40,24 +41,25 @@ With Multiple Variables
 (template
   (content)
   (with_group
-    variable: (identifier)
-    (filtered_value
-      (value
-        (literal
-          (number))))
-    variable: (identifier)
-    (filtered_value
-      (value
-        (literal
-          (number))))
-    (template
-      (content)
-      (template_variable
-        (filtered_value
-          (value
-            (variable_attribute
-              (identifier)))))
-      (content)))
+    (with_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (literal
+            (number))))
+      variable: (identifier)
+      (filtered_value
+        (value
+          (literal
+            (number))))
+      (template
+        (content)
+        (template_variable
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier)))))
+        (content))))
   (content))
 
 ==================
@@ -91,19 +93,21 @@ With Repeating A Binding Of The Tag Before It
 (template
   (content)
   (with_group
-    variable: (identifier)
-    (filtered_value
-      (value
-        (literal
-          (number))))
-    (template
-      (content)))
+    (with_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (literal
+            (number))))
+      (template
+        (content))))
   (with_group
-    variable: (identifier)
-    (filtered_value
-      (value
-        (literal
-          (number))))
-    (template
-      (content)))
+    (with_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (literal
+            (number))))
+      (template
+        (content))))
   (content))

@@ -11,14 +11,15 @@ Hi
 (template
   (content)
   (if_group
-    (predicate
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier)
-            (attribute)))))
-    (template
-      (content)))
+    (if_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)
+              (attribute)))))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -34,13 +35,14 @@ working
 (template
   (content)
   (if_group
-    (predicate
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier)))))
-    (template
-      (content)))
+    (if_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -60,32 +62,35 @@ other
 (template
   (content)
   (if_group
-    (predicate
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
-      (binaryOperator)
-      (filtered_value
-        (value
-          (literal
-            (number)))))
-    (template
-      (content))
-    (predicate
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
-      (binaryOperator)
-      (filtered_value
-        (value
-          (literal
-            (number)))))
-    (template
-      (content))
-    (template
-      (content)))
+    (if_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (literal
+              (number)))))
+      (template
+        (content)))
+    (elif_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (literal
+              (number)))))
+      (template
+        (content)))
+    (else_clause
+      (template
+        (content))))
   (content))
 
 ==================
@@ -101,45 +106,46 @@ yes
 (template
   (content)
   (if_group
-    (predicate
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
-      (binaryOperator)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
-      (binaryOperator)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
-      (binaryOperator)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
-      (binaryOperator)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
-      (binaryOperator)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier)))
-        (filter_expression
-          (filter)))
-      (binaryOperator)
-      (filtered_value
-        (value
-          (literal
-            (number)))))
-    (template
-      (content)))
+    (if_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))
+          (filter_expression
+            (filter)))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (literal
+              (number)))))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -150,5 +156,3 @@ If Operator Adjacent To Value
 {% if 1and 2 %}yes{% endif %}
 
 ---
-
-(ERROR)

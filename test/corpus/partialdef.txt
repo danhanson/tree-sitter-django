@@ -13,9 +13,10 @@ Partialdef Basic
 (template
   (content)
   (partialdef_group
-    (push_partial)
-    (template
-      (content))
+    (partialdef_clause
+      (push_partial)
+      (template
+        (content)))
     (pop_partial))
   (content))
 
@@ -34,8 +35,9 @@ Partialdef Inline
 (template
   (content)
   (partialdef_group
-    (push_partial)
-    (template
-      (content))
+    (partialdef_clause
+      (push_partial)
+      (template
+        (content)))
     (pop_partial))
   (content))

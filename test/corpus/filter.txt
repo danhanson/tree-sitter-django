@@ -13,10 +13,11 @@ hello
 (template
   (content)
   (filter_group
-    (filter_expression
-      (filter))
-    (template
-      (content)))
+    (filter_clause
+      (filter_expression
+        (filter))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -34,11 +35,12 @@ HELLO WORLD
 (template
   (content)
   (filter_group
-    (filter_expression
-      (filter)
-      (filter))
-    (template
-      (content)))
+    (filter_clause
+      (filter_expression
+        (filter)
+        (filter))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -57,10 +59,10 @@ HELLO WORLD
 (template
   (content)
   (filter_group
-    (filter_expression
-      (filter)
-      (filter))
-    (template
-      (content)))
+    (filter_clause
+      (filter_expression
+        (filter)
+        (filter))
+      (template
+        (content))))
   (content))
-

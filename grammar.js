@@ -291,7 +291,23 @@ const django = grammar({
   // after it settles
   conflicts: ($) => [
     [$.template],
-    [$.for_scope],
+    [$.autoescape_clause],
+    [$.block_clause],
+    [$.cache_clause],
+    [$.elif_clause],
+    [$.else_clause],
+    [$.empty_clause],
+    [$.filter_clause],
+    [$.for_clause],
+    [$.if_clause],
+    [$.ifchanged_clause],
+    [$.language_clause],
+    [$.localize_clause],
+    [$.localtime_clause],
+    [$.partialdef_clause],
+    [$.spaceless_clause],
+    [$.timezone_clause],
+    [$.with_clause],
     [$.predicate],
     [$.library, $.load],
     [$._translate_option],
@@ -482,19 +498,13 @@ const django = grammar({
           optional(seq(":", field("argument", $.value))),
         ),
       ),
-    autoescape_group: ($) =>
-      seq(
-        block("autoescape", part(choice("on", "off"))),
-        optional($.template),
-        block("endautoescape"),
-      ),
+    autoescape_clause: ($) =>
+      seq(block("autoescape", part(choice("on", "off"))), optional($.template)),
+    autoescape_group: ($) => seq($.autoescape_clause, block("endautoescape")),
     // the scanner takes the whitespace before a name it has to match itself
-    block_group: ($) =>
-      seq(
-        block("block", field("name", $.push_block)),
-        optional($.template),
-        block("endblock", $.pop_block),
-      ),
+    block_clause: ($) =>
+      seq(block("block", field("name", $.push_block)), optional($.template)),
+    block_group: ($) => seq($.block_clause, block("endblock", $.pop_block)),
     blocktranslate_group: ($) =>
       choice(
         ...["blocktrans", "blocktranslate"].map((name) =>
@@ -561,7 +571,7 @@ const django = grammar({
           ),
         ),
       ),
-    cache_group: ($) =>
+    cache_clause: ($) =>
       seq(
         block(
           "cache",
@@ -571,8 +581,8 @@ const django = grammar({
           optional(part(seq("using=", $.filtered_value))),
         ),
         optional($.template),
-        block("endcache"),
       ),
+    cache_group: ($) => seq($.cache_clause, block("endcache")),
     comment_group: ($) =>
       seq(
         block("comment", optional(part($.string))),
@@ -603,7 +613,7 @@ const django = grammar({
       ),
     debug: ($) => block("debug"),
     extends: ($) => block("extends", part($.filtered_value)),
-    filter_group: ($) =>
+    filter_clause: ($) =>
       seq(
         // the filter tag hands Django the rest of its text as one expression
         // rather than as split arguments, so pipes here take whitespace just
@@ -613,15 +623,15 @@ const django = grammar({
           part(alias($._filter_expression_spaced, $.filter_expression)),
         ),
         optional($.template),
-        block("endfilter"),
       ),
+    filter_group: ($) => seq($.filter_clause, block("endfilter")),
     firstof: ($) =>
       block(
         "firstof",
         repeat1(part($.filtered_value)),
         optional(asVariable($)),
       ),
-    for_scope: ($) =>
+    for_clause: ($) =>
       seq(
         block(
           "for",
@@ -642,12 +652,9 @@ const django = grammar({
         ),
         optional($.template),
       ),
+    empty_clause: ($) => seq(block("empty"), optional($.template)),
     for_group: ($) =>
-      seq(
-        $.for_scope,
-        optional(seq(block("empty"), optional($.template))),
-        block("endfor"),
-      ),
+      seq($.for_clause, optional($.empty_clause), block("endfor")),
     /**
      * django.templatetags.i18n. Each of these requires exactly "as <name>",
      * or "for <expression> as <name>", and rejects anything further.
@@ -674,21 +681,25 @@ const django = grammar({
     get_media_prefix: ($) => block("get_media_prefix", optional(asVariable($))),
     get_static_prefix: ($) =>
       block("get_static_prefix", optional(asVariable($))),
+    if_clause: ($) => seq(block("if", part($.predicate)), optional($.template)),
+    elif_clause: ($) =>
+      seq(block("elif", part($.predicate)), optional($.template)),
+    /** Shared by if_group and ifchanged_group, which spell it the same way. */
+    else_clause: ($) => seq(block("else"), optional($.template)),
     if_group: ($) =>
       seq(
-        block("if", part($.predicate)),
-        optional($.template),
-        repeat(seq(block("elif", part($.predicate)), optional($.template))),
-        optional(seq(block("else"), optional($.template))),
+        $.if_clause,
+        repeat($.elif_clause),
+        optional($.else_clause),
         block("endif"),
       ),
-    ifchanged_group: ($) =>
+    ifchanged_clause: ($) =>
       seq(
         block("ifchanged", repeat(part($.filtered_value))),
         optional($.template),
-        optional(seq(block("else"), optional($.template))),
-        block("endifchanged"),
       ),
+    ifchanged_group: ($) =>
+      seq($.ifchanged_clause, optional($.else_clause), block("endifchanged")),
     /**
      * do_include takes "with" and "only" in either order and refuses one it has
      * already been given, and "with" needs at least one argument. It calls
@@ -705,12 +716,9 @@ const django = grammar({
         ),
       ),
     /** django.templatetags.i18n. The language tag takes the one argument. */
-    language_group: ($) =>
-      seq(
-        block("language", part($.filtered_value)),
-        optional($.template),
-        block("endlanguage"),
-      ),
+    language_clause: ($) =>
+      seq(block("language", part($.filtered_value)), optional($.template)),
+    language_group: ($) => seq($.language_clause, block("endlanguage")),
     library: ($) => seq($.identifier, optional(seq(".", $.identifier))),
     load: ($) =>
       block(
@@ -724,19 +732,19 @@ const django = grammar({
      * django.templatetags.l10n. The argument is optional and localize_tag
      * rejects anything but "on" or "off", including a second word.
      */
-    localize_group: ($) =>
+    localize_clause: ($) =>
       seq(
         block("localize", optional(part(choice("on", "off")))),
         optional($.template),
-        block("endlocalize"),
       ),
+    localize_group: ($) => seq($.localize_clause, block("endlocalize")),
     /** django.templatetags.tz, taking "on" or "off" as localize does. */
-    localtime_group: ($) =>
+    localtime_clause: ($) =>
       seq(
         block("localtime", optional(part(choice("on", "off")))),
         optional($.template),
-        block("endlocaltime"),
       ),
+    localtime_group: ($) => seq($.localtime_clause, block("endlocaltime")),
     lorem: ($) =>
       block(
         "lorem",
@@ -746,12 +754,13 @@ const django = grammar({
       ),
     now: ($) => block("now", part($.string), optional(asVariable($))),
     partial: ($) => block("partial", part($.identifier)),
-    partialdef_group: ($) =>
+    partialdef_clause: ($) =>
       seq(
         block("partialdef", $.push_partial, optional(part("inline"))),
         optional($.template),
-        block("endpartialdef", $.pop_partial),
       ),
+    partialdef_group: ($) =>
+      seq($.partialdef_clause, block("endpartialdef", $.pop_partial)),
     // querystring(context, *args, **kwargs)
     query_string: ($) => simpleTag($, "querystring"),
     regroup: ($) =>
@@ -763,8 +772,8 @@ const django = grammar({
         optional(asVariable($)),
       ),
     reset_cycle: ($) => block("resetcycle", optional(part($.identifier))),
-    spaceless_group: ($) =>
-      seq(block("spaceless"), optional($.template), block("endspaceless")),
+    spaceless_clause: ($) => seq(block("spaceless"), optional($.template)),
+    spaceless_group: ($) => seq($.spaceless_clause, block("endspaceless")),
     static: ($) =>
       block("static", part($.filtered_value), optional(asVariable($))),
     template_tag_block: ($) =>
@@ -784,12 +793,9 @@ const django = grammar({
         ),
       ),
     /** django.templatetags.tz. timezone_tag takes the one argument. */
-    timezone_group: ($) =>
-      seq(
-        block("timezone", part($.filtered_value)),
-        optional($.template),
-        block("endtimezone"),
-      ),
+    timezone_clause: ($) =>
+      seq(block("timezone", part($.filtered_value)), optional($.template)),
+    timezone_group: ($) => seq($.timezone_clause, block("endtimezone")),
     /**
      * django.templatetags.i18n, registered under both spellings. do_translate
      * pops its options off one at a time and refuses one it has already seen,
@@ -833,12 +839,9 @@ const django = grammar({
         part($.filtered_value),
         optional(asVariable($)),
       ),
-    with_group: ($) =>
-      seq(
-        block("with", $._tag_open, $._tag_kwargs),
-        optional($.template),
-        block("endwith"),
-      ),
+    with_clause: ($) =>
+      seq(block("with", $._tag_open, $._tag_kwargs), optional($.template)),
+    with_group: ($) => seq($.with_clause, block("endwith")),
   },
 });
 

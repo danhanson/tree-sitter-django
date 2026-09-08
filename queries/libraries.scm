@@ -34,7 +34,7 @@
     ("trans")
     ("translate")] @library.i18n)
 
-(language_group
+(language_clause
   tag: ("language") @library.i18n)
 
 (get_available_languages
@@ -59,10 +59,10 @@
     ("language_name_local")
     ("language_name_translated")] @library.i18n)
 
-(cache_group
+(cache_clause
   tag: ("cache") @library.cache)
 
-(localize_group
+(localize_clause
   tag: ("localize") @library.l10n)
 
 (filter
@@ -70,10 +70,10 @@
     ("localize")
     ("unlocalize")] @library.l10n)
 
-(localtime_group
+(localtime_clause
   tag: ("localtime") @library.tz)
 
-(timezone_group
+(timezone_clause
   tag: ("timezone") @library.tz)
 
 (get_current_timezone

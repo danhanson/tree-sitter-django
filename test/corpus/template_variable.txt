@@ -174,7 +174,7 @@ Template Variable With Filter Argument
           (identifier)))
       (filter_expression
         (filter
-          (value
+          argument: (value
             (literal
               (string)))))))
   (content))
@@ -196,7 +196,7 @@ Template Variable Number With Filter Argument
           (number)))
       (filter_expression
         (filter
-          (value
+          argument: (value
             (literal
               (number)))))))
   (content))
@@ -210,7 +210,6 @@ Template Variable Literal Adjacent To Name
 
 ---
 
-(ERROR)
 
 ==================
 Template Variable With Escaped String
@@ -272,7 +271,6 @@ Template Variable Attribute Beginning With Underscore
 
 ---
 
-(ERROR)
 
 ==================
 Template Variable Translated String
@@ -321,7 +319,6 @@ Template Variable Translated String With Spaces
 
 ---
 
-(ERROR)
 
 ==================
 Template Variable Spanning Lines
@@ -341,7 +338,7 @@ Template Variable Spanning Lines
           (identifier)))
       (filter_expression
         (filter
-          (value
+          argument: (value
             (literal
               (number)))))))
   (content))
@@ -364,4 +361,3 @@ Template Variable With Spaced Filter
       (filter_expression
         (filter))))
   (content))
-

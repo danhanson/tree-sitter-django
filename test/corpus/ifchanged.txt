@@ -11,8 +11,9 @@ content
 (template
   (content)
   (ifchanged_group
-    (template
-      (content)))
+    (ifchanged_clause
+      (template
+        (content))))
   (content))
 
 ==================
@@ -28,16 +29,17 @@ content
 (template
   (content)
   (ifchanged_group
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (template
-      (content)))
+    (ifchanged_clause
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content))))
   (content))
 
 ==================
@@ -55,10 +57,12 @@ unchanged
 (template
   (content)
   (ifchanged_group
-    (template
-      (content))
-    (template
-      (content)))
+    (ifchanged_clause
+      (template
+        (content)))
+    (else_clause
+      (template
+        (content))))
   (content))
 
 ==================
@@ -76,20 +80,22 @@ unchanged
 (template
   (content)
   (ifchanged_group
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier)))
-      (filter_expression
-        (filter)))
-    (template
-      (content))
-    (template
-      (content)))
+    (ifchanged_clause
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)))
+        (filter_expression
+          (filter)))
+      (template
+        (content)))
+    (else_clause
+      (template
+        (content))))
   (content))
 
 ==================
@@ -105,8 +111,10 @@ content
 (template
   (content)
   (ifchanged_group
-    (template
-      (content)))
+    (ifchanged_clause
+      (template
+        (content)))
+    (else_clause))
   (content))
 
 ==================
@@ -128,16 +136,20 @@ c
 (template
   (content)
   (ifchanged_group
-    (template
-      (content))
-    (template
-      (content)
-      (ifchanged_group
-        (template
-          (content))
-        (template
-          (content)))
-      (content)))
+    (ifchanged_clause
+      (template
+        (content)))
+    (else_clause
+      (template
+        (content)
+        (ifchanged_group
+          (ifchanged_clause
+            (template
+              (content)))
+          (else_clause
+            (template
+              (content))))
+        (content))))
   (content))
 
 ==================

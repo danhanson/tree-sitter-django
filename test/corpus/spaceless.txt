@@ -13,6 +13,7 @@ Spaceless Basic
 (template
   (content)
   (spaceless_group
-    (template
-      (content)))
+    (spaceless_clause
+      (template
+        (content))))
   (content))
