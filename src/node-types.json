@@ -2817,6 +2817,10 @@
     "named": false
   },
   {
+    "type": "reversed",
+    "named": false
+  },
+  {
     "type": "rjust",
     "named": false
   },

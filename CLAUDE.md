@@ -242,6 +242,10 @@ documentation or memory. Both checks are worth repeating whenever tags, filters 
   `{% cache 500 sidebar.name %}` names a fragment there, `{% cache 500 using="c" %}` names a fragment
   called `using="c"` rather than choosing a cache, and `{% cache 500 sidebar using= %}` takes an empty
   name. All three are errors here.
+- `do_for` reads `reversed` off the end of the tag before it looks for `in`, so `{% for x in reversed %}`
+  is an error there and a loop over a variable named `reversed` here. Writing the flag as well
+  (`{% for x in reversed reversed %}`) is accepted by both, which is why the name is not simply reserved
+  in that position.
 - `do_translate` refuses `as` and `noop` as the value of its `context` option, so
   `{% trans "hi" context noop %}` is an error there and a context named by the variable `noop` here.
 - `partial`/`partialdef` are Django builtins as of Django 6; `elif`/`else`/`empty` are modelled as parts of

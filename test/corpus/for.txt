@@ -95,3 +95,353 @@ For With Empty
     (template
       (content)))
   (content))
+
+==================
+For With A Tag In Its Body
+==================
+
+{% for x in y %}
+{% if a %}b{% endif %}
+{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_scope
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content)
+        (if_group
+          (predicate
+            (filtered_value
+              (value
+                (variable_attribute
+                  (identifier)))))
+          (template
+            (content)))
+        (content))))
+  (content))
+
+==================
+For With A Nested For
+==================
+
+{% for x in y %}
+{% for z in x %}a{% endfor %}
+{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_scope
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content)
+        (for_group
+          (for_scope
+            variable: (identifier)
+            (filtered_value
+              (value
+                (variable_attribute
+                  (identifier))))
+            (template
+              (content))))
+        (content))))
+  (content))
+
+==================
+For With Tags In Both Branches
+==================
+
+{% for x in y %}
+{% if a %}b{% endif %}
+{% empty %}
+{% with c=1 %}d{% endwith %}
+{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_scope
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content)
+        (if_group
+          (predicate
+            (filtered_value
+              (value
+                (variable_attribute
+                  (identifier)))))
+          (template
+            (content)))
+        (content)))
+    (template
+      (content)
+      (with_group
+        variable: (identifier)
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (template
+          (content)))
+      (content)))
+  (content))
+
+==================
+For With A Named Block In Its Body
+==================
+
+{% for x in y %}
+{% block b %}c{% endblock b %}
+{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_scope
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content)
+        (block_group
+          name: (push_block)
+          (template
+            (content))
+          (pop_block))
+        (content))))
+  (content))
+
+==================
+For Nested In A Tag
+==================
+
+{% if a %}
+{% for x in y %}{% if b %}c{% endif %}{% endfor %}
+{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (predicate
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)))))
+    (template
+      (content)
+      (for_group
+        (for_scope
+          variable: (identifier)
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))
+          (template
+            (if_group
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier)))))
+              (template
+                (content))))))
+      (content)))
+  (content))
+
+==================
+For With An Empty Body
+==================
+
+{% for x in y %}{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_scope
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))))
+  (content))
+
+==================
+For Reversed
+==================
+
+{% for x in y reversed %}
+a
+{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_scope
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content))))
+  (content))
+
+==================
+For With Multiple Variables Reversed
+==================
+
+{% for k,v in y reversed %}
+a
+{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_scope
+      variable: (identifier)
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content))))
+  (content))
+
+==================
+For With A Filtered Sequence Reversed
+==================
+
+{% for x in y|slice:":2" reversed %}
+a
+{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_scope
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)))
+        (filter_expression
+          (filter
+            argument: (value
+              (literal
+                (string))))))
+      (template
+        (content))))
+  (content))
+
+==================
+For Reversed With Empty
+==================
+
+{% for x in y reversed %}
+a
+{% empty %}
+b
+{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_scope
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content)))
+    (template
+      (content)))
+  (content))
+
+==================
+For Reversed With A Tag In Its Body
+==================
+
+{% for x in y reversed %}
+{% if a %}b{% endif %}
+{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_scope
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content)
+        (if_group
+          (predicate
+            (filtered_value
+              (value
+                (variable_attribute
+                  (identifier)))))
+          (template
+            (content)))
+        (content))))
+  (content))
+
+==================
+For With Reversed Twice
+:error
+==================
+
+{% for x in y reversed reversed %}a{% endfor %}
+
+---
+
+
+==================
+For With Reversed Before In
+:error
+==================
+
+{% for x reversed in y %}a{% endfor %}
+
+---

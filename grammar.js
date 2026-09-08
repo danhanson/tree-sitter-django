@@ -291,6 +291,7 @@ const django = grammar({
   // after it settles
   conflicts: ($) => [
     [$.template],
+    [$.for_scope],
     [$.predicate],
     [$.library, $.load],
     [$._translate_option],
@@ -621,24 +622,25 @@ const django = grammar({
         optional(asVariable($)),
       ),
     for_scope: ($) =>
-      prec.left(
-        seq(
-          block(
-            "for",
-            part(field("variable", $.identifier)),
-            repeat(
-              seq(
-                optional(SEP),
-                ",",
-                optional(SEP),
-                field("variable", $.identifier),
-              ),
+      seq(
+        block(
+          "for",
+          part(field("variable", $.identifier)),
+          repeat(
+            seq(
+              optional(SEP),
+              ",",
+              optional(SEP),
+              field("variable", $.identifier),
             ),
-            part("in"),
-            part($.filtered_value),
           ),
-          optional($.template),
+          part("in"),
+          part($.filtered_value),
+          // do_for reads this off the end and takes the sequence from the bit
+          // before it, so it comes last or not at all
+          optional(part("reversed")),
         ),
+        optional($.template),
       ),
     for_group: ($) =>
       seq(
