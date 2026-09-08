@@ -1377,10 +1377,20 @@
             "named": false
           }
         ]
+      },
+      "variable": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
       }
     },
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": true,
       "types": [
         {
@@ -2712,6 +2722,10 @@
   },
   {
     "type": "on",
+    "named": false
+  },
+  {
+    "type": "only",
     "named": false
   },
   {

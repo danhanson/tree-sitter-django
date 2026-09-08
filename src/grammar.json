@@ -1980,7 +1980,7 @@
                 },
                 {
                   "type": "SYMBOL",
-                  "name": "_translate_kwargs"
+                  "name": "_tag_kwargs"
                 }
               ]
             },
@@ -2125,7 +2125,7 @@
         ]
       }
     },
-    "_translate_kwargs": {
+    "_tag_kwargs": {
       "type": "REPEAT1",
       "content": {
         "type": "SEQ",
@@ -4692,6 +4692,134 @@
             {
               "type": "SYMBOL",
               "name": "filtered_value"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "SEQ",
+                      "members": [
+                        {
+                          "type": "PATTERN",
+                          "value": "[ \\t\\r\\n]+"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "with"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "SYMBOL",
+                      "name": "_tag_kwargs"
+                    }
+                  ]
+                },
+                {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "SEQ",
+                      "members": [
+                        {
+                          "type": "SEQ",
+                          "members": [
+                            {
+                              "type": "PATTERN",
+                              "value": "[ \\t\\r\\n]+"
+                            },
+                            {
+                              "type": "STRING",
+                              "value": "with"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "SYMBOL",
+                          "name": "_tag_kwargs"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "SEQ",
+                      "members": [
+                        {
+                          "type": "PATTERN",
+                          "value": "[ \\t\\r\\n]+"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "only"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "PATTERN",
+                      "value": "[ \\t\\r\\n]+"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "only"
+                    }
+                  ]
+                },
+                {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "SEQ",
+                      "members": [
+                        {
+                          "type": "PATTERN",
+                          "value": "[ \\t\\r\\n]+"
+                        },
+                        {
+                          "type": "STRING",
+                          "value": "only"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "SEQ",
+                      "members": [
+                        {
+                          "type": "SEQ",
+                          "members": [
+                            {
+                              "type": "PATTERN",
+                              "value": "[ \\t\\r\\n]+"
+                            },
+                            {
+                              "type": "STRING",
+                              "value": "with"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "SYMBOL",
+                          "name": "_tag_kwargs"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
             }
           ]
         },

@@ -31,3 +31,228 @@ Include With Variable
         (variable_attribute
           (identifier)))))
   (content))
+
+==================
+Include With A Filtered Name
+==================
+
+{% include "t.html"|upper %}
+
+---
+
+(template
+  (content)
+  (include
+    (filtered_value
+      (value
+        (literal
+          (string)))
+      (filter_expression
+        (filter))))
+  (content))
+
+==================
+Include Only
+==================
+
+{% include "t.html" only %}
+
+---
+
+(template
+  (content)
+  (include
+    (filtered_value
+      (value
+        (literal
+          (string)))))
+  (content))
+
+==================
+Include With Context
+==================
+
+{% include "t.html" with a=1 %}
+
+---
+
+(template
+  (content)
+  (include
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Include With Several Bindings
+==================
+
+{% include "t.html" with a=1 b=2 %}
+
+---
+
+(template
+  (content)
+  (include
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    variable: (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Include With Context And Only
+==================
+
+{% include "t.html" with a=1 only %}
+
+---
+
+(template
+  (content)
+  (include
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Include With Only Before With
+==================
+
+{% include "t.html" only with a=1 %}
+
+---
+
+(template
+  (content)
+  (include
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Include With A Repeated Binding
+==================
+
+{% include "t.html" with a=1 a=2 %}
+
+---
+
+(template
+  (content)
+  (include
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    variable: (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    variable: (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Include Without A Name
+:error
+==================
+
+{% include %}
+
+---
+
+
+==================
+Include With Nothing To Bind
+:error
+==================
+
+{% include "t.html" with %}
+
+---
+
+
+==================
+Include With With Twice
+:error
+==================
+
+{% include "t.html" with a=1 with b=2 %}
+
+---
+
+
+==================
+Include With Only Twice
+:error
+==================
+
+{% include "t.html" only only %}
+
+---
+
+
+==================
+Include With An Unknown Option
+:error
+==================
+
+{% include "t.html" bogus %}
+
+---
+
+
+==================
+Include With A Legacy Binding
+:error
+==================
+
+{% include "t.html" with a as b %}
+
+---
+
+
+==================
+Include With A Second Name
+:error
+==================
+
+{% include "t.html" "u.html" %}
+
+---

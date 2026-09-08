@@ -527,7 +527,7 @@ const django = grammar({
       seq(
         $._bt_option,
         choice(
-          seq(part("with"), $._translate_kwargs),
+          seq(part("with"), $._tag_kwargs),
           part("context", $.filtered_value),
           part("trimmed"),
           part("asvar", field("variable", $.identifier)),
@@ -542,8 +542,13 @@ const django = grammar({
         ),
       ),
     _translate_body: ($) => repeat1(choice($.content, $.template_variable)),
-    /** The "with" option of blocktranslate takes at least one of these. */
-    _translate_kwargs: ($) =>
+    /**
+     * The "with" option of blocktranslate and of include takes at least one of
+     * these. Django lets a name repeat here — token_kwargs builds a dict and
+     * the later value wins — so unlike a simple_tag's arguments they are not
+     * guarded.
+     */
+    _tag_kwargs: ($) =>
       repeat1(
         part(seq(field("variable", $.identifier), "=", $.filtered_value)),
       ),
@@ -674,7 +679,20 @@ const django = grammar({
         optional(seq(block("else"), optional($.template))),
         block("endifchanged"),
       ),
-    include: ($) => block("include", part($.filtered_value)),
+    /**
+     * do_include takes "with" and "only" in either order and refuses one it has
+     * already been given, and "with" needs at least one argument. It calls
+     * token_kwargs with support_legacy=False, so "{% include "t" with a as b %}"
+     * is an error here as it is there, unlike the same clause in "{% with %}".
+     */
+    include: ($) =>
+      block(
+        "include",
+        part($.filtered_value),
+        optional(
+          arrangements([seq(part("with"), $._tag_kwargs), part("only")]),
+        ),
+      ),
     /** django.templatetags.i18n. The language tag takes the one argument. */
     language_group: ($) =>
       seq(
