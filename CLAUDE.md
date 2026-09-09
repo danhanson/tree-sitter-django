@@ -225,8 +225,9 @@ filter added from a library belongs in it. `queries/locals.scm` relies on the `v
 binding from a reference — another reason to keep `asVariable` uniform. `{% blocktranslate %}`'s `asvar`
 target carries an `asvar:` field instead, because it is written inside the tag but assigned outside it:
 the scope on `blocktranslate_group` confines the `with` and `count` bindings, and would swallow `asvar`
-too if it were spelled the same way. Defining it in the surrounding scope is left to the tool, since a
-locals query cannot let a definition out of the scope that contains it.
+too if it were spelled the same way. `queries/exports.scm` names it for a tool to
+bind in the scope around the block, which a locals query cannot do: it places a definition in the innermost
+scope containing it and offers no way out again.
 
 ## Testing
 
