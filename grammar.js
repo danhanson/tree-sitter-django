@@ -542,7 +542,10 @@ const django = grammar({
           seq(part("with"), $._tag_kwargs),
           part("context", $.filtered_value),
           part("trimmed"),
-          part("asvar", field("variable", $.identifier)),
+          // asvar names where the rendered text is stored, which is read
+          // after the block rather than inside it, so it is not a binding of
+          // the block the way "with" and "count" are
+          part("asvar", field("asvar", $.identifier)),
         ),
       ),
     _translate_count: ($) =>

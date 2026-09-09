@@ -222,7 +222,11 @@ captured through its field instead (`(filter name: (identifier))`, `(custom_tag 
 
 `queries/libraries.scm` is not a query editors run themselves; it is data for a linter, and every tag or
 filter added from a library belongs in it. `queries/locals.scm` relies on the `variable:` field to tell a
-binding from a reference — another reason to keep `asVariable` uniform.
+binding from a reference — another reason to keep `asVariable` uniform. `{% blocktranslate %}`'s `asvar`
+target carries an `asvar:` field instead, because it is written inside the tag but assigned outside it:
+the scope on `blocktranslate_group` confines the `with` and `count` bindings, and would swallow `asvar`
+too if it were spelled the same way. Defining it in the surrounding scope is left to the tool, since a
+locals query cannot let a definition out of the scope that contains it.
 
 ## Testing
 

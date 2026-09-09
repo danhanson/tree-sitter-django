@@ -330,6 +330,16 @@
     "type": "blocktranslate_group",
     "named": true,
     "fields": {
+      "asvar": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
       "tag": {
         "multiple": true,
         "required": true,

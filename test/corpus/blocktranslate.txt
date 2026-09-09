@@ -165,7 +165,7 @@ Blocktrans With Asvar
 (template
   (content)
   (blocktranslate_group
-    variable: (identifier)
+    asvar: (identifier)
     (content))
   (content))
 
@@ -214,7 +214,7 @@ Blocktrans With Every Option
       (value
         (literal
           (string))))
-    variable: (identifier)
+    asvar: (identifier)
     (content)
     (content))
   (content))
@@ -230,7 +230,7 @@ Blocktrans With Its Options Reordered
 (template
   (content)
   (blocktranslate_group
-    variable: (identifier)
+    asvar: (identifier)
     (content))
   (content))
 

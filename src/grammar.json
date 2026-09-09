@@ -2061,7 +2061,7 @@
                     },
                     {
                       "type": "FIELD",
-                      "name": "variable",
+                      "name": "asvar",
                       "content": {
                         "type": "SYMBOL",
                         "name": "identifier"
