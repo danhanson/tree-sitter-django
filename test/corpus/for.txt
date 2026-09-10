@@ -455,3 +455,89 @@ For With Reversed Before In
 {% for x reversed in y %}a{% endfor %}
 
 ---
+
+==================
+For Over A Variable Named Reversed
+==================
+
+{% for x in reversed reversed %}a{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (template
+        (content))))
+  (content))
+
+==================
+For Over An Attribute Of A Variable Named Reversed
+==================
+
+{% for x in reversed.items %}a{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)
+            (attribute))))
+      (template
+        (content))))
+  (content))
+
+==================
+For Over A Filtered Variable Named Reversed
+==================
+
+{% for x in reversed|last %}a{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)))
+        (filter_expression
+          (filter)))
+      (template
+        (content))))
+  (content))
+
+==================
+For With Reversed As Its Whole Sequence
+:error
+==================
+
+{% for x in reversed %}a{% endfor %}
+
+---
+
+
+==================
+For With Reversed Three Times
+:error
+==================
+
+{% for x in reversed reversed reversed %}a{% endfor %}
+
+---
+

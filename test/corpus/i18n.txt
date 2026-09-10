@@ -488,3 +488,58 @@ Language Name Filter With An Argument
 {{ "de"|language_name:1 }}
 
 ---
+
+==================
+Translate With A Context Named After Noop
+:error
+==================
+
+{% trans "hi" context noop %}
+
+---
+
+
+==================
+Translate With A Context From An Attribute Of Noop
+==================
+
+{% trans "hi" context noop.x %}
+
+---
+
+(template
+  (content)
+  (translate
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)
+          (attribute)))))
+  (content))
+
+==================
+Translate With A Filtered Context Named After Noop
+==================
+
+{% trans "hi" context noop|upper %}
+
+---
+
+(template
+  (content)
+  (translate
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter))))
+  (content))

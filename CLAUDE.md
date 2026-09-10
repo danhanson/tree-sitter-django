@@ -61,6 +61,15 @@ that place it:
   order but never twice. Used by `translate` and `include`; keyword arguments are guarded by the scanner
   instead. Grows as `Σ C(n,k)·k!` (65 for four names), which is
   why it is only used for signatures that name their arguments.
+- `wordAsValueRules(word)` / `wordAsValue($, word, continued)` — a tag's own keyword written where a value
+  goes. Django tells its flag from a variable by comparing the whole bit, so `reversed` is the flag of
+  `{% for %}` while `reversed.x` and `reversed|last` are lookups; `continued` selects that second group.
+  Needed because keyword extraction hands the parser the keyword wherever both it and `identifier` are
+  valid, so the reading in which the word names a variable has to be built back out of it. The rules are
+  hidden and aliased at the use site, one per level (`variable_attribute`, `value`, `filtered_value`),
+  because an alias renames the node its own rule makes and **cannot nest one inside another** — writing
+  it as nested inline `alias(alias(...))` calls silently yields a flat, partly zero-width tree that still
+  generates and still parses. Check the tree, not just the accept.
 
 Consequences worth knowing before editing a rule:
 
@@ -305,11 +314,5 @@ documentation or memory. Both checks are worth repeating whenever tags, filters 
   `{% cache 500 sidebar.name %}` names a fragment there, `{% cache 500 using="c" %}` names a fragment
   called `using="c"` rather than choosing a cache, and `{% cache 500 sidebar using= %}` takes an empty
   name. All three are errors here.
-- `do_for` reads `reversed` off the end of the tag before it looks for `in`, so `{% for x in reversed %}`
-  is an error there and a loop over a variable named `reversed` here. Writing the flag as well
-  (`{% for x in reversed reversed %}`) is accepted by both, which is why the name is not simply reserved
-  in that position.
-- `do_translate` refuses `as` and `noop` as the value of its `context` option, so
-  `{% trans "hi" context noop %}` is an error there and a context named by the variable `noop` here.
 - `partial`/`partialdef` are Django builtins as of Django 6; `elif`/`else`/`empty` are modelled as parts of
   their enclosing tag rather than as separate tags.

@@ -65,6 +65,56 @@ function asVariable($) {
 }
 
 /**
+ * A tag's own keyword written where a value goes, with the tree an ordinary
+ * lookup would have so that a tool sees no difference. Where a keyword and an
+ * identifier are both valid, tree-sitter hands the parser the keyword, so the
+ * reading in which the word names a variable has to be built back out of it —
+ * and out of hidden rules, because an alias only renames the node its rule
+ * makes and cannot nest one inside another.
+ *
+ * Django tells such a keyword from a variable by comparing the whole bit, so
+ * "reversed" is its flag while "reversed.x" and "reversed|last" are lookups.
+ * That second group is what `continued` selects.
+ *
+ * @param {string} word
+ * @returns {Record<string, RuleBuilder<string>>}
+ */
+function wordAsValueRules(word) {
+  return {
+    [`_${word}_lookup`]: ($) => alias(word, $.identifier),
+    [`_${word}_dotted_lookup`]: ($) =>
+      seq(alias(word, $.identifier), ".", $.attribute),
+    [`_${word}_value`]: ($) =>
+      alias($[`_${word}_lookup`], $.variable_attribute),
+    [`_${word}_dotted_value`]: ($) =>
+      alias($[`_${word}_dotted_lookup`], $.variable_attribute),
+    [`_${word}_bare`]: ($) => alias($[`_${word}_value`], $.value),
+    [`_${word}_continued`]: ($) =>
+      choice(
+        seq(
+          alias($[`_${word}_dotted_value`], $.value),
+          optional(seq("|", $.filter_expression)),
+        ),
+        seq(alias($[`_${word}_value`], $.value), "|", $.filter_expression),
+      ),
+  };
+}
+
+/**
+ * The rules wordAsValueRules() built, where a value goes.
+ * @param {GrammarSymbols<string>} $
+ * @param {string} word
+ * @param {boolean} continued whether a "." or a "|" has to follow the word
+ * @returns {RuleOrLiteral}
+ */
+function wordAsValue($, word, continued) {
+  return alias(
+    $[`_${word}_${continued ? "continued" : "bare"}`],
+    $.filtered_value,
+  );
+}
+
+/**
  * @param {RuleOrLiteral[]} chosen
  * @param {RuleOrLiteral[]} rest
  * @param {RuleOrLiteral[]} spellings
@@ -355,6 +405,10 @@ const django = grammar({
      * string: "_( 'a' )" is a syntax error there, not a translated literal.
      */
     translated_string: ($) => seq("_(", $.string, ")"),
+    // the flags of "for" and "trans", spelled as the variable names they
+    // also are; see wordAsValueRules()
+    ...wordAsValueRules("reversed"),
+    ...wordAsValueRules("noop"),
     boolean: ($) => choice("True", "False"),
     none: ($) => "None",
     attribute: ($) => /[a-zA-Z0-9][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9][a-zA-Z0-9_]*)*/,
@@ -651,10 +705,19 @@ const django = grammar({
             ),
           ),
           part("in"),
-          part($.filtered_value),
-          // do_for reads this off the end and takes the sequence from the bit
-          // before it, so it comes last or not at all
-          optional(part("reversed")),
+          // do_for reads the flag off the end and takes the sequence from the
+          // bit before it, so the flag comes last or not at all. A bare
+          // "reversed" in the sequence position leaves nothing to iterate,
+          // naming a sequence only when a lookup or filter continues it or
+          // when the flag follows it as well
+          choice(
+            seq(part($.filtered_value), optional(part("reversed"))),
+            seq(
+              part(wordAsValue($, "reversed", true)),
+              optional(part("reversed")),
+            ),
+            seq(part(wordAsValue($, "reversed", false)), part("reversed")),
+          ),
         ),
         optional($.template),
       ),
@@ -814,7 +877,12 @@ const django = grammar({
         optional(
           arrangements([
             part("noop"),
-            part("context", $.filtered_value),
+            // do_translate refuses "as" and "noop" as the context, comparing
+            // the whole bit, so a lookup that only begins with one is fine
+            part(
+              "context",
+              choice($.filtered_value, wordAsValue($, "noop", true)),
+            ),
             asVariable($),
           ]),
         ),
