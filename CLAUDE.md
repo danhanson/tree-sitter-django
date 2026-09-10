@@ -229,6 +229,19 @@ too if it were spelled the same way. `queries/exports.scm` names it for a tool t
 bind in the scope around the block, which a locals query cannot do: it places a definition in the innermost
 scope containing it and offers no way out again.
 
+`queries/conditionals.scm` is data for a tool too: `@conditional.group` / `@conditional.branch` /
+`@conditional.default` say which bodies render on only some passes, so a checker can tell that
+`{% if a %}{% now "Y" as n %}{% endif %}{{ n }}` may reach `{{ n }}` with nothing bound. A locals query
+cannot: it matches a reference to the definition whose scope contains it and has no notion of a path not
+taken. A group is exhaustive iff it has a `@conditional.default`, so each pattern captures the group
+alongside one of its parts and a tool needs no list of which clause belongs to which group. Adding a tag
+group whose body may be skipped means adding it there — `{% cache %}` is the non-obvious one, since a
+cache hit skips the body outright and `CacheNode` pushes no context.
+
+A branch that is also a `@local.scope` confines its bindings whichever way the branch goes, which is why
+`{% for %}` is inert for that check: `ForNode` renders `nodelist_empty` **inside** the same
+`context.push()` as the loop body, so `empty_clause` is a scope alongside `for_clause`.
+
 ## Testing
 
 Corpus tests live in `test/corpus/*.txt`, one file per tag.
