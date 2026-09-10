@@ -342,7 +342,8 @@ const django = grammar({
       seq($.value, optional(seq("|", $.filter_expression))),
     filter_expression: ($) => seq($.filter, repeat(seq("|", $.filter))),
     value: ($) => choice($.literal, $.variable_attribute),
-    literal: ($) => choice($.number, $.string, $.translated_string),
+    literal: ($) =>
+      choice($.number, $.string, $.translated_string, $.boolean, $.none),
     // digits, with single underscores allowed between them, as Python's
     // int() and float() accept ("1_000") and Django's Variable relies on
     number: ($) =>
@@ -354,6 +355,8 @@ const django = grammar({
      * string: "_( 'a' )" is a syntax error there, not a translated literal.
      */
     translated_string: ($) => seq("_(", $.string, ")"),
+    boolean: ($) => choice("True", "False"),
+    none: ($) => "None",
     attribute: ($) => /[a-zA-Z0-9][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9][a-zA-Z0-9_]*)*/,
     variable_attribute: ($) =>
       seq($.identifier, optional(seq(".", $.attribute))),

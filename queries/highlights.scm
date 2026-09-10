@@ -41,6 +41,8 @@ variable: (identifier) @variable.parameter
 
 (number) @number
 (string) @string
+(boolean) @constant.builtin
+(none) @constant.builtin
 
 (library
     (identifier) @module)

@@ -156,3 +156,29 @@ If Operator Adjacent To Value
 {% if 1and 2 %}yes{% endif %}
 
 ---
+
+==================
+If Is Not None
+==================
+
+{% if status is not None %}yes{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (literal
+              (none)))))
+      (template
+        (content))))
+  (content))

@@ -397,6 +397,11 @@
     }
   },
   {
+    "type": "boolean",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "cache_clause",
     "named": true,
     "fields": {
@@ -1700,6 +1705,14 @@
       "required": true,
       "types": [
         {
+          "type": "boolean",
+          "named": true
+        },
+        {
+          "type": "none",
+          "named": true
+        },
+        {
           "type": "number",
           "named": true
         },
@@ -2651,6 +2664,14 @@
     "named": false
   },
   {
+    "type": "False",
+    "named": false
+  },
+  {
+    "type": "True",
+    "named": false
+  },
+  {
     "type": "_(",
     "named": false
   },
@@ -3073,6 +3094,10 @@
   {
     "type": "media",
     "named": false
+  },
+  {
+    "type": "none",
+    "named": true
   },
   {
     "type": "noop",

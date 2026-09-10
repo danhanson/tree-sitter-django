@@ -277,6 +277,12 @@ documentation or memory. Both checks are worth repeating whenever tags, filters 
 
 - Django has no number token: `[\w.]+` is one lexeme and `int()`/`float()` decides whether it is a literal,
   so `1a`, `1e`, `0x1f`, `1.2.3`, `1__0` and `1.` are variable _lookups_ there and errors here.
+- Django has no boolean or `None` token either. `True`, `False` and `None` are lookups, which resolve
+  because `BaseContext._reset_dicts` seeds every context with `{"True": True, "False": False, "None": None}`.
+  They are `boolean` and `none` literals here, so that a tool reading `queries/locals.scm` does not count
+  them as references to something the template never defines. Shadowing still parses — `{% with True=1 %}`
+  binds an `identifier`, because the keyword is not valid where a binding name is — but `{{ True.x }}` is
+  an error here and an ordinary two-part lookup in Django, which renders `string_if_invalid`.
 - A `with` binding written twice (`{% with a=1 a=2 %}`, and the same in `{% include %}` and
   `{% blocktranslate %}`) is an error here and not in Django, where `token_kwargs` builds a dict and the
   later value wins. It has no use, so it is treated as the mistake it almost certainly is.

@@ -111,3 +111,24 @@ With Repeating A Binding Of The Tag Before It
       (template
         (content))))
   (content))
+
+==================
+With A Binding Named After A Literal
+==================
+
+{% with True=1 %}a{% endwith %}
+
+---
+
+(template
+  (content)
+  (with_group
+    (with_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (literal
+            (number))))
+      (template
+        (content))))
+  (content))

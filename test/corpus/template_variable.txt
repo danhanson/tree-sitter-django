@@ -361,3 +361,103 @@ Template Variable With Spaced Filter
       (filter_expression
         (filter))))
   (content))
+
+==================
+Template Variable True
+==================
+
+{{ True }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (boolean)))))
+  (content))
+
+==================
+Template Variable False
+==================
+
+{{ False }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (boolean)))))
+  (content))
+
+==================
+Template Variable None
+==================
+
+{{ None }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (none)))))
+  (content))
+
+==================
+Template Variable Boolean As Filter Argument
+==================
+
+{{ value|default:True }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))
+      (filter_expression
+        (filter
+          argument: (value
+            (literal
+              (boolean)))))))
+  (content))
+
+==================
+Template Variable Name Beginning With A Literal
+==================
+
+{{ Truest }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier)))))
+  (content))
+
+==================
+Template Variable Attribute Of A Literal
+:error
+==================
+
+{{ None.x }}
+
+---
+
