@@ -182,3 +182,149 @@ If Is Not None
       (template
         (content))))
   (content))
+
+==================
+If Is
+==================
+
+{% if x is y %}a{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content))))
+  (content))
+
+==================
+If Is Not
+==================
+
+{% if x is not y %}a{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content))))
+  (content))
+
+==================
+If Is Not Not
+==================
+
+{% if x is not not y %}a{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content))))
+  (content))
+
+==================
+If With A Repeated Not
+==================
+
+{% if not not x %}a{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content))))
+  (content))
+
+==================
+If Not Before A Name Beginning With In
+==================
+
+{% if not in_stock %}a{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content))))
+  (content))
+
+==================
+If Is Before A Name Beginning With Not
+==================
+
+{% if x is nothing %}a{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (predicate
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (binaryOperator)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content))))
+  (content))

@@ -493,7 +493,7 @@
           "value": "in"
         },
         {
-          "type": "PREC",
+          "type": "PREC_DYNAMIC",
           "value": 1,
           "content": {
             "type": "SEQ",
@@ -518,7 +518,7 @@
           "value": "is"
         },
         {
-          "type": "PREC",
+          "type": "PREC_DYNAMIC",
           "value": 1,
           "content": {
             "type": "SEQ",
@@ -544,25 +544,20 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SEQ",
-              "members": [
-                {
-                  "type": "STRING",
-                  "value": "not"
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "[ \\t\\r\\n]+"
-                }
-              ]
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
+          "type": "REPEAT",
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "not"
+              },
+              {
+                "type": "PATTERN",
+                "value": "[ \\t\\r\\n]+"
+              }
+            ]
+          }
         },
         {
           "type": "SYMBOL",
@@ -587,25 +582,20 @@
                 ]
               },
               {
-                "type": "CHOICE",
-                "members": [
-                  {
-                    "type": "SEQ",
-                    "members": [
-                      {
-                        "type": "PATTERN",
-                        "value": "[ \\t\\r\\n]+"
-                      },
-                      {
-                        "type": "STRING",
-                        "value": "not"
-                      }
-                    ]
-                  },
-                  {
-                    "type": "BLANK"
-                  }
-                ]
+                "type": "REPEAT",
+                "content": {
+                  "type": "SEQ",
+                  "members": [
+                    {
+                      "type": "PATTERN",
+                      "value": "[ \\t\\r\\n]+"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "not"
+                    }
+                  ]
+                }
               },
               {
                 "type": "SEQ",
@@ -8597,6 +8587,9 @@
     ],
     [
       "predicate"
+    ],
+    [
+      "binaryOperator"
     ],
     [
       "library",

@@ -79,7 +79,11 @@ Consequences worth knowing before editing a rule:
   fail at generate time; it shows up as `MISSING` nodes in a passing-looking parse.
 - **`conflicts` entries are the normal fix, not precedence.** With explicit separators the lookahead at a
   part boundary is `SEP` instead of the meaningful token, so LR(1) loses its discriminator. That is why
-  `predicate` and `[$.library, $.load]` are listed there.
+  `predicate`, `binaryOperator` and `[$.library, $.load]` are listed there. Where two readings both stay
+  valid to the end — `is not` as one operator or as `is` and a prefix `not` — the conflict needs a
+  `prec.dynamic` alongside it to settle which wins; a static `prec` resolves the shift/reduce while the
+  table is built and discards the other parse outright, which is how a bare `{% if x is y %}` came to be
+  an error.
 
 ### A tag group is a sequence of clauses
 

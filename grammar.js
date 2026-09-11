@@ -359,6 +359,7 @@ const django = grammar({
     [$.timezone_clause],
     [$.with_clause],
     [$.predicate],
+    [$.binaryOperator],
     [$.library, $.load],
     [$._translate_option],
     [$._filtered_value_spaced],
@@ -426,18 +427,18 @@ const django = grammar({
         "<=",
         ">=",
         "in",
-        prec(1, joined("not", "in")),
+        prec.dynamic(1, joined("not", "in")),
         "is",
-        prec(1, joined("is", "not")),
+        prec.dynamic(1, joined("is", "not")),
       ),
     predicate: ($) =>
       seq(
-        optional(seq("not", SEP)),
+        repeat(seq("not", SEP)),
         $.filtered_value,
         repeat(
           seq(
             part($.binaryOperator),
-            optional(part("not")),
+            repeat(part("not")),
             part($.filtered_value),
           ),
         ),
