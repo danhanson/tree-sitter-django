@@ -8,7 +8,7 @@ Include With String
 
 (template
   (content)
-  (include
+  (include_block
     (filtered_value
       (value
         (literal
@@ -25,7 +25,7 @@ Include With Variable
 
 (template
   (content)
-  (include
+  (include_block
     (filtered_value
       (value
         (variable_attribute
@@ -42,7 +42,7 @@ Include With A Filtered Name
 
 (template
   (content)
-  (include
+  (include_block
     (filtered_value
       (value
         (literal
@@ -61,7 +61,7 @@ Include Only
 
 (template
   (content)
-  (include
+  (include_block
     (filtered_value
       (value
         (literal
@@ -78,7 +78,7 @@ Include With Context
 
 (template
   (content)
-  (include
+  (include_block
     (filtered_value
       (value
         (literal
@@ -100,7 +100,7 @@ Include With Several Bindings
 
 (template
   (content)
-  (include
+  (include_block
     (filtered_value
       (value
         (literal
@@ -127,7 +127,7 @@ Include With Context And Only
 
 (template
   (content)
-  (include
+  (include_block
     (filtered_value
       (value
         (literal
@@ -149,7 +149,7 @@ Include With Only Before With
 
 (template
   (content)
-  (include
+  (include_block
     (filtered_value
       (value
         (literal

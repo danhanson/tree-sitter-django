@@ -14,11 +14,12 @@ For Basic
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
         (content)
         (template_variable
@@ -26,7 +27,8 @@ For Basic
             (value
               (variable_attribute
                 (identifier)))))
-        (content))))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -45,12 +47,13 @@ For With Multiple Variables
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
         (content)
         (template_variable
@@ -58,7 +61,8 @@ For With Multiple Variables
             (value
               (variable_attribute
                 (identifier)))))
-        (content))))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -79,11 +83,12 @@ For With Empty
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
         (content)
         (template_variable
@@ -93,8 +98,10 @@ For With Empty
                 (identifier)))))
         (content)))
     (empty_clause
+      (empty_block)
       (template
-        (content))))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -111,23 +118,27 @@ For With A Tag In Its Body
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
         (content)
         (if_group
           (if_clause
-            (predicate
-              (filtered_value
-                (value
-                  (variable_attribute
-                    (identifier)))))
+            (if_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
             (template
-              (content))))
-        (content))))
+              (content)))
+          (endif_block))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -144,23 +155,27 @@ For With A Nested For
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
         (content)
         (for_group
           (for_clause
-            variable: (identifier)
-            (filtered_value
-              (value
-                (variable_attribute
-                  (identifier))))
+            (for_block
+              variable: (identifier)
+              (filtered_value
+                (value
+                  (variable_attribute
+                    (identifier)))))
             (template
-              (content))))
-        (content))))
+              (content)))
+          (endfor_block))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -179,36 +194,43 @@ For With Tags In Both Branches
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
         (content)
         (if_group
           (if_clause
-            (predicate
-              (filtered_value
-                (value
-                  (variable_attribute
-                    (identifier)))))
+            (if_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
             (template
-              (content))))
+              (content)))
+          (endif_block))
         (content)))
     (empty_clause
+      (empty_block)
       (template
         (content)
         (with_group
           (with_clause
-            variable: (identifier)
-            (filtered_value
-              (value
-                (literal
-                  (number))))
+            (with_block
+              variable: (identifier)
+              (filtered_value
+                (value
+                  (literal
+                    (number)))))
             (template
-              (content))))
-        (content))))
+              (content)))
+          (endwith_block))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -225,20 +247,24 @@ For With A Named Block In Its Body
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
         (content)
         (block_group
           (block_clause
-            name: (push_block)
+            (block_block
+              name: (push_block))
             (template
               (content)))
-          (pop_block))
-        (content))))
+          (endblock_block
+            (pop_block)))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -255,31 +281,37 @@ For Nested In A Tag
   (content)
   (if_group
     (if_clause
-      (predicate
-        (filtered_value
-          (value
-            (variable_attribute
-              (identifier)))))
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
       (template
         (content)
         (for_group
           (for_clause
-            variable: (identifier)
-            (filtered_value
-              (value
-                (variable_attribute
-                  (identifier))))
+            (for_block
+              variable: (identifier)
+              (filtered_value
+                (value
+                  (variable_attribute
+                    (identifier)))))
             (template
               (if_group
                 (if_clause
-                  (predicate
-                    (filtered_value
-                      (value
-                        (variable_attribute
-                          (identifier)))))
+                  (if_block
+                    (predicate
+                      (filtered_value
+                        (value
+                          (variable_attribute
+                            (identifier))))))
                   (template
-                    (content)))))))
-        (content))))
+                    (content)))
+                (endif_block))))
+          (endfor_block))
+        (content)))
+    (endif_block))
   (content))
 
 ==================
@@ -294,11 +326,13 @@ For With An Empty Body
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))))
+    (endfor_block))
   (content))
 
 ==================
@@ -315,13 +349,15 @@ a
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
-        (content))))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -338,14 +374,16 @@ a
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
-        (content))))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -362,18 +400,20 @@ a
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier)))
-        (filter_expression
-          (filter
-            argument: (value
-              (literal
-                (string))))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))
+          (filter_expression
+            (filter
+              argument: (value
+                (literal
+                  (string)))))))
       (template
-        (content))))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -392,16 +432,19 @@ b
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
         (content)))
     (empty_clause
+      (empty_block)
       (template
-        (content))))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -418,23 +461,27 @@ For Reversed With A Tag In Its Body
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
         (content)
         (if_group
           (if_clause
-            (predicate
-              (filtered_value
-                (value
-                  (variable_attribute
-                    (identifier)))))
+            (if_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
             (template
-              (content))))
-        (content))))
+              (content)))
+          (endif_block))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -468,13 +515,15 @@ For Over A Variable Named Reversed
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
-        (content))))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -489,14 +538,16 @@ For Over An Attribute Of A Variable Named Reversed
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier)
-            (attribute))))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)
+              (attribute)))))
       (template
-        (content))))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================
@@ -511,15 +562,17 @@ For Over A Filtered Variable Named Reversed
   (content)
   (for_group
     (for_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier)))
-        (filter_expression
-          (filter)))
+      (for_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))
+          (filter_expression
+            (filter))))
       (template
-        (content))))
+        (content)))
+    (endfor_block))
   (content))
 
 ==================

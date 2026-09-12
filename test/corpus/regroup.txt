@@ -8,7 +8,7 @@ Regroup Basic
 
 (template
   (content)
-  (regroup
+  (regroup_block
     (filtered_value
       (value
         (variable_attribute

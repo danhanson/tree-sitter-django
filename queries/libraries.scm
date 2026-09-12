@@ -15,42 +15,42 @@
 ; heads, so that the capture is both the name to look up and the range to
 ; report. A paired tag names the opening tag only.
 
-(static
+(static_block
   tag: ("static") @library.static)
 
-(get_static_prefix
+(get_static_prefix_block
   tag: ("get_static_prefix") @library.static)
 
-(get_media_prefix
+(get_media_prefix_block
   tag: ("get_media_prefix") @library.static)
 
-(blocktrans_clause
+(blocktrans_block
   tag: ("blocktrans") @library.i18n)
 
-(blocktranslate_clause
+(blocktranslate_block
   tag: ("blocktranslate") @library.i18n)
 
-(translate
+(translate_block
   tag: [
     ("trans")
     ("translate")] @library.i18n)
 
-(language_clause
+(language_block
   tag: ("language") @library.i18n)
 
-(get_available_languages
+(get_available_languages_block
   tag: ("get_available_languages") @library.i18n)
 
-(get_current_language
+(get_current_language_block
   tag: ("get_current_language") @library.i18n)
 
-(get_current_language_bidi
+(get_current_language_bidi_block
   tag: ("get_current_language_bidi") @library.i18n)
 
-(get_language_info
+(get_language_info_block
   tag: ("get_language_info") @library.i18n)
 
-(get_language_info_list
+(get_language_info_list_block
   tag: ("get_language_info_list") @library.i18n)
 
 (filter
@@ -60,10 +60,10 @@
     ("language_name_local")
     ("language_name_translated")] @library.i18n)
 
-(cache_clause
+(cache_block
   tag: ("cache") @library.cache)
 
-(localize_clause
+(localize_block
   tag: ("localize") @library.l10n)
 
 (filter
@@ -71,13 +71,13 @@
     ("localize")
     ("unlocalize")] @library.l10n)
 
-(localtime_clause
+(localtime_block
   tag: ("localtime") @library.tz)
 
-(timezone_clause
+(timezone_block
   tag: ("timezone") @library.tz)
 
-(get_current_timezone
+(get_current_timezone_block
   tag: ("get_current_timezone") @library.tz)
 
 (filter
@@ -88,8 +88,8 @@
 
 ; "{% load static %}" makes every name in the library available; "{% load
 ; static from staticfiles %}" makes only the names listed available.
-(load
+(load_block
   (library) @load.library)
 
-(load
+(load_block
   (identifier) @load.name)

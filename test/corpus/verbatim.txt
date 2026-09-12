@@ -10,9 +10,11 @@ Verbatim Basic
   (content)
   (verbatim_group
     (verbatim_clause
-      (push_verbatim)
+      (verbatim_block
+        (push_verbatim))
       (verbatim_content))
-    (pop_verbatim))
+    (endverbatim_block
+      (pop_verbatim)))
   (content))
 
 ==================
@@ -27,8 +29,10 @@ Verbatim Empty
   (content)
   (verbatim_group
     (verbatim_clause
-      (push_verbatim))
-    (pop_verbatim))
+      (verbatim_block
+        (push_verbatim)))
+    (endverbatim_block
+      (pop_verbatim)))
   (content))
 
 ==================
@@ -46,9 +50,11 @@ Verbatim Ignores Tags
   (content)
   (verbatim_group
     (verbatim_clause
-      (push_verbatim)
+      (verbatim_block
+        (push_verbatim))
       (verbatim_content))
-    (pop_verbatim))
+    (endverbatim_block
+      (pop_verbatim)))
   (content))
 
 ==================
@@ -63,9 +69,11 @@ Verbatim With Name
   (content)
   (verbatim_group
     (verbatim_clause
-      (push_verbatim)
+      (verbatim_block
+        (push_verbatim))
       (verbatim_content))
-    (pop_verbatim))
+    (endverbatim_block
+      (pop_verbatim)))
   (content))
 
 ==================
@@ -82,7 +90,9 @@ Avoid template rendering via the {% verbatim %}{% endverbatim %} block.
   (content)
   (verbatim_group
     (verbatim_clause
-      (push_verbatim)
+      (verbatim_block
+        (push_verbatim))
       (verbatim_content))
-    (pop_verbatim))
+    (endverbatim_block
+      (pop_verbatim)))
   (content))

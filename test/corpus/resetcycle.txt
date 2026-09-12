@@ -8,7 +8,7 @@ Resetcycle Bare
 
 (template
   (content)
-  (reset_cycle)
+  (resetcycle_block)
   (content))
 
 ==================
@@ -21,6 +21,6 @@ Resetcycle With Name
 
 (template
   (content)
-  (reset_cycle
+  (resetcycle_block
     (identifier))
   (content))

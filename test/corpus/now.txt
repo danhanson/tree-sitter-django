@@ -8,7 +8,7 @@ Now Basic
 
 (template
   (content)
-  (now
+  (now_block
     (string))
   (content))
 
@@ -22,7 +22,7 @@ Now With As
 
 (template
   (content)
-  (now
+  (now_block
     (string)
     variable: (identifier))
   (content))

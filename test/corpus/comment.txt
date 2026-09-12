@@ -12,7 +12,9 @@ This is ignored
   (content)
   (comment_group
     (comment_clause
-      (comment_content)))
+      (comment_block)
+      (comment_content))
+    (endcomment_block))
   (content))
 
 ==================
@@ -26,7 +28,9 @@ Comment Empty
 (template
   (content)
   (comment_group
-    (comment_clause))
+    (comment_clause
+      (comment_block))
+    (endcomment_block))
   (content))
 
 ==================
@@ -43,8 +47,10 @@ This is ignored
   (content)
   (comment_group
     (comment_clause
-      (string)
-      (comment_content)))
+      (comment_block
+        (string))
+      (comment_content))
+    (endcomment_block))
   (content))
 
 ==================
@@ -61,5 +67,7 @@ Contains {% if x %} tag-like text
   (content)
   (comment_group
     (comment_clause
-      (comment_content)))
+      (comment_block)
+      (comment_content))
+    (endcomment_block))
   (content))

@@ -22,7 +22,9 @@
 ; rather than a narrower scope in locals.scm.
 
 (blocktrans_clause
-  asvar: (identifier) @export.name) @export.from
+  (blocktrans_block
+    asvar: (identifier) @export.name)) @export.from
 
 (blocktranslate_clause
-  asvar: (identifier) @export.name) @export.from
+  (blocktranslate_block
+    asvar: (identifier) @export.name)) @export.from

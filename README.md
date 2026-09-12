@@ -110,7 +110,7 @@ them is treated as the mistake.
 A library's tags and filters are registered in Python, so the grammar cannot know their names, their
 arity, or whether a tag opens a body. Two fallback rules accept them:
 
-- **Tags.** Any tag the grammar does not recognise parses as `custom_tag`, with the shape `simple_tag` and
+- **Tags.** Any tag the grammar does not recognise parses as `custom_tag_block`, with the shape `simple_tag` and
   `inclusion_tag` give: positional filter expressions, then `name=value` keyword arguments, then an
   optional `as name`. So `{% mytag a b|upper "s" k=1 as out %}` parses, with the name on the `tag:` field.
   A keyword argument written twice is refused, as `parse_bits` refuses it.
@@ -122,13 +122,13 @@ grammar knows from one it is only tolerating.
 
 What the fallbacks cannot do:
 
-- **A block tag is not nested.** `{% mytag %}…{% endmytag %}` is two sibling `custom_tag`s; pairing them
+- **A block tag is not nested.** `{% mytag %}…{% endmytag %}` is two sibling `custom_tag_block`s; pairing them
   would mean guessing that an unknown tag opens a body.
 - **A tag registered with `@register.tag` may parse anything**, since it receives the raw token, so one
   whose arguments are not the `simple_tag` shape — `{% mytag <<>> %}` — is an error here and not in Django.
 - **A misspelled name cannot be caught.** `{{ x|lenght }}` is indistinguishable from a filter some library
   registered. Cross-referencing names against `{% load %}` needs the project's Python, so it belongs in a
-  linter; `queries/libraries.scm` and the `load` rule supply what one needs.
+  linter; `queries/libraries.scm` and the `load_block` rule supply what one needs.
 - **Names that only exist inside a tag group are reserved**, so `{% endif %}` or `{% empty %}` standing on
   its own is an error rather than a call to a custom tag of that name.
 
@@ -136,7 +136,7 @@ What the fallbacks cannot do:
 
 For a project whose custom tags deserve real rules rather than the fallbacks, use this grammar as a base
 grammar. `grammar(base, {...})` merges your rules into it, and a rule that redefines one the base already
-has receives it as `previous`. A tag is an alternative of `template_block_groups`; a filter is an
+has receives it as `previous`. A tag is an alternative of `tag_block_group`; a filter is an
 alternative of `filter`.
 
 ```js
@@ -149,8 +149,8 @@ export default grammar(django, {
 
   rules: {
     // {% map items over rows %}
-    template_block_groups: ($, previous) => choice(previous, $.map_tag),
-    map_tag: ($) =>
+    tag_block_group: ($, previous) => choice(previous, $.map_block),
+    map_block: ($) =>
       seq(
         "{%",
         optional(SEP),
@@ -183,12 +183,13 @@ Five things to know:
 - **A new name wins over the fallback.** `shout` becomes a token of its own, so it commits to your
   alternative and your arity applies — `{{ x|shout }}` is now an error, while names you have not modelled
   still fall through to `(filter name: (identifier))`.
-- **A tag with a body needs a `conflicts` entry**, as every clause in the base grammar does:
-  `conflicts: ($, previous) => [...previous, [$.map_clause]]` for a `map_clause` holding the body. The
-  generator offers an associativity
-  instead; taking it silently discards the parse in which the body continues.
-- **End tags are not reserved**, a stray `{% endmap %}` parses as a `custom_tag` rather than an error — `reserved` takes no
-  `previous`, so the `tag_name` list cannot be added to a name at a time. Instead you may drop the `custom_tag` rule to avoid parsing end tags as custom tags.
+- **A tag with a body is split the way the base grammar's are**, so every `{% %}` is a node of its own:
+  a `map_block` for the opening tag, a `map_clause` of that block and the body, an `endmap_block`, and a
+  `map_group` of the clause and the end block. The clause needs a `conflicts` entry, as every clause in
+  the base grammar does: `conflicts: ($, previous) => [...previous, [$.map_clause]]`. The generator
+  offers an associativity instead; taking it silently discards the parse in which the body continues.
+- **End tags are not reserved**, a stray `{% endmap %}` parses as a `custom_tag_block` rather than an error — `reserved` takes no
+  `previous`, so the `tag_name` list cannot be added to a name at a time. Instead you may drop the `custom_tag_block` rule to avoid parsing end tags as custom tags.
 - **The external scanner has to be re-exported under your grammar's name**, or block-name matching and the
   repeated-argument guards will not link. Give your grammar a `src/scanner.c` that renames the base's five entry points to the
   ones your generated `parser.c` calls, and includes it:
@@ -210,13 +211,13 @@ build step can hand the compiler an absolute path from `import.meta.resolve` whe
 layout makes the relative one unreliable.
 
 **Turning the fallbacks off.** A grammar that models every tag and filter its project uses probably does
-not want `custom_tag` and `_custom_filter` accepting unrecognized names as they allow typos to parse. `previous` is the base rule whose `members` are filterable. We can filter out these rules to make the grammar more strict:
+not want `custom_tag_block` and `_custom_filter` accepting unrecognized names as they allow typos to parse. `previous` is the base rule whose `members` are filterable. We can filter out these rules to make the grammar more strict:
 
 ```js
-template_block_groups: ($, previous) =>
+tag_block_group: ($, previous) =>
   choice(
-    ...previous.members.filter((m) => m.name !== "custom_tag"),
-    $.map_tag,
+    ...previous.members.filter((m) => m.name !== "custom_tag_block"),
+    $.map_block,
   ),
 
 filter: ($, previous) =>

@@ -8,7 +8,7 @@ Static
 
 (template
   (content)
-  (static
+  (static_block
     (filtered_value
       (value
         (literal
@@ -25,7 +25,7 @@ Static With A Variable Path
 
 (template
   (content)
-  (static
+  (static_block
     (filtered_value
       (value
         (variable_attribute
@@ -42,7 +42,7 @@ Static With A Filtered Path
 
 (template
   (content)
-  (static
+  (static_block
     (filtered_value
       (value
         (literal
@@ -61,7 +61,7 @@ Static With As
 
 (template
   (content)
-  (static
+  (static_block
     (filtered_value
       (value
         (literal
@@ -109,7 +109,7 @@ Get Static Prefix
 
 (template
   (content)
-  (get_static_prefix)
+  (get_static_prefix_block)
   (content))
 
 ==================
@@ -122,7 +122,7 @@ Get Static Prefix With As
 
 (template
   (content)
-  (get_static_prefix
+  (get_static_prefix_block
     variable: (identifier))
   (content))
 
@@ -136,7 +136,7 @@ Get Media Prefix With As
 
 (template
   (content)
-  (get_media_prefix
+  (get_media_prefix_block
     variable: (identifier))
   (content))
 
@@ -170,10 +170,10 @@ Load Names The Library, Not The Tag
 
 (template
   (content)
-  (load
+  (load_block
     (library
       (identifier)))
-  (static
+  (static_block
     (filtered_value
       (value
         (literal

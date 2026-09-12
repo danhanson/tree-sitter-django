@@ -18,6 +18,8 @@ Autoescape
   (content)
   (autoescape_group
     (autoescape_clause
+      (autoescape_block)
       (template
-        (content))))
+        (content)))
+    (endautoescape_block))
   (content))

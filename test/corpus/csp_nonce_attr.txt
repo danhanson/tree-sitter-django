@@ -8,7 +8,7 @@ Csp Nonce Attr
 
 (template
   (content)
-  (csp_nonce_attr)
+  (csp_nonce_attr_block)
   (content))
 
 ==================
@@ -21,7 +21,7 @@ Csp Nonce Attr With Argument And As
 
 (template
   (content)
-  (csp_nonce_attr
+  (csp_nonce_attr_block
     (filtered_value
       (value
         (literal
@@ -39,7 +39,7 @@ Csp Nonce Attr With Media Keyword
 
 (template
   (content)
-  (csp_nonce_attr
+  (csp_nonce_attr_block
     (filtered_value
       (value
         (literal

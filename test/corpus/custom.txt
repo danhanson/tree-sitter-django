@@ -8,7 +8,7 @@ Custom Tag
 
 (template
   (content)
-  (custom_tag
+  (custom_tag_block
     tag: (identifier))
   (content))
 
@@ -22,7 +22,7 @@ Custom Tag With Arguments
 
 (template
   (content)
-  (custom_tag
+  (custom_tag_block
     tag: (identifier)
     (filtered_value
       (value
@@ -48,7 +48,7 @@ Custom Tag With Keyword Arguments
 
 (template
   (content)
-  (custom_tag
+  (custom_tag_block
     tag: (identifier)
     (filtered_value
       (value
@@ -71,7 +71,7 @@ Custom Tag With As
 
 (template
   (content)
-  (custom_tag
+  (custom_tag_block
     tag: (identifier)
     (filtered_value
       (value
@@ -90,7 +90,7 @@ Custom Tag With Filtered Argument
 
 (template
   (content)
-  (custom_tag
+  (custom_tag_block
     tag: (identifier)
     (filtered_value
       (value
@@ -110,10 +110,10 @@ Custom Tag Does Not Nest
 
 (template
   (content)
-  (custom_tag
+  (custom_tag_block
     tag: (identifier))
   (content)
-  (custom_tag
+  (custom_tag_block
     tag: (identifier))
   (content))
 
@@ -201,7 +201,7 @@ Custom Filter In A Tag
 
 (template
   (content)
-  (firstof
+  (firstof_block
     (filtered_value
       (value
         (variable_attribute
@@ -277,7 +277,7 @@ A Name Reserved For A Tag Is Still An Argument
 
 (template
   (content)
-  (custom_tag
+  (custom_tag_block
     tag: (identifier)
     (filtered_value
       (value
@@ -305,7 +305,7 @@ Custom Tag With Keyword Arguments And As
 
 (template
   (content)
-  (custom_tag
+  (custom_tag_block
     tag: (identifier)
     (identifier)
     (filtered_value
@@ -330,14 +330,14 @@ Custom Tag Repeating A Keyword Of The Tag Before It
 
 (template
   (content)
-  (custom_tag
+  (custom_tag_block
     tag: (identifier)
     (identifier)
     (filtered_value
       (value
         (literal
           (number)))))
-  (custom_tag
+  (custom_tag_block
     tag: (identifier)
     (identifier)
     (filtered_value

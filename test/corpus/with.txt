@@ -12,12 +12,13 @@ With Basic
   (content)
   (with_group
     (with_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier)
-            (attribute))))
+      (with_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)
+              (attribute)))))
       (template
         (content)
         (template_variable
@@ -25,7 +26,8 @@ With Basic
             (value
               (variable_attribute
                 (identifier)))))
-        (content))))
+        (content)))
+    (endwith_block))
   (content))
 
 ==================
@@ -42,16 +44,17 @@ With Multiple Variables
   (content)
   (with_group
     (with_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (literal
-            (number))))
-      variable: (identifier)
-      (filtered_value
-        (value
-          (literal
-            (number))))
+      (with_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        variable: (identifier)
+        (filtered_value
+          (value
+            (literal
+              (number)))))
       (template
         (content)
         (template_variable
@@ -59,7 +62,8 @@ With Multiple Variables
             (value
               (variable_attribute
                 (identifier)))))
-        (content))))
+        (content)))
+    (endwith_block))
   (content))
 
 ==================
@@ -94,22 +98,26 @@ With Repeating A Binding Of The Tag Before It
   (content)
   (with_group
     (with_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (literal
-            (number))))
+      (with_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (literal
+              (number)))))
       (template
-        (content))))
+        (content)))
+    (endwith_block))
   (with_group
     (with_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (literal
-            (number))))
+      (with_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (literal
+              (number)))))
       (template
-        (content))))
+        (content)))
+    (endwith_block))
   (content))
 
 ==================
@@ -124,11 +132,13 @@ With A Binding Named After A Literal
   (content)
   (with_group
     (with_clause
-      variable: (identifier)
-      (filtered_value
-        (value
-          (literal
-            (number))))
+      (with_block
+        variable: (identifier)
+        (filtered_value
+          (value
+            (literal
+              (number)))))
       (template
-        (content))))
+        (content)))
+    (endwith_block))
   (content))

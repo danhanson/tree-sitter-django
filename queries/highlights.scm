@@ -4,13 +4,13 @@
 variable: (identifier) @variable.parameter
 
 
-(block_clause
+(block_block
     (push_block) @type)
 
-(partialdef_clause
+(partialdef_block
     (push_partial) @type)
 
-(verbatim_clause
+(verbatim_block
     (push_verbatim) @type)
 
 (comment_content) @comment
@@ -192,8 +192,8 @@ tag: [
 (filter
     name: (identifier) @function.call)
 
-(custom_tag
+(custom_tag_block
     tag: (identifier) @function.call)
 
-(load
+(load_block
     (identifier) @function)

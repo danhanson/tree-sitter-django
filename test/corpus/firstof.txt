@@ -8,7 +8,7 @@ Firstof Basic
 
 (template
   (content)
-  (firstof
+  (firstof_block
     (filtered_value
       (value
         (variable_attribute
@@ -33,7 +33,7 @@ Firstof With As
 
 (template
   (content)
-  (firstof
+  (firstof_block
     (filtered_value
       (value
         (variable_attribute

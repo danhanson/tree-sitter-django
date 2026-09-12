@@ -11,7 +11,7 @@ Cycle Basic
 
 (template
   (content)
-  (cycle
+  (cycle_block
     (filtered_value
       (value
         (literal
@@ -35,7 +35,7 @@ Cycle With As
 
 (template
   (content)
-  (cycle
+  (cycle_block
     (filtered_value
       (value
         (literal
@@ -60,7 +60,7 @@ Cycle With As And Silent
 
 (template
   (content)
-  (cycle
+  (cycle_block
     (filtered_value
       (value
         (literal
@@ -85,7 +85,7 @@ Cycle Referencing Existing Variable
 
 (template
   (content)
-  (cycle
+  (cycle_block
     (filtered_value
       (value
         (variable_attribute
@@ -136,7 +136,7 @@ Cycle Spanning Lines
 
 (template
   (content)
-  (cycle
+  (cycle_block
     (filtered_value
       (value
         (literal

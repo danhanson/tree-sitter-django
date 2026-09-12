@@ -12,8 +12,10 @@ content
   (content)
   (ifchanged_group
     (ifchanged_clause
+      (ifchanged_block)
       (template
-        (content))))
+        (content)))
+    (endifchanged_block))
   (content))
 
 ==================
@@ -30,16 +32,18 @@ content
   (content)
   (ifchanged_group
     (ifchanged_clause
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (ifchanged_block
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
-        (content))))
+        (content)))
+    (endifchanged_block))
   (content))
 
 ==================
@@ -58,11 +62,14 @@ unchanged
   (content)
   (ifchanged_group
     (ifchanged_clause
+      (ifchanged_block)
       (template
         (content)))
     (else_clause
+      (else_block)
       (template
-        (content))))
+        (content)))
+    (endifchanged_block))
   (content))
 
 ==================
@@ -81,21 +88,24 @@ unchanged
   (content)
   (ifchanged_group
     (ifchanged_clause
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier)))
-        (filter_expression
-          (filter)))
+      (ifchanged_block
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))
+          (filter_expression
+            (filter))))
       (template
         (content)))
     (else_clause
+      (else_block)
       (template
-        (content))))
+        (content)))
+    (endifchanged_block))
   (content))
 
 ==================
@@ -112,9 +122,12 @@ content
   (content)
   (ifchanged_group
     (ifchanged_clause
+      (ifchanged_block)
       (template
         (content)))
-    (else_clause))
+    (else_clause
+      (else_block))
+    (endifchanged_block))
   (content))
 
 ==================
@@ -137,19 +150,25 @@ c
   (content)
   (ifchanged_group
     (ifchanged_clause
+      (ifchanged_block)
       (template
         (content)))
     (else_clause
+      (else_block)
       (template
         (content)
         (ifchanged_group
           (ifchanged_clause
+            (ifchanged_block)
             (template
               (content)))
           (else_clause
+            (else_block)
             (template
-              (content))))
-        (content))))
+              (content)))
+          (endifchanged_block))
+        (content)))
+    (endifchanged_block))
   (content))
 
 ==================

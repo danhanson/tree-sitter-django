@@ -10,13 +10,15 @@ Cache
   (content)
   (cache_group
     (cache_clause
-      (filtered_value
-        (value
-          (literal
-            (number))))
-      (identifier)
+      (cache_block
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (identifier))
       (template
-        (content))))
+        (content)))
+    (endcache_block))
   (content))
 
 ==================
@@ -31,13 +33,15 @@ Cache With A Variable Timeout
   (content)
   (cache_group
     (cache_clause
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
-      (identifier)
+      (cache_block
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (identifier))
       (template
-        (content))))
+        (content)))
+    (endcache_block))
   (content))
 
 ==================
@@ -52,18 +56,20 @@ Cache With A Filtered Timeout
   (content)
   (cache_group
     (cache_clause
-      (filtered_value
-        (value
-          (literal
-            (number)))
-        (filter_expression
-          (filter
-            argument: (value
-              (literal
-                (number))))))
-      (identifier)
+      (cache_block
+        (filtered_value
+          (value
+            (literal
+              (number)))
+          (filter_expression
+            (filter
+              argument: (value
+                (literal
+                  (number))))))
+        (identifier))
       (template
-        (content))))
+        (content)))
+    (endcache_block))
   (content))
 
 ==================
@@ -78,13 +84,15 @@ Cache With A Quoted Fragment Name
   (content)
   (cache_group
     (cache_clause
-      (filtered_value
-        (value
-          (literal
-            (number))))
-      (string)
+      (cache_block
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (string))
       (template
-        (content))))
+        (content)))
+    (endcache_block))
   (content))
 
 ==================
@@ -99,21 +107,23 @@ Cache Varying On Arguments
   (content)
   (cache_group
     (cache_clause
-      (filtered_value
-        (value
-          (literal
-            (number))))
-      (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (cache_block
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
-        (content))))
+        (content)))
+    (endcache_block))
   (content))
 
 ==================
@@ -128,19 +138,21 @@ Cache Varying On A Filtered Argument
   (content)
   (cache_group
     (cache_clause
-      (filtered_value
-        (value
-          (literal
-            (number))))
-      (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier)))
-        (filter_expression
-          (filter)))
+      (cache_block
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))
+          (filter_expression
+            (filter))))
       (template
-        (content))))
+        (content)))
+    (endcache_block))
   (content))
 
 ==================
@@ -155,17 +167,19 @@ Cache Using A Named Cache
   (content)
   (cache_group
     (cache_clause
-      (filtered_value
-        (value
-          (literal
-            (number))))
-      (identifier)
-      (filtered_value
-        (value
-          (literal
-            (string))))
+      (cache_block
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (identifier)
+        (filtered_value
+          (value
+            (literal
+              (string)))))
       (template
-        (content))))
+        (content)))
+    (endcache_block))
   (content))
 
 ==================
@@ -180,17 +194,19 @@ Cache Using An Unquoted Cache Name
   (content)
   (cache_group
     (cache_clause
-      (filtered_value
-        (value
-          (literal
-            (number))))
-      (identifier)
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))
+      (cache_block
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
       (template
-        (content))))
+        (content)))
+    (endcache_block))
   (content))
 
 ==================

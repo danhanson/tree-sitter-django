@@ -58,7 +58,7 @@ that place it:
   count (at most N), or `false`. `kwargs`: `true` (`**kwargs`), `false`, or `{name: rule}` for a known
   signature. Put the Python signature in a comment above the call site.
 - `arrangements(items)` — every ordered subset of `items`, so that a tag's options may be written in any
-  order but never twice. Used by `translate` and `include`; keyword arguments are guarded by the scanner
+  order but never twice. Used by `translate_block` and `include_block`; keyword arguments are guarded by the scanner
   instead. Grows as `Σ C(n,k)·k!` (65 for four names), which is
   why it is only used for signatures that name their arguments.
 - `wordAsValueRules(word)` / `wordAsValue($, word, continued)` — a tag's own keyword written where a value
@@ -102,10 +102,18 @@ opened it. A clause reduces anyway, so it survives error recovery and tooling ca
 to find the enclosing tag. That is what makes completion of `{% elif %}`, `{% else %}`, `{% empty %}` and
 the end tags possible.
 
+**Every `{% %}` is a node of its own, named `<tag>_block`** after the tag as Django spells it: `if_block`,
+`elif_block`, `endif_block`, `block_block`, `templatetag_block`, `custom_tag_block`. A clause is its
+opening block and a body; a group is its clauses and its end block. A block ends at `%}` and nothing can
+extend it, so it reduces on whatever token follows — the end of input included — and a half-written
+template still holds the last `{% for … %}` or `{% endif %}` typed as a whole node, not as loose tokens.
+Stripping `_block` gives the name; a new tag, or a tag group's new part, follows the same scheme.
+
 The names themselves need no hand-maintained list either: in the generated `src/node-types.json`, a group's
-`children` are its clause types and its own `tag:` field holds the end tag, so the candidates for a group
-are its `tag:` plus the `tag:` of each clause it can hold. For `if_group` that is `endif` from the group and
-`if`, `elif`, `else` from its three clauses. Going the other way — from a clause the cursor sits in to the
+`children` are its clause types and its end block, and a clause's children include its opening block, so
+the candidates for a group are its end block plus the opening block of each clause it can hold. For
+`if_group` that is `endif_block` from the group and `if_block`, `elif_block`, `else_block` from its three
+clauses. Going the other way — from a clause the cursor sits in to the
 groups that can hold it — is the same table read backwards, which is what an unterminated tag needs, since
 the group node does not exist yet.
 
@@ -115,7 +123,10 @@ which lands in the "a tag starts here" state no matter how the tree is shaped.
 `else_clause` is shared by `if_group` and `ifchanged_group`. `comment_clause` and `verbatim_clause` hold raw
 scanner text that admits no tags. `blocktranslate_group` has one clause per spelling, `blocktrans_clause` and
 `blocktranslate_clause`, because each must be closed by its own end tag; the counted form nests a
-`plural_clause` inside it, since `{% plural %}` is only valid after `count`. Their bodies are
+`plural_clause` inside it, since `{% plural %}` is only valid after `count`. The clause has to know which
+form its opening block was, so `blocktransRules` builds each as a hidden rule (`_blocktrans_block`,
+`_blocktrans_count_block`) and aliases both to the one visible `blocktrans_block` where the clause uses
+it. Their bodies are
 `_translate_body`, not `template`, which is why these four clauses need no `conflicts` entry — the rule
 below is about a body that can itself start with `{%`.
 
@@ -125,7 +136,8 @@ silently discarded the parse in which the body continues, so every tag inside a 
 
 Sharing the clauses also made the table markedly smaller — 7,200 states and a 515KB library became 5,150
 and 383KB — for the same reason hoisting `blocktranslate`'s pieces into hidden rules did: the automaton
-stops duplicating the body states in every group's inline context.
+stops duplicating the body states in every group's inline context. Giving every `{% %}` its own `_block`
+rule shrank it again, from 1,999 states to 1,818, by the same mechanism.
 
 ### Filter pipes differ by context
 
@@ -139,18 +151,18 @@ whitespace first, so a pipe there must be tight. Hence `_filtered_value_spaced` 
 A library's tags and filters are registered in Python, so the grammar cannot know their names, their
 arity, or whether a tag is a block tag. Two fallback rules accept them:
 
-- `custom_tag` — `simpleTag($, $.identifier)`, i.e. what `simple_tag`/`inclusion_tag` accept, which is how
+- `custom_tag_block` — `simpleTag($, $.identifier)`, i.e. what `simple_tag`/`inclusion_tag` accept, which is how
   a tag is registered unless it needs the parser itself.
 - `_custom_filter`, the last alternative of `filter`, whose name is `$.identifier` rather than one of the
   builtin literals. Hidden, so the tree is what an inline alternative would give, but named so that a
-  grammar extending this one can filter it out of `filter`'s `members` the way it can `custom_tag` — see
+  grammar extending this one can filter it out of `filter`'s `members` the way it can `custom_tag_block` — see
   the extension section in `README.md`.
 
 **A name that only exists inside a tag group has to be reserved instead.** `endif`, `else`, `empty` and
 the rest are tokens only in the state their group opens, so where a tag is named the lexer reads them as an
-identifier and `custom_tag` takes them: `{% endif %}` on its own parsed as a tag from some library. They are
+identifier and `custom_tag_block` takes them: `{% endif %}` on its own parsed as a tag from some library. They are
 listed in `NAMES_INSIDE_A_TAG_GROUP` and applied through the `tag_name` reserved context, which wraps
-`custom_tag`'s name **and nothing else** — a reserved context replaces the global one inside whatever it
+`custom_tag_block`'s name **and nothing else** — a reserved context replaces the global one inside whatever it
 wraps, so wrapping the whole rule would un-reserve `as` and reject `{% mytag endif %}`. Adding a tag group
 with a new part or end tag means adding its name there too.
 
@@ -183,7 +195,7 @@ no ordering predicate to express it. What such a tool needs to know about Django
 A library's filters go in their own arity tables (`L10N_FILTERS_WITHOUT_ARGUMENT`,
 `TZ_FILTERS_WITH_ARGUMENT`, …) rather than into the builtin ones, so that the builtin parity check still has an exact list to compare against.
 
-Modelling a library name makes it keyword-extracted, so it no longer reaches `custom_tag`. A project that
+Modelling a library name makes it keyword-extracted, so it no longer reaches `custom_tag_block`. A project that
 registers its own tag under one of these names and a different signature therefore gets a parse error. That
 is accepted: these names are common enough that shadowing them is the mistake.
 
@@ -245,7 +257,7 @@ matching.
 
 `queries/highlights.scm` lists tag and filter names explicitly, so adding either to the grammar means
 adding it there too; filter names appear there without their colon. A name the grammar does not know is
-captured through its field instead (`(filter name: (identifier))`, `(custom_tag tag: (identifier))`).
+captured through its field instead (`(filter name: (identifier))`, `(custom_tag_block tag: (identifier))`).
 
 `queries/libraries.scm` is not a query editors run themselves; it is data for a linter, and every tag or
 filter added from a library belongs in it. `queries/locals.scm` relies on the `variable:` field to tell a
@@ -325,8 +337,8 @@ unavoidable limitation, or a case where this grammar is the more permissive one 
 - `{% csp_nonce_attr "a" media="b" %}` is accepted, matching Django, which only rejects it at render time.
 - A misspelled tag or filter cannot be caught: `{{ x|lenght }}` is indistinguishable from a filter some
   library registered. Cross-referencing names against `{% load %}` needs the project's Python, so it
-  belongs in a linter; the `load` rule already parses the library and `from` names for one to use.
-- `{% mytag %}…{% endmytag %}` parses as two sibling `custom_tag`s. Nesting them would mean guessing that
+  belongs in a linter; the `load_block` rule already parses the library and `from` names for one to use.
+- `{% mytag %}…{% endmytag %}` parses as two sibling `custom_tag_block`s. Nesting them would mean guessing that
   an unknown tag is a block tag.
 - A custom tag's contents are only assumed to be the `simple_tag` shape. `@register.tag` receives the raw
   token and may parse anything, so `{% mytag <<>> %}` is rejected here and not by Django.
