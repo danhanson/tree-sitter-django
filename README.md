@@ -12,6 +12,40 @@ npm run parser-build     # build the WASM binary
 npm run playground       # interactively explore the grammar
 ```
 
+## Queries
+
+Four of the files in `queries/` are the standard query files an editor loads:
+
+- **`highlights.scm`** — syntax highlighting. Tag and filter names are listed one by one, so a name the
+  grammar knows is captured as `@function` and a name it is only tolerating as `@function.call`.
+- **`locals.scm`** — scopes, definitions and references, so an editor can resolve a variable to the tag
+  that bound it. A definition is a `variable:` field; the scopes are the clauses whose bindings do not
+  outlive them (`{% with %}`, `{% for %}`, `{% empty %}`, `{% block %}`, `{% partialdef %}`,
+  `{% blocktranslate %}`).
+- **`tags.scm`** — the symbol index behind `tree-sitter tag`. A `{% partialdef %}` and the names a
+  `{% load %}` brings in are definitions; every tag and filter used is a reference.
+- **`injections.scm`** — marks template text and `{% verbatim %}` bodies as another language's content, so
+  the HTML around the tags can be parsed by its own grammar. It names no language, leaving the editor to
+  supply one.
+
+The other three are data for a tool rather than queries an editor runs. Each captures the two halves of a
+relation a tree-sitter query cannot express, and the tool does the join:
+
+- **`libraries.scm`** — which library each tag or filter is registered in, and what each `{% load %}`
+  brings in. The grammar never requires the load, so reporting a missing one is a linter's job; a query
+  has no ordering predicate to compare the positions itself.
+- **`exports.scm`** — a name a tag binds in the scope _around_ it rather than the scope it opens. Only
+  `{% blocktranslate %}`'s `asvar` does that, and a locals query cannot say so: it places a definition in
+  the innermost scope containing it and offers no way out again.
+- **`conditionals.scm`** — which bodies render on only some passes, as `@conditional.group` /
+  `@conditional.branch` / `@conditional.default`, so a checker can tell that
+  `{% if a %}{% now "Y" as n %}{% endif %}{{ n }}` may reach `{{ n }}` with nothing bound. A group is
+  exhaustive exactly when one of its branches is a default. A locals query has no notion of a path not
+  taken.
+
+`tree-sitter test` loads every file in the directory, so a pattern naming a node that no longer exists
+fails the suite rather than quietly matching nothing.
+
 ## Django libraries
 
 Five of Django's template libraries are not builtins: their names have to be `{% load %}`ed, or preloaded
@@ -107,7 +141,7 @@ export default grammar(django, {
 });
 ```
 
-Four things to know:
+Five things to know:
 
 - **Whitespace is explicit.** `extras` is empty, because Django splits a tag's contents before parsing any
   argument, so every separator has to be written out. The `part`/`block`/`simpleTag` helpers the base
@@ -117,12 +151,11 @@ Four things to know:
   still fall through to `(filter name: (identifier))`.
 - **A tag with a body needs a `conflicts` entry**, as every clause in the base grammar does:
   `conflicts: ($, previous) => [...previous, [$.map_clause]]`. The generator offers an associativity
-  instead; taking it silently discards the parse in which the body continues. Its end tag is not reserved
-  either, so a stray `{% endmap %}` parses as a `custom_tag` rather than an error — `reserved` takes no
-  `previous`, so the `tag_name` list cannot be added to a name at a time.
+  instead; taking it silently discards the parse in which the body continues.
+- **End tags are not reserved**, a stray `{% endmap %}` parses as a `custom_tag` rather than an error — `reserved` takes no
+  `previous`, so the `tag_name` list cannot be added to a name at a time. Instead you may drop the `custom_tag` rule to avoid parsing end tags as custom tags.
 - **The external scanner has to be re-exported under your grammar's name**, or block-name matching and the
-  repeated-argument guards will not link. `exports` cannot deliver it — that is Node's resolver, and the
-  scanner is C — so give your grammar a `src/scanner.c` that renames the base's five entry points to the
+  repeated-argument guards will not link. Give your grammar a `src/scanner.c` that renames the base's five entry points to the
   ones your generated `parser.c` calls, and includes it:
 
 ```c
@@ -140,6 +173,26 @@ order they have here, so the scanner's token enum stays valid. `tree-sitter buil
 path, hence the relative `#include`; the package also exports `tree-sitter-django/src/scanner.c`, so a
 build step can hand the compiler an absolute path from `import.meta.resolve` where a package manager's
 layout makes the relative one unreliable.
+
+**Turning the fallbacks off.** A grammar that models every tag and filter its project uses probably does
+not want `custom_tag` and `_custom_filter` accepting unrecognized names as they allow typos to parse. `previous` is the base rule whose `members` are filterable. We can filter out these rules to make the grammar more strict:
+
+```js
+template_block_groups: ($, previous) =>
+  choice(
+    ...previous.members.filter((m) => m.name !== "custom_tag"),
+    $.map_group,
+  ),
+
+filter: ($, previous) =>
+  choice(
+    ...previous.members.filter((m) => m.name !== "_custom_filter"),
+    seq(field("name", "shout"), ":", field("argument", $.value)),
+  ),
+```
+
+`{% mytag %}` and `{{ x|unknown }}` are then errors, while the builtins, the libraries and your own rules
+carry on as before.
 
 ## Divergences from Django
 
