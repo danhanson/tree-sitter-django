@@ -549,12 +549,19 @@ const django = grammar({
           field("name", choice(...FILTERS_WITH_OPTIONAL_ARGUMENT)),
           optional(seq(":", field("argument", $.value))),
         ),
-        // a filter a "load" brought in: its name is not known here, and so
-        // neither is whether it takes an argument
-        seq(
-          field("name", $.identifier),
-          optional(seq(":", field("argument", $.value))),
-        ),
+        $._custom_filter,
+      ),
+    /**
+     * A filter a "load" brought in: its name is not known here, and so neither
+     * is whether it takes an argument. Hidden, so the tree is the same as if
+     * it were spelled inline, but named so that a grammar extending this one
+     * can drop it from filter's alternatives the way it can drop custom_tag
+     * from template_block_groups.
+     */
+    _custom_filter: ($) =>
+      seq(
+        field("name", $.identifier),
+        optional(seq(":", field("argument", $.value))),
       ),
     autoescape_clause: ($) =>
       seq(block("autoescape", part(choice("on", "off"))), optional($.template)),

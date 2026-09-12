@@ -138,7 +138,10 @@ arity, or whether a tag is a block tag. Two fallback rules accept them:
 
 - `custom_tag` — `simpleTag($, $.identifier)`, i.e. what `simple_tag`/`inclusion_tag` accept, which is how
   a tag is registered unless it needs the parser itself.
-- the last alternative of `filter`, whose name is `$.identifier` rather than one of the builtin literals.
+- `_custom_filter`, the last alternative of `filter`, whose name is `$.identifier` rather than one of the
+  builtin literals. Hidden, so the tree is what an inline alternative would give, but named so that a
+  grammar extending this one can filter it out of `filter`'s `members` the way it can `custom_tag` — see
+  the extension section in `README.md`.
 
 **A name that only exists inside a tag group has to be reserved instead.** `endif`, `else`, `empty` and
 the rest are tokens only in the state their group opens, so where a tag is named the lexer reads them as an
@@ -180,6 +183,14 @@ A library's filters go in their own arity tables (`L10N_FILTERS_WITHOUT_ARGUMENT
 Modelling a library name makes it keyword-extracted, so it no longer reaches `custom_tag`. A project that
 registers its own tag under one of these names and a different signature therefore gets a parse error. That
 is accepted: these names are common enough that shadowing them is the mistake.
+
+**Adding a library tag or filter touches four files**: `grammar.js`, `queries/libraries.scm` (which library
+it came from), `queries/highlights.scm` (the name, spelled out) and the table in `README.md`, which lists
+every library name the grammar models. All four are hand-maintained, and **no test catches a name left out
+of any of them**: `tree-sitter test` loads every `.scm` under `queries/`, so a pattern naming a node that
+no longer exists aborts the whole run, but a name that was never added passes 304/304 in silence, and the
+README nothing checks at all. The library-contents differential below, run against
+`django.templatetags.<name>.register`, is what finds a gap.
 
 ### External scanner (`src/scanner.c`)
 
@@ -287,6 +298,11 @@ documentation or memory. Both checks are worth repeating whenever tags, filters 
 `python -c "import django; print(django.get_version())"` and fall back to the explicit venv path.
 
 ### Deliberate divergences from Django
+
+`README.md` carries a shorter list of its own, and the two are not the same set on purpose: the README
+lists only the divergences where Django accepts an input that is almost certainly a mistake, which is the
+rule it states. Anything added here that fits that rule belongs there too; anything that does not — an
+unavoidable limitation, or a case where this grammar is the more permissive one — stays here.
 
 - Django has no number token: `[\w.]+` is one lexeme and `int()`/`float()` decides whether it is a literal,
   so `1a`, `1e`, `0x1f`, `1.2.3`, `1__0` and `1.` are variable _lookups_ there and errors here.

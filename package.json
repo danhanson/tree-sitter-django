@@ -4,6 +4,12 @@
   "private": true,
   "license": "MIT",
   "type": "module",
+  "exports": {
+    "./grammar": "./grammar.js",
+    "./src/scanner.c": "./src/scanner.c",
+    "./queries/*": "./queries/*",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
