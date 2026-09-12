@@ -10,7 +10,7 @@ variable: (identifier) @variable.parameter
 (partialdef_clause
     (push_partial) @type)
 
-(verbatim_group
+(verbatim_clause
     (push_verbatim) @type)
 
 (comment_content) @comment

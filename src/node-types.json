@@ -327,7 +327,7 @@
     }
   },
   {
-    "type": "blocktranslate_group",
+    "type": "blocktrans_clause",
     "named": true,
     "fields": {
       "asvar": {
@@ -341,27 +341,11 @@
         ]
       },
       "tag": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
           {
             "type": "blocktrans",
-            "named": false
-          },
-          {
-            "type": "blocktranslate",
-            "named": false
-          },
-          {
-            "type": "endblocktrans",
-            "named": false
-          },
-          {
-            "type": "endblocktranslate",
-            "named": false
-          },
-          {
-            "type": "plural",
             "named": false
           }
         ]
@@ -390,7 +374,103 @@
           "named": true
         },
         {
+          "type": "plural_clause",
+          "named": true
+        },
+        {
           "type": "template_variable",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "blocktranslate_clause",
+    "named": true,
+    "fields": {
+      "asvar": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "blocktranslate",
+            "named": false
+          }
+        ]
+      },
+      "variable": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "content",
+          "named": true
+        },
+        {
+          "type": "filtered_value",
+          "named": true
+        },
+        {
+          "type": "plural_clause",
+          "named": true
+        },
+        {
+          "type": "template_variable",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "blocktranslate_group",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "endblocktrans",
+            "named": false
+          },
+          {
+            "type": "endblocktranslate",
+            "named": false
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "blocktrans_clause",
+          "named": true
+        },
+        {
+          "type": "blocktranslate_clause",
           "named": true
         }
       ]
@@ -466,19 +546,15 @@
     }
   },
   {
-    "type": "comment_group",
+    "type": "comment_clause",
     "named": true,
     "fields": {
       "tag": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
           {
             "type": "comment",
-            "named": false
-          },
-          {
-            "type": "endcomment",
             "named": false
           }
         ]
@@ -494,6 +570,32 @@
         },
         {
           "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "comment_group",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "endcomment",
+            "named": false
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "comment_clause",
           "named": true
         }
       ]
@@ -2010,6 +2112,36 @@
     }
   },
   {
+    "type": "plural_clause",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "plural",
+            "named": false
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "content",
+          "named": true
+        },
+        {
+          "type": "template_variable",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "predicate",
     "named": true,
     "fields": {},
@@ -2472,19 +2604,45 @@
     }
   },
   {
+    "type": "verbatim_clause",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "verbatim",
+            "named": false
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "push_verbatim",
+          "named": true
+        },
+        {
+          "type": "verbatim_content",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "verbatim_group",
     "named": true,
     "fields": {
       "tag": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
           {
             "type": "endverbatim",
-            "named": false
-          },
-          {
-            "type": "verbatim",
             "named": false
           }
         ]
@@ -2499,11 +2657,7 @@
           "named": true
         },
         {
-          "type": "push_verbatim",
-          "named": true
-        },
-        {
-          "type": "verbatim_content",
+          "type": "verbatim_clause",
           "named": true
         }
       ]

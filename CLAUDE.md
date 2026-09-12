@@ -112,9 +112,12 @@ the group node does not exist yet.
 Do not reach for lookahead to solve that instead: `ts_language_next_state` follows only the shift on `{%`,
 which lands in the "a tag starts here" state no matter how the tree is shaped.
 
-`else_clause` is shared by `if_group` and `ifchanged_group`. `comment_group` and `verbatim_group` have no
-clause — their bodies are raw scanner text that admits no tags — and neither does `blocktranslate_group`,
-whose body is `_translate_body`.
+`else_clause` is shared by `if_group` and `ifchanged_group`. `comment_clause` and `verbatim_clause` hold raw
+scanner text that admits no tags. `blocktranslate_group` has one clause per spelling, `blocktrans_clause` and
+`blocktranslate_clause`, because each must be closed by its own end tag; the counted form nests a
+`plural_clause` inside it, since `{% plural %}` is only valid after `count`. Their bodies are
+`_translate_body`, not `template`, which is why these four clauses need no `conflicts` entry — the rule
+below is about a body that can itself start with `{%`.
 
 **Every clause needs a `conflicts` entry.** The generator offers a left associativity instead; taking it is
 what broke `{% for %}` in `06aa870`, where `prec.left` resolved the shift/reduce on `{%` statically and
@@ -248,7 +251,7 @@ captured through its field instead (`(filter name: (identifier))`, `(custom_tag 
 filter added from a library belongs in it. `queries/locals.scm` relies on the `variable:` field to tell a
 binding from a reference — another reason to keep `asVariable` uniform. `{% blocktranslate %}`'s `asvar`
 target carries an `asvar:` field instead, because it is written inside the tag but assigned outside it:
-the scope on `blocktranslate_group` confines the `with` and `count` bindings, and would swallow `asvar`
+the scope on `blocktrans_clause` / `blocktranslate_clause` confines the `with` and `count` bindings, and would swallow `asvar`
 too if it were spelled the same way. `queries/exports.scm` names it for a tool to
 bind in the scope around the block, which a locals query cannot do: it places a definition in the innermost
 scope containing it and offers no way out again.

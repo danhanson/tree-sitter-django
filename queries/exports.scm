@@ -21,5 +21,8 @@
 ; scope span could have separated them; that is why this is a separate file
 ; rather than a narrower scope in locals.scm.
 
-(blocktranslate_group
+(blocktrans_clause
+  asvar: (identifier) @export.name) @export.from
+
+(blocktranslate_clause
   asvar: (identifier) @export.name) @export.from

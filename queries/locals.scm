@@ -23,4 +23,5 @@ variable: (identifier) @local.definition
 ; outside it, and carries an "asvar" field rather than "variable" so that this
 ; scope does not swallow it. A tool that wants it must define it in the scope
 ; around the block, which a locals query has no way to say.
-(blocktranslate_group) @local.scope
+(blocktrans_clause) @local.scope
+(blocktranslate_clause) @local.scope

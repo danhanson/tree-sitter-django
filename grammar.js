@@ -205,6 +205,31 @@ function simpleTag($, tag, args = true, kwargs = true) {
 }
 
 /**
+ * @param {GrammarSymbols<string>} $
+ * @param {string} tag
+ * @returns {ChoiceRule}
+ */
+function blocktrans_clause_rule($, tag) {
+  return choice(
+    seq(
+      block(tag, $._tag_open, repeat($._translate_option)),
+      optional($._translate_body),
+    ),
+    seq(
+      block(
+        tag,
+        $._tag_open,
+        repeat($._translate_option),
+        $._translate_count,
+        repeat($._translate_option),
+      ),
+      optional($._translate_body),
+      $.plural_clause,
+    ),
+  );
+}
+
+/**
  * Django checks a filter's argument count against the registered function
  * while it parses the template, so the arity of a builtin is syntax here:
  * "length:2" and a bare "add" are both errors.
@@ -577,30 +602,13 @@ const django = grammar({
     block_clause: ($) =>
       seq(block("block", field("name", $.push_block)), optional($.template)),
     block_group: ($) => seq($.block_clause, block("endblock", $.pop_block)),
+    plural_clause: ($) => seq(block("plural"), optional($._translate_body)),
+    blocktrans_clause: ($) => blocktrans_clause_rule($, "blocktrans"),
+    blocktranslate_clause: ($) => blocktrans_clause_rule($, "blocktranslate"),
     blocktranslate_group: ($) =>
       choice(
-        ...["blocktrans", "blocktranslate"].map((name) =>
-          choice(
-            seq(
-              block(name, $._tag_open, repeat($._translate_option)),
-              optional($._translate_body),
-              block("end" + name),
-            ),
-            seq(
-              block(
-                name,
-                $._tag_open,
-                repeat($._translate_option),
-                $._translate_count,
-                repeat($._translate_option),
-              ),
-              $._translate_body,
-              block("plural"),
-              optional($._translate_body),
-              block("end" + name),
-            ),
-          ),
-        ),
+        seq($.blocktrans_clause, block("endblocktrans")),
+        seq($.blocktranslate_clause, block("endblocktranslate")),
       ),
     /**
      * The scanner reads the name of the option before the grammar does, so it
@@ -658,12 +666,12 @@ const django = grammar({
         optional($.template),
       ),
     cache_group: ($) => seq($.cache_clause, block("endcache")),
-    comment_group: ($) =>
+    comment_clause: ($) =>
       seq(
         block("comment", optional(part($.string))),
         optional($.comment_content),
-        block("endcomment"),
       ),
+    comment_group: ($) => seq($.comment_clause, block("endcomment")),
     // csp_nonce_attr(context, media=None)
     csp_nonce_attr: ($) =>
       simpleTag($, "csp_nonce_attr", 1, { media: $.filtered_value }),
@@ -914,12 +922,10 @@ const django = grammar({
         ),
         optional(asVariable($)),
       ),
+    verbatim_clause: ($) =>
+      seq(block("verbatim", $.push_verbatim), optional($.verbatim_content)),
     verbatim_group: ($) =>
-      seq(
-        block("verbatim", $.push_verbatim),
-        optional($.verbatim_content),
-        block("endverbatim", $.pop_verbatim),
-      ),
+      seq($.verbatim_clause, block("endverbatim", $.pop_verbatim)),
     width_ratio: ($) =>
       block(
         "widthratio",

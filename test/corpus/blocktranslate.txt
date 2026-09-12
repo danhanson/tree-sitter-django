@@ -9,7 +9,8 @@ Blocktrans
 (template
   (content)
   (blocktranslate_group
-    (content))
+    (blocktrans_clause
+      (content)))
   (content))
 
 ==================
@@ -23,7 +24,8 @@ Blocktranslate
 (template
   (content)
   (blocktranslate_group
-    (content))
+    (blocktranslate_clause
+      (content)))
   (content))
 
 ==================
@@ -36,7 +38,8 @@ Blocktrans Empty
 
 (template
   (content)
-  (blocktranslate_group)
+  (blocktranslate_group
+    (blocktrans_clause))
   (content))
 
 ==================
@@ -50,12 +53,13 @@ Blocktrans With A Placeholder
 (template
   (content)
   (blocktranslate_group
-    (content)
-    (template_variable
-      (filtered_value
-        (value
-          (variable_attribute
-            (identifier))))))
+    (blocktrans_clause
+      (content)
+      (template_variable
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))))
   (content))
 
 ==================
@@ -69,7 +73,8 @@ Blocktrans Trimmed
 (template
   (content)
   (blocktranslate_group
-    (content))
+    (blocktrans_clause
+      (content)))
   (content))
 
 ==================
@@ -83,12 +88,13 @@ Blocktrans With
 (template
   (content)
   (blocktranslate_group
-    variable: (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (content))
+    (blocktrans_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (content)))
   (content))
 
 ==================
@@ -102,17 +108,18 @@ Blocktrans With Several Bindings
 (template
   (content)
   (blocktranslate_group
-    variable: (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    variable: (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (content))
+    (blocktrans_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (content)))
   (content))
 
 ==================
@@ -126,14 +133,15 @@ Blocktrans With A Filtered Binding
 (template
   (content)
   (blocktranslate_group
-    variable: (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier)))
-      (filter_expression
-        (filter)))
-    (content))
+    (blocktrans_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier)))
+        (filter_expression
+          (filter)))
+      (content)))
   (content))
 
 ==================
@@ -147,11 +155,12 @@ Blocktrans With Context
 (template
   (content)
   (blocktranslate_group
-    (filtered_value
-      (value
-        (literal
-          (string))))
-    (content))
+    (blocktrans_clause
+      (filtered_value
+        (value
+          (literal
+            (string))))
+      (content)))
   (content))
 
 ==================
@@ -165,8 +174,9 @@ Blocktrans With Asvar
 (template
   (content)
   (blocktranslate_group
-    asvar: (identifier)
-    (content))
+    (blocktrans_clause
+      asvar: (identifier)
+      (content)))
   (content))
 
 ==================
@@ -180,13 +190,57 @@ Blocktrans With Count And Plural
 (template
   (content)
   (blocktranslate_group
-    variable: (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (content)
-    (content))
+    (blocktrans_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (content)
+      (plural_clause
+        (content))))
+  (content))
+
+==================
+Blocktrans With An Empty Singular
+==================
+
+{% blocktrans count n=x %}{% plural %}many{% endblocktrans %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (plural_clause
+        (content))))
+  (content))
+
+==================
+Blocktranslate With An Empty Plural
+==================
+
+{% blocktranslate count n=x %}one{% plural %}{% endblocktranslate %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    (blocktranslate_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (content)
+      (plural_clause)))
   (content))
 
 ==================
@@ -200,23 +254,25 @@ Blocktrans With Every Option
 (template
   (content)
   (blocktranslate_group
-    variable: (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    variable: (identifier)
-    (filtered_value
-      (value
-        (variable_attribute
-          (identifier))))
-    (filtered_value
-      (value
-        (literal
-          (string))))
-    asvar: (identifier)
-    (content)
-    (content))
+    (blocktrans_clause
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      variable: (identifier)
+      (filtered_value
+        (value
+          (variable_attribute
+            (identifier))))
+      (filtered_value
+        (value
+          (literal
+            (string))))
+      asvar: (identifier)
+      (content)
+      (plural_clause
+        (content))))
   (content))
 
 ==================
@@ -230,8 +286,9 @@ Blocktrans With Its Options Reordered
 (template
   (content)
   (blocktranslate_group
-    asvar: (identifier)
-    (content))
+    (blocktrans_clause
+      asvar: (identifier)
+      (content)))
   (content))
 
 ==================
@@ -244,6 +301,7 @@ Blocktrans Closed By The Other Spelling
 ---
 
 
+
 ==================
 Blocktranslate Closed By The Other Spelling
 :error
@@ -252,6 +310,7 @@ Blocktranslate Closed By The Other Spelling
 {% blocktranslate %}hi{% endblocktrans %}
 
 ---
+
 
 
 ==================
@@ -264,6 +323,7 @@ Blocktrans With Count And No Plural
 ---
 
 
+
 ==================
 Blocktrans With Plural And No Count
 :error
@@ -272,6 +332,7 @@ Blocktrans With Plural And No Count
 {% blocktrans %}one{% plural %}many{% endblocktrans %}
 
 ---
+
 
 
 ==================
@@ -284,6 +345,7 @@ Blocktrans Counting Two Bindings
 ---
 
 
+
 ==================
 Blocktrans With Nothing To Bind
 :error
@@ -292,6 +354,7 @@ Blocktrans With Nothing To Bind
 {% blocktrans with %}hi{% endblocktrans %}
 
 ---
+
 
 
 ==================
@@ -304,6 +367,7 @@ Blocktrans With An Unknown Option
 ---
 
 
+
 ==================
 Blocktrans With Asvar And No Name
 :error
@@ -312,6 +376,7 @@ Blocktrans With Asvar And No Name
 {% blocktrans asvar %}hi{% endblocktrans %}
 
 ---
+
 
 
 ==================
@@ -324,6 +389,7 @@ Blocktrans Holding A Tag
 ---
 
 
+
 ==================
 Blocktrans Holding A Comment
 :error
@@ -332,6 +398,7 @@ Blocktrans Holding A Comment
 {% blocktrans %}a{# c #}b{% endblocktrans %}
 
 ---
+
 
 
 ==================
@@ -344,6 +411,7 @@ Blocktrans Holding Another Blocktrans
 ---
 
 
+
 ==================
 Blocktrans With Two Plurals
 :error
@@ -352,6 +420,7 @@ Blocktrans With Two Plurals
 {% blocktrans count n=x %}one{% plural %}many{% plural %}x{% endblocktrans %}
 
 ---
+
 
 
 ==================
@@ -363,6 +432,8 @@ Blocktrans With An Argument On Plural
 
 ---
 
+
+
 ==================
 Blocktrans With Trimmed Twice
 :error
@@ -371,6 +442,7 @@ Blocktrans With Trimmed Twice
 {% blocktrans trimmed trimmed %}hi{% endblocktrans %}
 
 ---
+
 
 
 ==================
@@ -383,6 +455,7 @@ Blocktrans With With Twice
 ---
 
 
+
 ==================
 Blocktrans With Context Twice
 :error
@@ -391,6 +464,7 @@ Blocktrans With Context Twice
 {% blocktrans context "a" context "b" %}hi{% endblocktrans %}
 
 ---
+
 
 
 ==================
@@ -403,6 +477,7 @@ Blocktrans With Asvar Twice
 ---
 
 
+
 ==================
 Blocktrans With Count Twice
 :error
@@ -413,6 +488,7 @@ Blocktrans With Count Twice
 ---
 
 
+
 ==================
 Blocktranslate With Trimmed Twice
 :error
@@ -421,6 +497,7 @@ Blocktranslate With Trimmed Twice
 {% blocktranslate trimmed trimmed %}hi{% endblocktranslate %}
 
 ---
+
 
 
 ==================
@@ -434,9 +511,11 @@ Blocktrans Repeating An Option Of The Tag Before It
 (template
   (content)
   (blocktranslate_group
-    (content))
+    (blocktrans_clause
+      (content)))
   (blocktranslate_group
-    (content))
+    (blocktrans_clause
+      (content)))
   (content))
 
 ==================
@@ -447,3 +526,5 @@ Blocktrans With A Binding Twice
 {% blocktrans with a=1 a=2 %}x{% endblocktrans %}
 
 ---
+
+

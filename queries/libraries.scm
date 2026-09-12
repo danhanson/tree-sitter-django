@@ -24,10 +24,11 @@
 (get_media_prefix
   tag: ("get_media_prefix") @library.static)
 
-(blocktranslate_group
-  tag: [
-    ("blocktrans")
-    ("blocktranslate")] @library.i18n)
+(blocktrans_clause
+  tag: ("blocktrans") @library.i18n)
+
+(blocktranslate_clause
+  tag: ("blocktranslate") @library.i18n)
 
 (translate
   tag: [
