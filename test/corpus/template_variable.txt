@@ -461,3 +461,40 @@ Template Variable Attribute Of A Literal
 
 ---
 
+
+==================
+Template Variable Trailing Dot With An Exponent
+==================
+
+{{ 1.e5 }}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (literal
+          (number)))))
+  (content))
+
+==================
+Template Variable Trailing Dot
+:error
+==================
+
+{{ 1. }}
+
+---
+
+
+==================
+Template Variable Signed Trailing Dot
+:error
+==================
+
+{{ -1. }}
+
+---
+

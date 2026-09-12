@@ -280,8 +280,8 @@ Corpus tests live in `test/corpus/*.txt`, one file per tag.
 
 ### Checking against Django itself
 
-The `Pipfile` pins Django so the grammar can be diffed against the real implementation instead of against
-documentation or memory. Both checks are worth repeating whenever tags, filters or literals change:
+`Pipfile.lock` pins Django (`Pipfile` itself says `django = "*"`) so the grammar can be diffed against the
+real implementation instead of against documentation or memory. Both checks are worth repeating whenever tags, filters or literals change:
 
 - **Builtin parity** — enumerate `Engine.default_builtins`, then compare `register.tags` and
   `register.filters` against `grammar.js`. For filters also compare argument arity via
@@ -305,7 +305,11 @@ rule it states. Anything added here that fits that rule belongs there too; anyth
 unavoidable limitation, or a case where this grammar is the more permissive one — stays here.
 
 - Django has no number token: `[\w.]+` is one lexeme and `int()`/`float()` decides whether it is a literal,
-  so `1a`, `1e`, `0x1f`, `1.2.3`, `1__0` and `1.` are variable _lookups_ there and errors here.
+  so `1a`, `1e`, `0x1f`, `1.2.3`, `1__0` and `1.` are variable _lookups_ there and errors here. `1.` is the
+  one that needs care: `Variable` calls `float()` and then rejects what it parsed if the last character is
+  a dot (`# "2." is invalid`), so a trailing dot is a number only with an exponent after it — `1.e5` is a
+  float and `1.` is not. The `number` regex is spelled to say that, and `test/corpus/template_variable.txt`
+  pins all three.
 - Django has no boolean or `None` token either. `True`, `False` and `None` are lookups, which resolve
   because `BaseContext._reset_dicts` seeds every context with `{"True": True, "False": False, "None": None}`.
   They are `boolean` and `none` literals here, so that a tool reading `queries/locals.scm` does not count

@@ -1,6 +1,35 @@
 # tree-sitter-django
 
-A [tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar for the Django Template Language (DTL) — the `{% %}` tags and `{{ }}` variables used in Django templates.
+A [tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar for the Django Template Language (DTL) — the `{% %}` tags, `{{ }}` variables and `{# #}` comments used in Django templates.
+
+## Coverage
+
+Every tag and filter Django ships as a builtin is modelled — 28 tags and 57 filters as of Django 6.1 —
+and so is every tag and filter of the five libraries below. Arguments are part of the grammar rather than
+something a linter checks later, so a builtin written with the wrong ones is a parse error: `{{ x|length:2 }}`
+and `{% now %}` do not parse, because `length` takes no argument and `now` requires one.
+
+The target is Django 6.1, including the builtins Django 6 added (`{% partial %}`, `{% partialdef %}`,
+`{% querystring %}`, `{% csp_nonce_attr %}`). Rather than being written from the documentation, the grammar
+is checked against a real Django — `Pipfile.lock` pins the version — by enumerating `Engine.default_builtins`
+for the tag and filter lists and their arities, and by running candidate snippets through both
+`django.template.Template()` and this parser to compare what each accepts. Where the two deliberately
+disagree is listed under [Divergences](#divergences-from-django).
+
+## Using it
+
+There is no published package yet, and no language bindings — those are coming. What is here today:
+
+- **`src/parser.c` and `src/scanner.c` are generated and committed**, so any tree-sitter host can compile
+  them directly without running the CLI. The scanner is required: block-name matching
+  (`{% block a %}…{% endblock a %}`) and the repeated-argument guards live in it.
+- **`npm run parser-build`** produces `tree-sitter-django.wasm` for a `web-tree-sitter` host or an editor
+  that loads Wasm grammars. It is a build artifact rather than a checked-in one, so it has to be built
+  (or shipped by a release) before anything can load it.
+- **`queries/`** holds the highlight, locals, tags and injection queries an editor loads, plus three files
+  meant for a linter. See [Queries](#queries).
+- **`tree-sitter.json`** names the grammar `django`, scopes it `source.django`, and points at the query
+  files, which is what a tree-sitter host reads to wire all of the above together.
 
 ## Development
 
@@ -11,6 +40,11 @@ npm run parser-test      # run the corpus tests in test/corpus
 npm run parser-build     # build the WASM binary
 npm run playground       # interactively explore the grammar
 ```
+
+`src/parser.c`, `src/grammar.json` and `src/node-types.json` are generated **and committed**, so a change
+to `grammar.js` or `src/scanner.c` is only half made until `parser-generate` has run and the result is
+committed alongside it. `tree-sitter test` compiles the parser itself, so a stale `src/` shows up as tests
+that pass against the wrong grammar.
 
 ## Queries
 
@@ -150,7 +184,8 @@ Five things to know:
   alternative and your arity applies — `{{ x|shout }}` is now an error, while names you have not modelled
   still fall through to `(filter name: (identifier))`.
 - **A tag with a body needs a `conflicts` entry**, as every clause in the base grammar does:
-  `conflicts: ($, previous) => [...previous, [$.map_clause]]`. The generator offers an associativity
+  `conflicts: ($, previous) => [...previous, [$.map_clause]]` for a `map_clause` holding the body. The
+  generator offers an associativity
   instead; taking it silently discards the parse in which the body continues.
 - **End tags are not reserved**, a stray `{% endmap %}` parses as a `custom_tag` rather than an error — `reserved` takes no
   `previous`, so the `tag_name` list cannot be added to a name at a time. Instead you may drop the `custom_tag` rule to avoid parsing end tags as custom tags.
@@ -181,7 +216,7 @@ not want `custom_tag` and `_custom_filter` accepting unrecognized names as they 
 template_block_groups: ($, previous) =>
   choice(
     ...previous.members.filter((m) => m.name !== "custom_tag"),
-    $.map_group,
+    $.map_tag,
   ),
 
 filter: ($, previous) =>
@@ -203,7 +238,8 @@ Every case below is input Django itself accepts:
 
 - **Number-shaped names.** Django has no number token: a word is a literal if `int()` or `float()` parses
   it and a variable lookup otherwise, so `0x1f`, `1a`, `1.`, `1.2.3` and `1__0` look up a variable of that
-  name and render nothing.
+  name and render nothing. (`1.` really is a lookup there and not a float — `Variable` rejects a trailing
+  dot after parsing it — while `1.e5` is a float, and both are treated that way here.)
 - **An attribute of `True`, `False` or `None`.** Every Django context is seeded with those three names, so
   `{{ True.x }}` is an ordinary two-part lookup that can never resolve.
 - **A keyword argument written twice.** `{% with a=1 a=2 %}`, and the same in `{% include %}` and
@@ -217,3 +253,7 @@ Every case below is input Django itself accepts:
 
 In the other direction the grammar is more permissive only where it cannot know better, which is what the
 fallbacks above are for.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

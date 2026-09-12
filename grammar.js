@@ -395,10 +395,17 @@ const django = grammar({
     value: ($) => choice($.literal, $.variable_attribute),
     literal: ($) =>
       choice($.number, $.string, $.translated_string, $.boolean, $.none),
-    // digits, with single underscores allowed between them, as Python's
-    // int() and float() accept ("1_000") and Django's Variable relies on
+    /**
+     * Digits, with single underscores allowed between them, as Python's int()
+     * and float() accept ("1_000") and Django's Variable relies on.
+     *
+     * A trailing dot needs an exponent after it. Variable calls float() and
+     * then rejects what it just parsed if the last character is a dot — the
+     * comment in Django reads `# "2." is invalid` — so "1." is a two-part
+     * lookup there rather than a number, while "1.e5" is a float.
+     */
     number: ($) =>
-      /[-+]?(?:[0-9](?:_?[0-9])*(?:\.(?:[0-9](?:_?[0-9])*)?)?|\.[0-9](?:_?[0-9])*)(?:[eE][0-9](?:_?[0-9])*)?/,
+      /[-+]?(?:(?:[0-9](?:_?[0-9])*(?:\.[0-9](?:_?[0-9])*)?|\.[0-9](?:_?[0-9])*)(?:[eE][0-9](?:_?[0-9])*)?|[0-9](?:_?[0-9])*\.[eE][0-9](?:_?[0-9])*)/,
     string: ($) => STRING,
     /**
      * A string to translate at render time. Django matches "_(" and ")" as
