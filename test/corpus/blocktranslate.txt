@@ -349,12 +349,26 @@ Blocktranslate Closed By The Other Spelling
 
 ==================
 Blocktrans With Count And No Plural
-:error
 ==================
 
 {% blocktrans count n=x %}one{% endblocktrans %}
 
 ---
+
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_clause
+      (blocktrans_block
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (content)
+      (missing_plural_block))
+    (endblocktrans_block))
+  (content))
 
 
 

@@ -1,0 +1,503 @@
+==================
+Missing Endif At End Of Input
+==================
+
+{% if a %}x
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (missing_endif_block)))
+
+==================
+Missing Endfor After Empty
+==================
+
+{% for x in y %}a{% empty %}b
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_clause
+      (for_block
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content)))
+    (empty_clause
+      (empty_block)
+      (template
+        (content)))
+    (missing_endfor_block)))
+
+==================
+Missing Endblock At End Of Input
+==================
+
+{% block content %}x
+
+---
+
+(template
+  (content)
+  (block_group
+    (block_clause
+      (block_block
+        (push_block))
+      (template
+        (content)))
+    (missing_endblock_block)))
+
+==================
+Missing Endpartialdef At End Of Input
+==================
+
+{% partialdef p %}x
+
+---
+
+(template
+  (content)
+  (partialdef_group
+    (partialdef_clause
+      (partialdef_block
+        (push_partial))
+      (template
+        (content)))
+    (missing_endpartialdef_block)))
+
+==================
+Missing Endverbatim With An Empty Body
+==================
+
+{% verbatim %}
+
+---
+
+(template
+  (content)
+  (verbatim_group
+    (verbatim_clause
+      (verbatim_block
+        (push_verbatim))
+      (verbatim_content))
+    (missing_endverbatim_block)))
+
+==================
+Missing Endverbatim After A Tag In Its Text
+==================
+
+{% verbatim %}{% endif %}x
+
+---
+
+(template
+  (content)
+  (verbatim_group
+    (verbatim_clause
+      (verbatim_block
+        (push_verbatim))
+      (verbatim_content))
+    (missing_endverbatim_block)))
+
+==================
+Missing Endcomment At End Of Input
+==================
+
+{% comment %}x
+
+---
+
+(template
+  (content)
+  (comment_group
+    (comment_clause
+      (comment_block)
+      (comment_content))
+    (missing_endcomment_block)))
+
+==================
+Missing Endif Before An Outer End Tag
+==================
+
+{% for x in y %}{% if a %}{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_clause
+      (for_block
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (if_group
+          (if_clause
+            (if_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier)))))))
+          (missing_endif_block))))
+    (endfor_block))
+  (content))
+
+==================
+Missing Endfor Before An Outer Else
+==================
+
+{% if a %}{% for x in y %}{% else %}b{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (for_group
+          (for_clause
+            (for_block
+              (identifier)
+              (filtered_value
+                (value
+                  (variable_attribute
+                    (identifier))))))
+          (missing_endfor_block))))
+    (else_clause
+      (else_block)
+      (template
+        (content)))
+    (endif_block))
+  (content))
+
+==================
+Missing Endwith Before An Outer Endblock
+==================
+
+{% block a %}{% with b=1 %}{% endblock a %}
+
+---
+
+(template
+  (content)
+  (block_group
+    (block_clause
+      (block_block
+        (push_block))
+      (template
+        (with_group
+          (with_clause
+            (with_block
+              (identifier)
+              (filtered_value
+                (value
+                  (literal
+                    (number))))))
+          (missing_endwith_block))))
+    (endblock_block
+      (pop_block)))
+  (content))
+
+==================
+Missing Two End Tags At End Of Input
+==================
+
+{% for x in y %}{% if a %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_clause
+      (for_block
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (if_group
+          (if_clause
+            (if_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
+            (template
+              (content)))
+          (missing_endif_block))))
+    (missing_endfor_block)))
+
+==================
+Missing Endblock Before An Outer Name
+==================
+
+{% block a %}{% block b %}{% endblock a %}
+
+---
+
+(template
+  (content)
+  (block_group
+    (block_clause
+      (block_block
+        (push_block))
+      (template
+        (block_group
+          (block_clause
+            (block_block
+              (push_block)))
+          (missing_endblock_block))))
+    (endblock_block
+      (pop_block)))
+  (content))
+
+==================
+Missing Endpartialdef Before An Outer Name
+==================
+
+{% partialdef a %}{% partialdef b %}{% endpartialdef a %}
+
+---
+
+(template
+  (content)
+  (partialdef_group
+    (partialdef_clause
+      (partialdef_block
+        (push_partial))
+      (template
+        (partialdef_group
+          (partialdef_clause
+            (partialdef_block
+              (push_partial)))
+          (missing_endpartialdef_block))))
+    (endpartialdef_block
+      (pop_partial)))
+  (content))
+
+==================
+Missing Plural At End Of Input
+==================
+
+{% blocktrans count n=x %}one
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_clause
+      (blocktrans_block
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (content)
+      (missing_plural_block))
+    (missing_endblocktrans_block)))
+
+==================
+Missing Plural Before Endblocktranslate
+==================
+
+{% blocktranslate count n=x %}one{% endblocktranslate %}
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    (blocktranslate_clause
+      (blocktranslate_block
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (content)
+      (missing_plural_block))
+    (endblocktranslate_block))
+  (content))
+
+==================
+Missing Endblocktrans After Plural
+==================
+
+{% blocktrans count n=x %}one{% plural %}many
+
+---
+
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_clause
+      (blocktrans_block
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (content)
+      (plural_clause
+        (plural_block)
+        (content)))
+    (missing_endblocktrans_block)))
+
+==================
+Missing Endfor Before A Tag Without Spaces
+==================
+
+{% if a %}{% for x in y %}{%endif%}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (for_group
+          (for_clause
+            (for_block
+              (identifier)
+              (filtered_value
+                (value
+                  (variable_attribute
+                    (identifier))))))
+          (missing_endfor_block))))
+    (endif_block))
+  (content))
+
+==================
+Missing Endfor Before A Tag Across Lines
+==================
+
+{% if a %}{% for x in y %}{%
+endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (for_group
+          (for_clause
+            (for_block
+              (identifier)
+              (filtered_value
+                (value
+                  (variable_attribute
+                    (identifier))))))
+          (missing_endfor_block))))
+    (endif_block))
+  (content))
+
+==================
+Missing Endif After A Custom End Tag
+==================
+
+{% if a %}{% endmytag %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (custom_tag_block
+          (identifier))
+        (content)))
+    (missing_endif_block)))
+
+==================
+Stray End Tag After A Missing One
+:error
+==================
+
+{% if a %}{% endfor %}
+
+---
+
+
+==================
+Endblock Naming No Open Block
+:error
+==================
+
+{% block a %}{% block b %}{% endblock c %}
+
+---
+
+
+==================
+Second Else Is Not A Missing Tag
+:error
+==================
+
+{% if a %}{% else %}{% else %}{% endif %}
+
+---
+
+
+==================
+Plural Without Count Is Not A Missing Tag
+:error
+==================
+
+{% blocktrans %}one{% plural %}many{% endblocktrans %}
+
+---
+

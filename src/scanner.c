@@ -1,10 +1,19 @@
 #include "tree_sitter/parser.h"
 #include "tree_sitter/alloc.h"
 #include "tree_sitter/array.h"
-#include <string.h>
 
 #define ERROR_SIZE 64
 #define NAME_SEP ' '
+
+/* A scanner is also built for Wasm, where only a few C library functions are
+ * available and string.h is not among them, so strings are compared here. */
+static bool strings_equal(const char *left, const char *right) {
+  while (*left != '\0' && *left == *right) {
+    ++left;
+    ++right;
+  }
+  return *left == *right;
+}
 
 enum TokenType {
   /* indicates that an error occurred */
@@ -29,6 +38,14 @@ enum TokenType {
   /* zero width, before the name of a "name=value" argument: record the name,
    * and fail if the tag has already been given one by that name */
   KwargName,
+  /* zero width, where a tag group's required tag is missing; see
+   * scan_missing_tag */
+  MissingTag,
+  /* zero width, before the name of a tag that opens a group: push the group */
+  GroupOpen,
+  /* zero width, before the name of a tag that closes a group, or of the plural
+   * of a counted blocktranslate: pop the group, or record its plural */
+  GroupClose,
 };
 
 /* The options blocktranslate takes, in the order of the bits recording them.
@@ -47,10 +64,67 @@ typedef enum {
   BlockTag,
   PartialTag,
   VerbatimTag,
+  /* The groups below have no name to match, and are kept only so that a
+   * missing end tag can be told from one that belongs to the group. A counted
+   * blocktranslate is a kind of its own until its plural is read, because
+   * until then "plural" is the tag it is waiting for. */
+  AutoescapeTag,
+  BlocktransTag,
+  BlocktransCountTag,
+  BlocktranslateTag,
+  BlocktranslateCountTag,
+  CacheTag,
+  CommentTag,
+  FilterTag,
+  ForTag,
+  IfTag,
+  IfchangedTag,
+  LanguageTag,
+  LocalizeTag,
+  LocaltimeTag,
+  SpacelessTag,
+  TimezoneTag,
+  WithTag,
+  TagKindCount,
 } TagKind;
 
 /* one letter per kind, in TagKind order, used to serialize an open tag */
-static const char tag_kind_chars[] = "bpv";
+static const char tag_kind_chars[] = "bpvatTrRcmfoihlzesnw";
+
+typedef struct {
+  /* the name of the tag GroupOpen pushes this kind for, or NULL */
+  const char *open_name;
+  /* The names that continue or close the group, space separated: a tag with
+   * one of them belongs to the group, so is no sign its end tag is missing.
+   * The last is the tag that closes it. */
+  const char *own_names;
+  /* The body is raw text in which no tag is read, so only the end of input
+   * can show that the end tag is missing. */
+  bool raw;
+} TagGroup;
+
+static const TagGroup tag_groups[TagKindCount] = {
+  [BlockTag]               = { NULL,             "endblock",          false },
+  [PartialTag]             = { NULL,             "endpartialdef",     false },
+  [VerbatimTag]            = { NULL,             "endverbatim",       true  },
+  [AutoescapeTag]          = { "autoescape",     "endautoescape",     false },
+  [BlocktransTag]          = { "blocktrans",     "endblocktrans",     false },
+  [BlocktransCountTag]     = { NULL,             "plural",            false },
+  [BlocktranslateTag]      = { "blocktranslate", "endblocktranslate", false },
+  [BlocktranslateCountTag] = { NULL,             "plural",            false },
+  [CacheTag]               = { "cache",          "endcache",          false },
+  [CommentTag]             = { "comment",        "endcomment",        true  },
+  [FilterTag]              = { "filter",         "endfilter",         false },
+  [ForTag]                 = { "for",            "empty endfor",      false },
+  [IfTag]                  = { "if",             "elif else endif",   false },
+  [IfchangedTag]           = { "ifchanged",      "else endifchanged", false },
+  [LanguageTag]            = { "language",       "endlanguage",       false },
+  [LocalizeTag]            = { "localize",       "endlocalize",       false },
+  [LocaltimeTag]           = { "localtime",      "endlocaltime",      false },
+  [SpacelessTag]           = { "spaceless",      "endspaceless",      false },
+  [TimezoneTag]            = { "timezone",       "endtimezone",       false },
+  [WithTag]                = { "with",           "endwith",           false },
+};
 
 typedef struct {
   TagKind kind;
@@ -97,7 +171,7 @@ static void reset_scanner(struct Scanner *const scanner) {
      * readable here and none of it holds a pointer to free: scanner_error
      * resets before it sets has_error, which is what frees them. Zeroing the
      * whole struct clears the error and the state it overlays at once. */
-    memset(scanner, 0, sizeof(*scanner));
+    *scanner = (struct Scanner) {0};
   } else {
     scanner->translate_seen = 0;
     array_delete(&scanner->seen_kwargs);
@@ -349,12 +423,18 @@ void tree_sitter_django_external_scanner_deserialize(
         }
         if (name == NULL) {
           // a tag starts with the letter for its kind
-          const char *kind = code > 0 && code < 128 ? strchr(tag_kind_chars, code) : NULL;
-          if (kind == NULL) {
+          int kind = -1;
+          for (int i = 0; i < TagKindCount; ++i) {
+            if (tag_kind_chars[i] == code) {
+              kind = i;
+              break;
+            }
+          }
+          if (kind < 0) {
             scanner_error(scanner, "Invalid tag kind");
             return;
           }
-          OpenTag tag = { (TagKind) (kind - tag_kind_chars), array_new() };
+          OpenTag tag = { (TagKind) kind, array_new() };
           array_push(&scanner->stack, tag);
           name = &array_back(&scanner->stack)->name;
         } else if (code == NAME_SEP) {
@@ -460,7 +540,7 @@ static int read_translate_option(TSLexer *const lexer) {
   }
   word[size] = '\0';
   for (unsigned i = 0; i < sizeof(translate_options) / sizeof(*translate_options); ++i) {
-    if (strcmp(word, translate_options[i]) == 0) {
+    if (strings_equal(word, translate_options[i])) {
       return (int) i;
     }
   }
@@ -513,6 +593,205 @@ static bool scan_kwarg_name(struct Scanner *const scanner, TSLexer *const lexer)
   }
   array_push(&scanner->seen_kwargs, NAME_SEP);
   return true;
+}
+
+/* NAMES_INSIDE_A_TAG_GROUP in grammar.js, which this must be kept in step with:
+ * the names reserved to a tag group, which can therefore never continue the
+ * body of a group they do not belong to. */
+static const char group_names[] =
+  "elif else empty endautoescape endblock endblocktrans endblocktranslate "
+  "endcache endcomment endfilter endfor endif endifchanged endlanguage "
+  "endlocalize endlocaltime endpartialdef endspaceless endtimezone endverbatim "
+  "endwith plural";
+
+/* The longest of group_names and of the opening names, "endblocktranslate",
+ * is 17. */
+#define GROUP_NAME_MAX 17
+
+/* Whether `word` is one of the space-separated names in `list`. */
+static bool name_in_list(const char *const word, const char *list) {
+  for (;;) {
+    const char *letter = word;
+    while (*letter != '\0' && *letter == *list) {
+      ++letter;
+      ++list;
+    }
+    if (*letter == '\0' && (*list == ' ' || *list == '\0')) {
+      return true;
+    }
+    while (*list != ' ' && *list != '\0') {
+      ++list;
+    }
+    if (*list == '\0') {
+      return false;
+    }
+    ++list;
+  }
+}
+
+/* The last of the space-separated names in `list`. */
+static const char *last_name(const char *list) {
+  const char *last = list;
+  for (; *list != '\0'; ++list) {
+    if (*list == ' ') {
+      last = list + 1;
+    }
+  }
+  return last;
+}
+
+static bool names_equal(const Name *const left, const Name *const right) {
+  if (left->size != right->size) {
+    return false;
+  }
+  for (unsigned i = 0; i < left->size; ++i) {
+    if (left->contents[i] != right->contents[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/* Reads a tag's name into `word`, and reports whether it could be the name of
+ * a group's tag at all: one longer than any of them is not. */
+static bool read_group_word(TSLexer *const lexer, char word[GROUP_NAME_MAX + 1]) {
+  unsigned size = 0;
+  while (check_name_char(lexer->lookahead)) {
+    if (size < GROUP_NAME_MAX) {
+      word[size] = (char) lexer->lookahead;
+    }
+    ++size;
+    lexer->advance(lexer, false);
+  }
+  if (size == 0 || size > GROUP_NAME_MAX) {
+    return false;
+  }
+  word[size] = ' ';
+  return true;
+}
+
+/* Closes the innermost group, as its end tag does; for a counted
+ * blocktranslate still waiting for its plural, records the plural instead,
+ * which leaves the group open. */
+static void close_group(struct Scanner *const scanner) {
+  OpenTag *const tag = array_back(&scanner->stack);
+  if (tag->kind == BlocktransCountTag || tag->kind == BlocktranslateCountTag) {
+    tag->kind = (TagKind) (tag->kind - 1);
+    return;
+  }
+  array_delete(&tag->name);
+  array_pop(&scanner->stack);
+}
+
+/* Scans GroupOpen or GroupClose, both zero width before a tag's name. Either
+ * may be valid where a tag starts, and nothing else of this scanner is. */
+static bool scan_group_tag(
+  struct Scanner *const scanner,
+  TSLexer *const lexer,
+  const bool *const valid_symbols
+) {
+  lexer->mark_end(lexer);
+  char word[GROUP_NAME_MAX + 1];
+  if (!read_group_word(lexer, word)) {
+    return false;
+  }
+  if (valid_symbols[GroupOpen]) {
+    for (unsigned kind = 0; kind < TagKindCount; ++kind) {
+      const char *const name = tag_groups[kind].open_name;
+      if (name != NULL && strings_equal(name, word)) {
+        OpenTag tag = { (TagKind) kind, array_new() };
+        array_push(&scanner->stack, tag);
+        lexer->result_symbol = GroupOpen;
+        return true;
+      }
+    }
+  }
+  if (valid_symbols[GroupClose] && scanner->stack.size > 0) {
+    const OpenTag *const innermost = array_back(&scanner->stack);
+    const char *const own_names = tag_groups[innermost->kind].own_names;
+    // block, partialdef and verbatim close through their pop tokens
+    if (innermost->kind > VerbatimTag && strings_equal(last_name(own_names), word)) {
+      close_group(scanner);
+      lexer->result_symbol = GroupClose;
+      return true;
+    }
+  }
+  return false;
+}
+
+typedef enum {
+  /* no marker here, and nothing has been read */
+  NotMissing,
+  /* the marker was scanned */
+  Missing,
+  /* no marker, but input was read to decide that, so nothing else may be
+   * scanned from here */
+  NotMissingAfterReading,
+} MissingResult;
+
+/* Scans the zero-width marker for the innermost group's missing tag. The
+ * marker is valid only where that group could close, which is after a body,
+ * where nothing else of this scanner is valid but the raw-text tokens, and
+ * those are scanned only when this returns NotMissing.
+ *
+ * The tag is taken to be missing at the end of input; before a tag whose name
+ * is reserved to some other group, since it cannot be part of this group's
+ * body; and before an endblock or endpartialdef whose name is not the innermost
+ * open one but one further out, which it closes instead. The marker then
+ * closes the group as the missing tag would have. */
+static MissingResult scan_missing_tag(struct Scanner *const scanner, TSLexer *const lexer) {
+  if (scanner->stack.size == 0) {
+    // the stack has lost track of the group, so leave it to the grammar
+    return NotMissing;
+  }
+  const OpenTag *const innermost = array_back(&scanner->stack);
+  const TagGroup *const group = &tag_groups[innermost->kind];
+  lexer->mark_end(lexer);
+  if (!lexer->eof(lexer)) {
+    if (group->raw || lexer->lookahead != '{') {
+      return NotMissing;
+    }
+    lexer->advance(lexer, false);
+    if (lexer->lookahead != '%') {
+      return NotMissingAfterReading;
+    }
+    lexer->advance(lexer, false);
+    skip_whitespace(lexer);
+    char word[GROUP_NAME_MAX + 1];
+    if (!read_group_word(lexer, word)) {
+      return NotMissingAfterReading;
+    }
+    if (name_in_list(word, group->own_names)) {
+      // the group's own tag, unless it names a block further out
+      if (innermost->kind != BlockTag && innermost->kind != PartialTag) {
+        return NotMissingAfterReading;
+      }
+      if (!check_space(lexer->lookahead) || scanner->stack.size < 2) {
+        return NotMissingAfterReading;
+      }
+      skip_whitespace(lexer);
+      Name name = array_new();
+      bool closes_outer = false;
+      if (read_name(lexer, &name) && !names_equal(&innermost->name, &name)) {
+        for (unsigned i = scanner->stack.size - 1; i-- > 0;) {
+          const OpenTag *const tag = array_get(&scanner->stack, i);
+          if (tag->kind == innermost->kind && names_equal(&tag->name, &name)) {
+            closes_outer = true;
+            break;
+          }
+        }
+      }
+      array_delete(&name);
+      if (!closes_outer) {
+        return NotMissingAfterReading;
+      }
+    } else if (!name_in_list(word, group_names)) {
+      return NotMissingAfterReading;
+    }
+  }
+  close_group(scanner);
+  lexer->result_symbol = MissingTag;
+  return Missing;
 }
 
 const char endverbatim_chars[] = "endverbatim";
@@ -669,6 +948,22 @@ bool tree_sitter_django_external_scanner_scan(
   if (valid_symbols[MatcherError]) {
     return false;
   }
+  /* Above the raw-text scanners, which find nothing at the end of an empty
+   * body, and below the MatcherError check, which keeps these from being
+   * scanned during error recovery. */
+  if (valid_symbols[MissingTag]) {
+    switch (scan_missing_tag(scanner, lexer)) {
+      case Missing:
+        return true;
+      case NotMissingAfterReading:
+        return false;
+      case NotMissing:
+        break;
+    }
+  }
+  if (valid_symbols[GroupOpen] || valid_symbols[GroupClose]) {
+    return scan_group_tag(scanner, lexer, valid_symbols);
+  }
   if (valid_symbols[VerbatimContent]) {
     return scan_verbatim_content(scanner, lexer);
   }
@@ -710,6 +1005,13 @@ bool tree_sitter_django_external_scanner_scan(
       return false;
     }
     scanner->translate_seen |= bit;
+    if (option == 1 && scanner->stack.size > 0) {
+      // "count" makes the group one that waits for a plural
+      OpenTag *const tag = array_back(&scanner->stack);
+      if (tag->kind == BlocktransTag || tag->kind == BlocktranslateTag) {
+        tag->kind = (TagKind) (tag->kind + 1);
+      }
+    }
     lexer->result_symbol = TranslateOption;
     return true;
   }
@@ -729,7 +1031,8 @@ bool tree_sitter_django_external_scanner_scan(
   /* Only the innermost open tag can be closed here, so it is the one and only
    * candidate: there is never a second name to try, and so never any input to
    * reread. */
-  if (scanner->stack.size > 0) {
+  // only the kinds that match a name have a pop token
+  if (scanner->stack.size > 0 && array_back(&scanner->stack)->kind <= VerbatimTag) {
     OpenTag *tag = array_back(&scanner->stack);
     enum TokenType token = pop_token_for_kind(tag->kind);
     if (valid_symbols[token]) {

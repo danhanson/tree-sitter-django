@@ -253,6 +253,10 @@
         {
           "type": "endautoescape_block",
           "named": true
+        },
+        {
+          "type": "missing_endautoescape_block",
+          "named": true
         }
       ]
     }
@@ -322,6 +326,10 @@
         {
           "type": "endblock_block",
           "named": true
+        },
+        {
+          "type": "missing_endblock_block",
+          "named": true
         }
       ]
     }
@@ -386,6 +394,10 @@
         },
         {
           "type": "content",
+          "named": true
+        },
+        {
+          "type": "missing_plural_block",
           "named": true
         },
         {
@@ -462,6 +474,10 @@
           "named": true
         },
         {
+          "type": "missing_plural_block",
+          "named": true
+        },
+        {
           "type": "plural_clause",
           "named": true
         },
@@ -494,6 +510,14 @@
         },
         {
           "type": "endblocktranslate_block",
+          "named": true
+        },
+        {
+          "type": "missing_endblocktrans_block",
+          "named": true
+        },
+        {
+          "type": "missing_endblocktranslate_block",
           "named": true
         }
       ]
@@ -572,6 +596,10 @@
         {
           "type": "endcache_block",
           "named": true
+        },
+        {
+          "type": "missing_endcache_block",
+          "named": true
         }
       ]
     }
@@ -635,6 +663,10 @@
         },
         {
           "type": "endcomment_block",
+          "named": true
+        },
+        {
+          "type": "missing_endcomment_block",
           "named": true
         }
       ]
@@ -1608,6 +1640,10 @@
         {
           "type": "filter_clause",
           "named": true
+        },
+        {
+          "type": "missing_endfilter_block",
+          "named": true
         }
       ]
     }
@@ -1740,6 +1776,10 @@
         },
         {
           "type": "for_clause",
+          "named": true
+        },
+        {
+          "type": "missing_endfor_block",
           "named": true
         }
       ]
@@ -2041,6 +2081,10 @@
         {
           "type": "if_clause",
           "named": true
+        },
+        {
+          "type": "missing_endif_block",
+          "named": true
         }
       ]
     }
@@ -2108,6 +2152,10 @@
         },
         {
           "type": "ifchanged_clause",
+          "named": true
+        },
+        {
+          "type": "missing_endifchanged_block",
           "named": true
         }
       ]
@@ -2208,6 +2256,10 @@
         },
         {
           "type": "language_clause",
+          "named": true
+        },
+        {
+          "type": "missing_endlanguage_block",
           "named": true
         }
       ]
@@ -2339,6 +2391,10 @@
         {
           "type": "localize_clause",
           "named": true
+        },
+        {
+          "type": "missing_endlocalize_block",
+          "named": true
         }
       ]
     }
@@ -2392,6 +2448,10 @@
         },
         {
           "type": "localtime_clause",
+          "named": true
+        },
+        {
+          "type": "missing_endlocaltime_block",
           "named": true
         }
       ]
@@ -2540,6 +2600,10 @@
       "types": [
         {
           "type": "endpartialdef_block",
+          "named": true
+        },
+        {
+          "type": "missing_endpartialdef_block",
           "named": true
         },
         {
@@ -2761,6 +2825,10 @@
           "named": true
         },
         {
+          "type": "missing_endspaceless_block",
+          "named": true
+        },
+        {
           "type": "spaceless_clause",
           "named": true
         }
@@ -2914,6 +2982,10 @@
       "types": [
         {
           "type": "endtimezone_block",
+          "named": true
+        },
+        {
+          "type": "missing_endtimezone_block",
           "named": true
         },
         {
@@ -3118,6 +3190,10 @@
           "named": true
         },
         {
+          "type": "missing_endverbatim_block",
+          "named": true
+        },
+        {
           "type": "verbatim_clause",
           "named": true
         }
@@ -3225,6 +3301,10 @@
       "types": [
         {
           "type": "endwith_block",
+          "named": true
+        },
+        {
+          "type": "missing_endwith_block",
           "named": true
         },
         {
@@ -3717,6 +3797,82 @@
   {
     "type": "media",
     "named": false
+  },
+  {
+    "type": "missing_endautoescape_block",
+    "named": true
+  },
+  {
+    "type": "missing_endblock_block",
+    "named": true
+  },
+  {
+    "type": "missing_endblocktrans_block",
+    "named": true
+  },
+  {
+    "type": "missing_endblocktranslate_block",
+    "named": true
+  },
+  {
+    "type": "missing_endcache_block",
+    "named": true
+  },
+  {
+    "type": "missing_endcomment_block",
+    "named": true
+  },
+  {
+    "type": "missing_endfilter_block",
+    "named": true
+  },
+  {
+    "type": "missing_endfor_block",
+    "named": true
+  },
+  {
+    "type": "missing_endif_block",
+    "named": true
+  },
+  {
+    "type": "missing_endifchanged_block",
+    "named": true
+  },
+  {
+    "type": "missing_endlanguage_block",
+    "named": true
+  },
+  {
+    "type": "missing_endlocalize_block",
+    "named": true
+  },
+  {
+    "type": "missing_endlocaltime_block",
+    "named": true
+  },
+  {
+    "type": "missing_endpartialdef_block",
+    "named": true
+  },
+  {
+    "type": "missing_endspaceless_block",
+    "named": true
+  },
+  {
+    "type": "missing_endtimezone_block",
+    "named": true
+  },
+  {
+    "type": "missing_endverbatim_block",
+    "named": true
+  },
+  {
+    "type": "missing_endwith_block",
+    "named": true
+  },
+  {
+    "type": "missing_plural_block",
+    "named": true
   },
   {
     "type": "none",

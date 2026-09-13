@@ -109,13 +109,17 @@ extend it, so it reduces on whatever token follows — the end of input included
 template still holds the last `{% for … %}` or `{% endif %}` typed as a whole node, not as loose tokens.
 Stripping `_block` gives the name; a new tag, or a tag group's new part, follows the same scheme.
 
+A group's last child is its end block or, where the end tag is missing, a zero-width marker named for it
+(`missing_endif_block`; see the scanner section). So an unterminated group still reduces to a group node,
+and only a stray tag or a body the grammar cannot read produces an `ERROR`.
+
 The names themselves need no hand-maintained list either: in the generated `src/node-types.json`, a group's
 `children` are its clause types and its end block, and a clause's children include its opening block, so
 the candidates for a group are its end block plus the opening block of each clause it can hold. For
 `if_group` that is `endif_block` from the group and `if_block`, `elif_block`, `else_block` from its three
 clauses. Going the other way — from a clause the cursor sits in to the
-groups that can hold it — is the same table read backwards, which is what an unterminated tag needs, since
-the group node does not exist yet.
+groups that can hold it — is the same table read backwards, which is what a clause needs when error
+recovery has left it without its group.
 
 Do not reach for lookahead to solve that instead: `ts_language_next_state` follows only the shift on `{%`,
 which lands in the "a tag starts here" state no matter how the tree is shaped.
@@ -209,7 +213,7 @@ README nothing checks at all. The library-contents differential below, run again
 
 ### External scanner (`src/scanner.c`)
 
-Twelve external tokens, for the constraints a context-free grammar cannot express:
+Fifteen external tokens, for the constraints a context-free grammar cannot express:
 
 - `push_block`/`push_partial`/`push_verbatim` and the matching `pop_*` — name matching for
   `{% block a %}…{% endblock a %}`. They share **one** stack of `{kind, name}` entries, not one stack per
@@ -226,6 +230,25 @@ Twelve external tokens, for the constraints a context-free grammar cannot expres
   flags, not a stack, because the tag cannot nest: its body admits no tags. It lives outside the
   `stack`/`error` union, is cleared in both branches of `reset_scanner`, and is serialized after the
   status character, so a GLR stack split copies it like everything else.
+- `_group_open`, `_group_close` — zero width, before the name of a tag that opens or closes a tag group
+  (`groupBlock`). The scanner reads the name ahead of the grammar and pushes or pops a nameless entry, so
+  the stack holds every open group and not only the three whose names it matches; `block`, `partialdef`
+  and `verbatim` still push and pop through their own tokens, and are the only kinds with a pop token.
+  `{% plural %}` goes through `_group_close` too: reading the `count` option (`_bt_option`) turns a
+  blocktranslate entry into its counted kind, which waits for `plural` before its end tag. `tag_groups`
+  holds each kind's opening name and the names that belong to it, and `group_names` **must stay in sync
+  with `NAMES_INSIDE_A_TAG_GROUP`**.
+- `_missing_tag` — the marker where a group's required tag is missing, aliased at each use to
+  `missing_endX_block` or `missing_plural_block` (`MISSING_BLOCKS`). It is placed only at the end of
+  input; before a tag whose name is reserved to some other group, which therefore cannot belong to this
+  body; or before an `endblock`/`endpartialdef` naming a block further out than the innermost. It closes
+  the innermost group on the stack as the end tag would, the group reduces with no `ERROR`, and
+  `queries/errors.scm` is what reports it. **It is one token aliased per group, never a token per
+  group**: tree-sitter does not merge parse states whose valid external tokens differ, so a token per
+  group cloned every body state for each kind of group and took the table from 1,818 states to 17,664
+  (it is 3,057 as built). That trade is also why the scanner keeps a stack of every group instead of
+  being told by the token which group it is in. A supertype would be the natural way to match every
+  marker, but the generator silently drops one whose members are aliases, so `errors.scm` lists them.
 - `matcher_error` — used by no rule; returned only if the scanner reaches an error state.
 
 `check_space()` defines whitespace for the scanner and **must stay in sync with `SEP`**, because the
@@ -251,7 +274,9 @@ Zero-width guards carry one hazard: `recover_with_missing` can supply one withou
 during tree-sitter's mark-everything-valid recovery pass, so new guards go **below** it — and above the
 whitespace loop, which skips the separator the grammar still has to match. A guard must also never be valid
 where `content` is: a zero-width token at a content boundary preempts the internal lexer and `content` stops
-matching.
+matching. `_missing_tag` is the one exception, and is safe only because it returns a token solely at the end
+of input or at `{%`, where `content` cannot match. It is scanned above the raw-text scanners, which find
+nothing at the end of an empty body.
 
 ### Queries
 
@@ -281,9 +306,14 @@ A branch that is also a `@local.scope` confines its bindings whichever way the b
 `{% for %}` is inert for that check: `ForNode` renders `nodelist_empty` **inside** the same
 `context.push()` as the loop body, so `empty_clause` is a scope alongside `for_clause`.
 
+`queries/errors.scm` collects what an editor should report: `(ERROR)` as `@error.syntax`, `(MISSING)` as
+`@error.missing`, and every missing-tag marker as `@error.missing_tag`. A tree holding only markers has
+no `has_error`, so a tool that checks that flag alone misses them. Adding a tag group means adding its
+marker there, since no supertype matches them all.
+
 ## Testing
 
-Corpus tests live in `test/corpus/*.txt`, one file per tag.
+Corpus tests live in `test/corpus/*.txt`, one file per tag, and `missing.txt` for the missing-tag markers.
 
 - A test whose header carries `:error` asserts only that the parse fails. Prefer it for syntax-error cases
   over pinning an error-recovery tree, which is brittle.
@@ -355,3 +385,7 @@ unavoidable limitation, or a case where this grammar is the more permissive one 
   name. All three are errors here.
 - `partial`/`partialdef` are Django builtins as of Django 6; `elif`/`else`/`empty` are modelled as parts of
   their enclosing tag rather than as separate tags.
+- An unterminated group parses here and raises `TemplateSyntaxError` in Django: `{% if a %}x`, or a
+  `{% for %}` closed while an `{% if %}` inside it is still open, holds a `missing_endif_block` marker
+  where the end tag belongs. The marker is the error, reported through `queries/errors.scm`; a check
+  for `ERROR` nodes alone accepts the tree.

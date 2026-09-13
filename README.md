@@ -22,11 +22,11 @@ There is no published package yet, and no language bindings — those are coming
 
 - **`src/parser.c` and `src/scanner.c` are generated and committed**, so any tree-sitter host can compile
   them directly without running the CLI. The scanner is required: block-name matching
-  (`{% block a %}…{% endblock a %}`) and the repeated-argument guards live in it.
+  (`{% block a %}…{% endblock a %}`), the repeated-argument guards and the missing-tag markers live in it.
 - **`npm run parser-build`** produces `tree-sitter-django.wasm` for a `web-tree-sitter` host or an editor
   that loads Wasm grammars. It is a build artifact rather than a checked-in one, so it has to be built
   (or shipped by a release) before anything can load it.
-- **`queries/`** holds the highlight, locals, tags and injection queries an editor loads, plus three files
+- **`queries/`** holds the highlight, locals, tags, injection and error queries an editor loads, plus three files
   meant for a linter. See [Queries](#queries).
 - **`tree-sitter.json`** names the grammar `django`, scopes it `source.django`, and points at the query
   files, which is what a tree-sitter host reads to wire all of the above together.
@@ -48,7 +48,7 @@ that pass against the wrong grammar.
 
 ## Queries
 
-Four of the files in `queries/` are the standard query files an editor loads:
+Five of the files in `queries/` are query files an editor loads:
 
 - **`highlights.scm`** — syntax highlighting. Tag and filter names are listed one by one, so a name the
   grammar knows is captured as `@function` and a name it is only tolerating as `@function.call`.
@@ -61,6 +61,13 @@ Four of the files in `queries/` are the standard query files an editor loads:
 - **`injections.scm`** — marks template text and `{% verbatim %}` bodies as another language's content, so
   the HTML around the tags can be parsed by its own grammar. It names no language, leaving the editor to
   supply one.
+- **`errors.scm`** — what to report as a problem: `(ERROR)` as `@error.syntax`, tree-sitter's own
+  `(MISSING)` as `@error.missing`, and `@error.missing_tag` for the marker placed where a group's required
+  tag is missing. An unterminated `{% if a %}x` parses as an `if_group` ending in a zero-width
+  `missing_endif_block` rather than as an `ERROR`, so completion and the scope queries keep working while
+  a template is being written — and the tree reports no error of its own, so this query is how to find
+  it. A marker is placed only where the scanner can tell: at the end of input, before an end tag that
+  belongs to an enclosing group, or before an `{% endblock %}` naming a block further out.
 
 The other three are data for a tool rather than queries an editor runs. Each captures the two halves of a
 relation a tree-sitter query cannot express, and the tool does the join:
@@ -175,7 +182,7 @@ export default grammar(django, {
 });
 ```
 
-Five things to know:
+Six things to know:
 
 - **Whitespace is explicit.** `extras` is empty, because Django splits a tag's contents before parsing any
   argument, so every separator has to be written out. The `part`/`block`/`simpleTag` helpers the base
@@ -190,6 +197,8 @@ Five things to know:
   offers an associativity instead; taking it silently discards the parse in which the body continues.
 - **End tags are not reserved**, a stray `{% endmap %}` parses as a `custom_tag_block` rather than an error — `reserved` takes no
   `previous`, so the `tag_name` list cannot be added to a name at a time. Instead you may drop the `custom_tag_block` rule to avoid parsing end tags as custom tags.
+- **Your own tag groups get no missing-tag markers.** Which groups the scanner tracks is fixed in its
+  tables, so an unterminated `{% map %}` is an `ERROR`.
 - **The external scanner has to be re-exported under your grammar's name**, or block-name matching and the
   repeated-argument guards will not link. Give your grammar a `src/scanner.c` that renames the base's five entry points to the
   ones your generated `parser.c` calls, and includes it:

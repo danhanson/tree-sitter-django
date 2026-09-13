@@ -115,12 +115,20 @@ Localize With Two Arguments
 
 ==================
 Localize Unclosed
-:error
 ==================
 
 {% localize %}
 
 ---
+
+(template
+  (content)
+  (localize_group
+    (localize_clause
+      (localize_block)
+      (template
+        (content)))
+    (missing_endlocalize_block)))
 
 
 ==================
