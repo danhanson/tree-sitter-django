@@ -238,7 +238,7 @@ Fifteen external tokens, for the constraints a context-free grammar cannot expre
   blocktranslate entry into its counted kind, which waits for `plural` before its end tag. `tag_groups`
   holds each kind's opening name and the names that belong to it, and `group_names` **must stay in sync
   with `NAMES_INSIDE_A_TAG_GROUP`**.
-- `_missing_tag` — the marker where a group's required tag is missing, aliased at each use to
+- `_missing_block` — the marker where a group's required tag block is missing, aliased at each use to
   `missing_endX_block` or `missing_plural_block` (`MISSING_BLOCKS`). It is placed only at the end of
   input; before a tag whose name is reserved to some other group, which therefore cannot belong to this
   body; or before an `endblock`/`endpartialdef` naming a block further out than the innermost. It closes
@@ -274,7 +274,7 @@ Zero-width guards carry one hazard: `recover_with_missing` can supply one withou
 during tree-sitter's mark-everything-valid recovery pass, so new guards go **below** it — and above the
 whitespace loop, which skips the separator the grammar still has to match. A guard must also never be valid
 where `content` is: a zero-width token at a content boundary preempts the internal lexer and `content` stops
-matching. `_missing_tag` is the one exception, and is safe only because it returns a token solely at the end
+matching. `_missing_block` is the one exception, and is safe only because it returns a token solely at the end
 of input or at `{%`, where `content` cannot match. It is scanned above the raw-text scanners, which find
 nothing at the end of an empty body.
 
@@ -307,7 +307,7 @@ A branch that is also a `@local.scope` confines its bindings whichever way the b
 `context.push()` as the loop body, so `empty_clause` is a scope alongside `for_clause`.
 
 `queries/errors.scm` collects what an editor should report: `(ERROR)` as `@error.syntax`, `(MISSING)` as
-`@error.missing`, and every missing-tag marker as `@error.missing_tag`. A tree holding only markers has
+`@error.missing`, and every missing-tag marker as `@error.missing_block`. A tree holding only markers has
 no `has_error`, so a tool that checks that flag alone misses them. Adding a tag group means adding its
 marker there, since no supertype matches them all.
 

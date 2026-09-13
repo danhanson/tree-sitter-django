@@ -62,7 +62,7 @@ Five of the files in `queries/` are query files an editor loads:
   the HTML around the tags can be parsed by its own grammar. It names no language, leaving the editor to
   supply one.
 - **`errors.scm`** — what to report as a problem: `(ERROR)` as `@error.syntax`, tree-sitter's own
-  `(MISSING)` as `@error.missing`, and `@error.missing_tag` for the marker placed where a group's required
+  `(MISSING)` as `@error.missing`, and `@error.missing_block` for the marker placed where a group's required
   tag is missing. An unterminated `{% if a %}x` parses as an `if_group` ending in a zero-width
   `missing_endif_block` rather than as an `ERROR`, so completion and the scope queries keep working while
   a template is being written — and the tree reports no error of its own, so this query is how to find

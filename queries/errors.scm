@@ -6,10 +6,9 @@
 ; Such a tree has no error of its own (ts_node_has_error is false), so a tool
 ; has to run this query to find them.
 ;
-;   @error.syntax       input the grammar could not parse
-;   @error.missing      a token that tree-sitter's error recovery inserted
-;   @error.missing_tag  a tag its group requires, absent where the marker is;
-;                       the marker's type names the tag
+;   @error.syntax        input the grammar could not parse
+;   @error.missing       a token that tree-sitter's error recovery inserted
+;   @error.missing_block expected tag block is missing
 ;
 ; The markers are listed one by one, as MISSING_BLOCKS in grammar.js: the
 ; generator drops a supertype whose members are aliases, so there is no single
@@ -39,4 +38,4 @@
     (missing_endtimezone_block)
     (missing_endverbatim_block)
     (missing_endwith_block)
-    (missing_plural_block)] @error.missing_tag
+    (missing_plural_block)] @error.missing_block

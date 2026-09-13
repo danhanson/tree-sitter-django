@@ -263,7 +263,7 @@ function blocktransRules(tag) {
           optional($._translate_body),
           choice(
             $.plural_clause,
-            alias($._missing_tag, $.missing_plural_block),
+            alias($._missing_block, $.missing_plural_block),
           ),
         ),
       ),
@@ -481,7 +481,7 @@ const django = grammar({
     $._tag_open,
     $._bt_option,
     $._kwarg_name,
-    $._missing_tag,
+    $._missing_block,
     $._group_open,
     $._group_close,
   ],
@@ -684,7 +684,7 @@ const django = grammar({
         $.autoescape_clause,
         choice(
           $.endautoescape_block,
-          alias($._missing_tag, $.missing_endautoescape_block),
+          alias($._missing_block, $.missing_endautoescape_block),
         ),
       ),
     // the scanner takes the whitespace before a name it has to match itself
@@ -696,7 +696,7 @@ const django = grammar({
         $.block_clause,
         choice(
           $.endblock_block,
-          alias($._missing_tag, $.missing_endblock_block),
+          alias($._missing_block, $.missing_endblock_block),
         ),
       ),
     plural_block: ($) => groupBlock($._group_close, "plural"),
@@ -709,14 +709,14 @@ const django = grammar({
           $.blocktrans_clause,
           choice(
             $.endblocktrans_block,
-            alias($._missing_tag, $.missing_endblocktrans_block),
+            alias($._missing_block, $.missing_endblocktrans_block),
           ),
         ),
         seq(
           $.blocktranslate_clause,
           choice(
             $.endblocktranslate_block,
-            alias($._missing_tag, $.missing_endblocktranslate_block),
+            alias($._missing_block, $.missing_endblocktranslate_block),
           ),
         ),
       ),
@@ -780,7 +780,7 @@ const django = grammar({
         $.cache_clause,
         choice(
           $.endcache_block,
-          alias($._missing_tag, $.missing_endcache_block),
+          alias($._missing_block, $.missing_endcache_block),
         ),
       ),
     comment_block: ($) =>
@@ -792,7 +792,7 @@ const django = grammar({
         $.comment_clause,
         choice(
           $.endcomment_block,
-          alias($._missing_tag, $.missing_endcomment_block),
+          alias($._missing_block, $.missing_endcomment_block),
         ),
       ),
     // csp_nonce_attr(context, media=None)
@@ -835,7 +835,7 @@ const django = grammar({
         $.filter_clause,
         choice(
           $.endfilter_block,
-          alias($._missing_tag, $.missing_endfilter_block),
+          alias($._missing_block, $.missing_endfilter_block),
         ),
       ),
     firstof_block: ($) =>
@@ -880,7 +880,7 @@ const django = grammar({
       seq(
         $.for_clause,
         optional($.empty_clause),
-        choice($.endfor_block, alias($._missing_tag, $.missing_endfor_block)),
+        choice($.endfor_block, alias($._missing_block, $.missing_endfor_block)),
       ),
     /**
      * django.templatetags.i18n. Each of these requires exactly "as <name>",
@@ -924,7 +924,7 @@ const django = grammar({
         $.if_clause,
         repeat($.elif_clause),
         optional($.else_clause),
-        choice($.endif_block, alias($._missing_tag, $.missing_endif_block)),
+        choice($.endif_block, alias($._missing_block, $.missing_endif_block)),
       ),
     ifchanged_block: ($) =>
       groupBlock($._group_open, "ifchanged", repeat(part($.filtered_value))),
@@ -936,7 +936,7 @@ const django = grammar({
         optional($.else_clause),
         choice(
           $.endifchanged_block,
-          alias($._missing_tag, $.missing_endifchanged_block),
+          alias($._missing_block, $.missing_endifchanged_block),
         ),
       ),
     /**
@@ -964,7 +964,7 @@ const django = grammar({
         $.language_clause,
         choice(
           $.endlanguage_block,
-          alias($._missing_tag, $.missing_endlanguage_block),
+          alias($._missing_block, $.missing_endlanguage_block),
         ),
       ),
     library: ($) => seq($.identifier, optional(seq(".", $.identifier))),
@@ -993,7 +993,7 @@ const django = grammar({
         $.localize_clause,
         choice(
           $.endlocalize_block,
-          alias($._missing_tag, $.missing_endlocalize_block),
+          alias($._missing_block, $.missing_endlocalize_block),
         ),
       ),
     /** django.templatetags.tz, taking "on" or "off" as localize does. */
@@ -1010,7 +1010,7 @@ const django = grammar({
         $.localtime_clause,
         choice(
           $.endlocaltime_block,
-          alias($._missing_tag, $.missing_endlocaltime_block),
+          alias($._missing_block, $.missing_endlocaltime_block),
         ),
       ),
     lorem_block: ($) =>
@@ -1031,7 +1031,7 @@ const django = grammar({
         $.partialdef_clause,
         choice(
           $.endpartialdef_block,
-          alias($._missing_tag, $.missing_endpartialdef_block),
+          alias($._missing_block, $.missing_endpartialdef_block),
         ),
       ),
     // querystring(context, *args, **kwargs)
@@ -1053,7 +1053,7 @@ const django = grammar({
         $.spaceless_clause,
         choice(
           $.endspaceless_block,
-          alias($._missing_tag, $.missing_endspaceless_block),
+          alias($._missing_block, $.missing_endspaceless_block),
         ),
       ),
     static_block: ($) =>
@@ -1084,7 +1084,7 @@ const django = grammar({
         $.timezone_clause,
         choice(
           $.endtimezone_block,
-          alias($._missing_tag, $.missing_endtimezone_block),
+          alias($._missing_block, $.missing_endtimezone_block),
         ),
       ),
     /**
@@ -1129,7 +1129,7 @@ const django = grammar({
         $.verbatim_clause,
         choice(
           $.endverbatim_block,
-          alias($._missing_tag, $.missing_endverbatim_block),
+          alias($._missing_block, $.missing_endverbatim_block),
         ),
       ),
     widthratio_block: ($) =>
@@ -1147,7 +1147,7 @@ const django = grammar({
     with_group: ($) =>
       seq(
         $.with_clause,
-        choice($.endwith_block, alias($._missing_tag, $.missing_endwith_block)),
+        choice($.endwith_block, alias($._missing_block, $.missing_endwith_block)),
       ),
   },
 });
