@@ -182,12 +182,20 @@ static void reset_scanner(struct Scanner *const scanner) {
   }
 }
 
+/* Copies `string` into the error, cut short to fit it. */
+static void set_error(struct Scanner *const scanner, const char *const string) {
+  unsigned i = 0;
+  for (; i < ERROR_SIZE - 1 && string[i] != '\0'; ++i) {
+    scanner->error[i] = string[i];
+  }
+  scanner->error[i] = '\0';
+}
+
 #define scanner_error(scanner, string) do {\
   struct Scanner *_scanner = scanner;\
   reset_scanner(_scanner);\
   _scanner->has_error = true;\
-  _scanner->error[0] = '\0';\
-  /*strncat(_scanner->error, string, ERROR_SIZE - 1);*/\
+  set_error(_scanner, string);\
 } while(0)
 
 void * tree_sitter_django_external_scanner_create() {
