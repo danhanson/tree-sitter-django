@@ -182,6 +182,24 @@ static void reset_scanner(struct Scanner *const scanner) {
   }
 }
 
+/* The size of a name copied into a log message, its terminator included. */
+#define LOG_NAME_SIZE 64
+
+/* Copies a name into `out` for a log message, cut short to fit it. A name holds
+ * only ASCII letters, digits and underscores, so each code point is one char. */
+static const char *log_name(
+  const int32_t *const codes,
+  const unsigned size,
+  char out[LOG_NAME_SIZE]
+) {
+  unsigned i = 0;
+  for (; i < size && i < LOG_NAME_SIZE - 1; ++i) {
+    out[i] = (char) codes[i];
+  }
+  out[i] = '\0';
+  return out;
+}
+
 /* Copies `string` into the error, cut short to fit it. */
 static void set_error(struct Scanner *const scanner, const char *const string) {
   unsigned i = 0;
@@ -592,7 +610,9 @@ static bool scan_kwarg_name(struct Scanner *const scanner, TSLexer *const lexer)
         }
       }
       if (same) {
-        // the tag already holds an argument by this name
+        char name[LOG_NAME_SIZE];
+        lexer->log(lexer, "refused keyword argument %s: the tag already holds one by that name",
+          log_name(array_get(&scanner->seen_kwargs, start), size, name));
         scanner->seen_kwargs.size = start;
         return false;
       }
@@ -714,14 +734,31 @@ static bool scan_group_tag(
       }
     }
   }
-  if (valid_symbols[GroupClose] && scanner->stack.size > 0) {
-    const OpenTag *const innermost = array_back(&scanner->stack);
-    const char *const own_names = tag_groups[innermost->kind].own_names;
-    // block, partialdef and verbatim close through their pop tokens
-    if (innermost->kind > VerbatimTag && strings_equal(last_name(own_names), word)) {
-      close_group(scanner);
-      lexer->result_symbol = GroupClose;
-      return true;
+  if (valid_symbols[GroupClose]) {
+    if (scanner->stack.size > 0) {
+      const OpenTag *const innermost = array_back(&scanner->stack);
+      const char *const own_names = tag_groups[innermost->kind].own_names;
+      // block, partialdef and verbatim close through their pop tokens
+      if (innermost->kind > VerbatimTag && strings_equal(last_name(own_names), word)) {
+        close_group(scanner);
+        lexer->result_symbol = GroupClose;
+        return true;
+      }
+    }
+    /* The parser takes a close only inside a group, and a tag that belongs to
+     * another group gets a missing-tag marker first, so a closing name refused
+     * here means the stack disagrees with the parser. Any other tag reaches
+     * here on its way to the grammar and is not reported. */
+    for (unsigned kind = VerbatimTag + 1; kind < TagKindCount; ++kind) {
+      if (strings_equal(last_name(tag_groups[kind].own_names), word)) {
+        if (scanner->stack.size == 0) {
+          lexer->log(lexer, "refused %s: the parser expects a group to close, but the stack holds none", word);
+        } else {
+          lexer->log(lexer, "refused %s: the parser expects a group to close, but the innermost on the stack closes with %s",
+            word, last_name(tag_groups[array_back(&scanner->stack)->kind].own_names));
+        }
+        break;
+      }
     }
   }
   return false;
@@ -749,7 +786,8 @@ typedef enum {
  * closes the group as the missing tag would have. */
 static MissingResult scan_missing_tag(struct Scanner *const scanner, TSLexer *const lexer) {
   if (scanner->stack.size == 0) {
-    // the stack has lost track of the group, so leave it to the grammar
+    // the marker is only valid inside a group, so the stack has lost track of it
+    lexer->log(lexer, "no missing-tag marker: the parser is inside a group, but the stack holds none");
     return NotMissing;
   }
   const OpenTag *const innermost = array_back(&scanner->stack);
@@ -1009,7 +1047,8 @@ bool tree_sitter_django_external_scanner_scan(
     }
     uint8_t bit = (uint8_t) (1 << option);
     if (scanner->translate_seen & bit) {
-      // the option is already written once in this tag
+      lexer->log(lexer, "refused blocktranslate option %s: it is already written once in this tag",
+        translate_options[option]);
       return false;
     }
     scanner->translate_seen |= bit;
@@ -1059,7 +1098,10 @@ bool tree_sitter_django_external_scanner_scan(
         lexer->result_symbol = token;
         return true;
       }
-      // the close tag names something other than the tag it would close
+      char name[LOG_NAME_SIZE];
+      lexer->log(lexer, "refused %s: it does not name the innermost open \"%s\"",
+        last_name(tag_groups[tag->kind].own_names),
+        log_name(tag->name.contents, tag->name.size, name));
       return false;
     }
   }
