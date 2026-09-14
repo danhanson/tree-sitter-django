@@ -221,13 +221,31 @@ Cache Without A Fragment Name
 
 ==================
 Cache With Anything After Using
-:error
 ==================
 
 {% cache 500 sidebar using="c" extra %}x{% endcache %}
 
 ---
 
+(template
+  (content)
+  (cache_group
+    (cache_block
+      (cache_tag
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (identifier)
+        (filtered_value
+          (value
+            (literal
+              (string))))
+        (unexpected_argument))
+      (template
+        (content)))
+    (endcache_tag))
+  (content))
 
 ==================
 Cache With An Empty Using
@@ -257,3 +275,4 @@ Cache With Using As Its Fragment Name
 {% cache 500 using="c" %}x{% endcache %}
 
 ---
+

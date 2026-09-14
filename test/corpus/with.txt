@@ -68,23 +68,56 @@ With Multiple Variables
 
 ==================
 With A Binding Twice
-:error
 ==================
 
 {% with a=1 a=2 %}x{% endwith %}
 
 ---
 
+(template
+  (content)
+  (with_group
+    (with_block
+      (with_tag
+        (identifier)
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (unexpected_argument))
+      (template
+        (content)))
+    (endwith_tag))
+  (content))
 
 ==================
 With A Binding Repeated Later
-:error
 ==================
 
 {% with a=1 b=2 a=3 %}x{% endwith %}
 
 ---
 
+(template
+  (content)
+  (with_group
+    (with_block
+      (with_tag
+        (identifier)
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (identifier)
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (unexpected_argument))
+      (template
+        (content)))
+    (endwith_tag))
+  (content))
 
 ==================
 With Repeating A Binding Of The Tag Before It

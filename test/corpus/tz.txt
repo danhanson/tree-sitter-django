@@ -64,13 +64,22 @@ Localtime With Another Argument
 
 ==================
 Localtime With Two Arguments
-:error
 ==================
 
 {% localtime on off %}x{% endlocaltime %}
 
 ---
 
+(template
+  (content)
+  (localtime_group
+    (localtime_block
+      (localtime_tag
+        (unexpected_argument))
+      (template
+        (content)))
+    (endlocaltime_tag))
+  (content))
 
 ==================
 Timezone
@@ -152,13 +161,26 @@ Timezone Without An Argument
 
 ==================
 Timezone With Two Arguments
-:error
 ==================
 
 {% timezone "a" "b" %}x{% endtimezone %}
 
 ---
 
+(template
+  (content)
+  (timezone_group
+    (timezone_block
+      (timezone_tag
+        (filtered_value
+          (value
+            (literal
+              (string))))
+        (unexpected_argument))
+      (template
+        (content)))
+    (endtimezone_tag))
+  (content))
 
 ==================
 Get Current Timezone
@@ -186,13 +208,18 @@ Get Current Timezone Without As
 
 ==================
 Get Current Timezone With Anything After As
-:error
 ==================
 
 {% get_current_timezone as tz junk %}
 
 ---
 
+(template
+  (content)
+  (get_current_timezone_tag
+    (identifier)
+    (unexpected_argument))
+  (content))
 
 ==================
 Localtime Filter
@@ -272,3 +299,4 @@ Localtime Filter With An Argument
 {{ x|localtime:1 }}
 
 ---
+

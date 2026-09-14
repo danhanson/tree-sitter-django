@@ -219,8 +219,11 @@ b
     (ifchanged_block
       (ifchanged_tag)
       (template
-        (content)
-        (unexpected_tag)
+        (content)))
+    (else_block
+      (else_tag
+        (unexpected_argument))
+      (template
         (content)))
     (endifchanged_tag))
   (content))

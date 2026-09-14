@@ -233,9 +233,18 @@ Include With A Legacy Binding
 
 ==================
 Include With A Second Name
-:error
 ==================
 
 {% include "t.html" "u.html" %}
 
 ---
+
+(template
+  (content)
+  (include_tag
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (unexpected_argument))
+  (content))

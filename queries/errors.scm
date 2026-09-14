@@ -41,3 +41,5 @@
     (missing_plural_tag)] @error.missing_tag
 
 (unexpected_tag) @error.unexpected_tag
+
+(unexpected_argument) @error.unexpected_argument

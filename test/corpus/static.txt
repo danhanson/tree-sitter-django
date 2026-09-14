@@ -81,23 +81,40 @@ Static Without A Path
 
 ==================
 Static With A Second Path
-:error
 ==================
 
 {% static "a.css" "b.css" %}
 
 ---
 
+(template
+  (content)
+  (static_tag
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (unexpected_argument))
+  (content))
 
 ==================
 Static With Anything After As
-:error
 ==================
 
 {% static "a.css" as url junk %}
 
 ---
 
+(template
+  (content)
+  (static_tag
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (identifier)
+    (unexpected_argument))
+  (content))
 
 ==================
 Get Static Prefix

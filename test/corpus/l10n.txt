@@ -105,13 +105,22 @@ Localize With Another Argument
 
 ==================
 Localize With Two Arguments
-:error
 ==================
 
 {% localize on off %}x{% endlocalize %}
 
 ---
 
+(template
+  (content)
+  (localize_group
+    (localize_block
+      (localize_tag
+        (unexpected_argument))
+      (template
+        (content)))
+    (endlocalize_tag))
+  (content))
 
 ==================
 Localize Unclosed
@@ -129,7 +138,6 @@ Localize Unclosed
       (template
         (content)))
     (missing_endlocalize_tag)))
-
 
 ==================
 Localize Filter
@@ -187,3 +195,4 @@ Unlocalize Filter With An Argument
 {{ x|unlocalize:1 }}
 
 ---
+

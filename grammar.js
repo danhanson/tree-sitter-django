@@ -514,6 +514,9 @@ const django = grammar({
     [$.timezone_block],
     [$.with_block],
     [$.binaryOperator],
+    [$.predicate],
+    [$._translate_option],
+    [$.unexpected_argument],
     [$.library, $.load_tag],
     [$._filtered_value_spaced],
     [$._filter_expression_spaced],
@@ -561,15 +564,35 @@ const django = grammar({
     template: ($) => repeat1(choice($.template_node, $.content)),
     // the tags of a group; see startTag
     simpleTagOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
-    simpleTagClose: ($) => seq(optional(SEP), "%}"),
+    simpleTagClose: ($) =>
+      seq(optional($.unexpected_argument), optional(SEP), "%}"),
     startTagOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
-    startTagClose: ($) => seq($._group_open_tag_push, optional(SEP), "%}"),
+    startTagClose: ($) =>
+      seq(
+        optional($.unexpected_argument),
+        $._group_open_tag_push,
+        optional(SEP),
+        "%}",
+      ),
     followTagOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
-    followTagClose: ($) => seq($._group_follow, optional(SEP), "%}"),
+    followTagClose: ($) =>
+      seq(
+        optional($.unexpected_argument),
+        $._group_follow,
+        optional(SEP),
+        "%}",
+      ),
     repeatTagOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
-    repeatTagClose: ($) => seq($._group_repeat, optional(SEP), "%}"),
+    repeatTagClose: ($) =>
+      seq(
+        optional($.unexpected_argument),
+        $._group_repeat,
+        optional(SEP),
+        "%}",
+      ),
     endTagOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
-    endTagClose: ($) => seq($._group_close, optional(SEP), "%}"),
+    endTagClose: ($) =>
+      seq(optional($.unexpected_argument), $._group_close, optional(SEP), "%}"),
     content: ($) => /(?:[^\{]|\{[^\{#%}])+/,
     // the separator between the parts of a tag; see SEP
     _sep: ($) => /[ \t\r\n]+/,
@@ -1165,30 +1188,44 @@ const django = grammar({
      * second and a third "else", the later ones are the strays. Reading the
      * first as the stray instead parses just as well, so _group_held, which the
      * scanner returns only for a name the innermost group already holds, puts
-     * the later reading at -1 against -2 for each tag flagged before its time.
+     * the later reading at -2 against -4 for each tag flagged before its time. Both
+     * cost more than an unexpected_argument, at -1, so a tag its group does take
+     * but with a word it does not is read as that tag rather than as a stray.
      */
     unexpected_tag: ($) =>
       choice(
-        prec.dynamic(
-          -1,
-          seq(
-            $.simpleTagOpen,
-            field("tag_name", choice(...NAMES_INSIDE_A_TAG_GROUP)),
-            repeat(seq(SEP, /[^\s%]+/)),
-            $._group_held,
-            $.simpleTagClose,
-          ),
-        ),
         prec.dynamic(
           -2,
           seq(
             $.simpleTagOpen,
             field("tag_name", choice(...NAMES_INSIDE_A_TAG_GROUP)),
-            repeat(seq(SEP, /[^\s%]+/)),
+            optional($.unexpected_argument),
+            $._group_held,
+            optional(SEP),
+            "%}",
+          ),
+        ),
+        prec.dynamic(
+          -4,
+          seq(
+            $.simpleTagOpen,
+            field("tag_name", choice(...NAMES_INSIDE_A_TAG_GROUP)),
             $.simpleTagClose,
           ),
         ),
       ),
+    /**
+     * Words a tag does not take, kept inside the tag they were written in. Every
+     * close utility accepts them before its "%}", so a misused tag keeps its own
+     * node, "{% else x %}" is still the else of its group, and error recovery
+     * has nothing to repair. Each word is a token of lexical precedence -1, so
+     * that a token an argument really takes wins wherever one is valid, even
+     * over a longer match: "b|upper" is still a filtered value. The node costs
+     * -1 of dynamic precedence, less than any unexpected_tag, and
+     * queries/errors.scm reports it.
+     */
+    unexpected_argument: ($) =>
+      prec.dynamic(-1, repeat1(seq(SEP, token(prec(-1, /[^\s%]+/))))),
     url_tag: ($) =>
       tag(
         "url",

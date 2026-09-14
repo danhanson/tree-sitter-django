@@ -486,13 +486,27 @@ For Reversed With A Tag In Its Body
 
 ==================
 For With Reversed Twice
-:error
 ==================
 
 {% for x in y reversed reversed %}a{% endfor %}
 
 ---
 
+(template
+  (content)
+  (for_group
+    (for_block
+      (for_tag
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (unexpected_argument))
+      (template
+        (content)))
+    (endfor_tag))
+  (content))
 
 ==================
 For With Reversed Before In
@@ -502,6 +516,7 @@ For With Reversed Before In
 {% for x reversed in y %}a{% endfor %}
 
 ---
+
 
 ==================
 For Over A Variable Named Reversed
@@ -587,10 +602,24 @@ For With Reversed As Its Whole Sequence
 
 ==================
 For With Reversed Three Times
-:error
 ==================
 
 {% for x in reversed reversed reversed %}a{% endfor %}
 
 ---
 
+(template
+  (content)
+  (for_group
+    (for_block
+      (for_tag
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (unexpected_argument))
+      (template
+        (content)))
+    (endfor_tag))
+  (content))

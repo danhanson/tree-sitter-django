@@ -69,7 +69,8 @@ Five of the files in `queries/` are query files an editor loads:
   it. A marker is placed only where the scanner can tell: at the end of input, before an end tag that
   belongs to an enclosing group, or before an `{% endblock %}` naming a block further out.
   A group's tag written where no open group can hold it, such as `{% else %}` inside a `{% for %}`, is an
-  `unexpected_tag`, captured as `@error.unexpected_tag`.
+  `unexpected_tag`, captured as `@error.unexpected_tag`. Words a tag does not take, such as the `x` in
+  `{% else x %}`, are an `unexpected_argument` inside that tag, captured as `@error.unexpected_argument`.
 
 The other three are data for a tool rather than queries an editor runs. Each captures the two halves of a
 relation a tree-sitter query cannot express, and the tool does the join:
@@ -224,7 +225,9 @@ Seven things to know:
   `conflicts` entry, as every block in the base grammar does. The generator offers an associativity
   instead; taking it silently discards the parse in which the body continues.
 - **End tags are not reserved**, a stray `{% endmap %}` parses as a `custom_tag` rather than an error — `reserved` takes no
-  `previous`, so the `tag_name` list cannot be added to a name at a time. Instead you may drop the `custom_tag` rule to avoid parsing end tags as custom tags.
+  `previous`, so the `tag_name` list cannot be added to a name at a time. Instead you may drop the `custom_tag` rule to avoid parsing end tags as custom tags. While the fallback
+  is there, stray words in one of your end tags (`{% endloop extra %}`) read as a `custom_tag` too, which
+  leaves your group with a missing-tag marker at the end of input instead of an `unexpected_argument`.
 - **Your groups get missing-tag markers.** The scanner knows no group by name — a group is closed by `end`
   followed by its opening tag's name — so the `alias($._missing_tag, $.missing_endloop_tag)` choice
   above is all it takes: an unclosed `{% loop x %}`, or one left open inside an `{% if %}` that

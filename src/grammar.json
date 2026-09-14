@@ -52,6 +52,18 @@
           "members": [
             {
               "type": "SYMBOL",
+              "name": "unexpected_argument"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
               "name": "_sep"
             },
             {
@@ -93,6 +105,18 @@
     "startTagClose": {
       "type": "SEQ",
       "members": [
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "unexpected_argument"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
         {
           "type": "SYMBOL",
           "name": "_group_open_tag_push"
@@ -144,6 +168,18 @@
       "type": "SEQ",
       "members": [
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "unexpected_argument"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
           "type": "SYMBOL",
           "name": "_group_follow"
         },
@@ -194,6 +230,18 @@
       "type": "SEQ",
       "members": [
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "unexpected_argument"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
           "type": "SYMBOL",
           "name": "_group_repeat"
         },
@@ -243,6 +291,18 @@
     "endTagClose": {
       "type": "SEQ",
       "members": [
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "unexpected_argument"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
         {
           "type": "SYMBOL",
           "name": "_group_close"
@@ -7064,140 +7124,6 @@
       "members": [
         {
           "type": "PREC_DYNAMIC",
-          "value": -1,
-          "content": {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "simpleTagOpen"
-              },
-              {
-                "type": "FIELD",
-                "name": "tag_name",
-                "content": {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "STRING",
-                      "value": "elif"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "else"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "empty"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endautoescape"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endblock"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endblocktrans"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endblocktranslate"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endcache"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endcomment"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endfilter"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endfor"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endif"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endifchanged"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endlanguage"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endlocalize"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endlocaltime"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endpartialdef"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endspaceless"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endtimezone"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endverbatim"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "endwith"
-                    },
-                    {
-                      "type": "STRING",
-                      "value": "plural"
-                    }
-                  ]
-                }
-              },
-              {
-                "type": "REPEAT",
-                "content": {
-                  "type": "SEQ",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "_sep"
-                    },
-                    {
-                      "type": "PATTERN",
-                      "value": "[^\\s%]+"
-                    }
-                  ]
-                }
-              },
-              {
-                "type": "SYMBOL",
-                "name": "_group_held"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "simpleTagClose"
-              }
-            ]
-          }
-        },
-        {
-          "type": "PREC_DYNAMIC",
           "value": -2,
           "content": {
             "type": "SEQ",
@@ -7304,17 +7230,143 @@
                 }
               },
               {
-                "type": "REPEAT",
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "unexpected_argument"
+                  },
+                  {
+                    "type": "BLANK"
+                  }
+                ]
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_group_held"
+              },
+              {
+                "type": "CHOICE",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_sep"
+                  },
+                  {
+                    "type": "BLANK"
+                  }
+                ]
+              },
+              {
+                "type": "STRING",
+                "value": "%}"
+              }
+            ]
+          }
+        },
+        {
+          "type": "PREC_DYNAMIC",
+          "value": -4,
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "simpleTagOpen"
+              },
+              {
+                "type": "FIELD",
+                "name": "tag_name",
                 "content": {
-                  "type": "SEQ",
+                  "type": "CHOICE",
                   "members": [
                     {
-                      "type": "SYMBOL",
-                      "name": "_sep"
+                      "type": "STRING",
+                      "value": "elif"
                     },
                     {
-                      "type": "PATTERN",
-                      "value": "[^\\s%]+"
+                      "type": "STRING",
+                      "value": "else"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "empty"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endautoescape"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endblock"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endblocktrans"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endblocktranslate"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endcache"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endcomment"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endfilter"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endfor"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endif"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endifchanged"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endlanguage"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endlocalize"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endlocaltime"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endpartialdef"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endspaceless"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endtimezone"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endverbatim"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "endwith"
+                    },
+                    {
+                      "type": "STRING",
+                      "value": "plural"
                     }
                   ]
                 }
@@ -7327,6 +7379,33 @@
           }
         }
       ]
+    },
+    "unexpected_argument": {
+      "type": "PREC_DYNAMIC",
+      "value": -1,
+      "content": {
+        "type": "REPEAT1",
+        "content": {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_sep"
+            },
+            {
+              "type": "TOKEN",
+              "content": {
+                "type": "PREC",
+                "value": -1,
+                "content": {
+                  "type": "PATTERN",
+                  "value": "[^\\s%]+"
+                }
+              }
+            }
+          ]
+        }
+      }
     },
     "url_tag": {
       "type": "SEQ",
@@ -7820,6 +7899,15 @@
     ],
     [
       "binaryOperator"
+    ],
+    [
+      "predicate"
+    ],
+    [
+      "_translate_option"
+    ],
+    [
+      "unexpected_argument"
     ],
     [
       "library",

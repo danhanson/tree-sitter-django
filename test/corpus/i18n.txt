@@ -400,13 +400,26 @@ Language Without An Argument
 
 ==================
 Language With Two Arguments
-:error
 ==================
 
 {% language "a" "b" %}x{% endlanguage %}
 
 ---
 
+(template
+  (content)
+  (language_group
+    (language_block
+      (language_tag
+        (filtered_value
+          (value
+            (literal
+              (string))))
+        (unexpected_argument))
+      (template
+        (content)))
+    (endlanguage_tag))
+  (content))
 
 ==================
 Language Name Filter
@@ -492,6 +505,7 @@ Language Name Filter With An Argument
 {{ "de"|language_name:1 }}
 
 ---
+
 
 ==================
 Translate With A Context Named After Noop

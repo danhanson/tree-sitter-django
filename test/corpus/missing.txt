@@ -950,7 +950,8 @@ Endblock Naming No Open Block
             (block_tag
               (push_block))
             (template
-              (unexpected_tag)
+              (unexpected_tag
+                (unexpected_argument))
               (content)))
           (missing_endblock_tag))))
     (missing_endblock_tag)))

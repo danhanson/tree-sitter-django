@@ -48,14 +48,21 @@ Csp Nonce Attr With Media Keyword
 
 ==================
 Csp Nonce Attr Takes One Argument
-:error
 ==================
 
 {% csp_nonce_attr "a" "b" %}
 
 ---
 
-(ERROR)
+(template
+  (content)
+  (csp_nonce_attr_tag
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (unexpected_argument))
+  (content))
 
 ==================
 Csp Nonce Attr Rejects Unknown Keyword
@@ -67,6 +74,7 @@ Csp Nonce Attr Rejects Unknown Keyword
 ---
 
 (ERROR)
+
 
 ==================
 Csp Nonce Attr Rejects Repeated Keyword
@@ -88,3 +96,4 @@ Csp Nonce Attr With Media Twice
 {% csp_nonce_attr media="a" media="b" %}
 
 ---
+

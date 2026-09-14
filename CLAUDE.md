@@ -197,13 +197,30 @@ group can hold it — `{% endif %}` with nothing open, `{% else %}` in a `{% for
 and error recovery placed it badly: every tag starts with `{%` and the read token, which the parser has
 already accepted when the name turns out to be wrong, so recovery rewinds to just after them and folds the
 stray tag into whichever tag comes next, which then holds the `ERROR`. `unexpected_tag` takes any of
-`NAMES_INSIDE_A_TAG_GROUP` with loose arguments, so there is nothing to recover; `prec.dynamic(-1)` keeps it
+`NAMES_INSIDE_A_TAG_GROUP` with loose arguments, so there is nothing to recover; `prec.dynamic(-2)`, or `-4`, keeps it
 from displacing a tag the group does take, and `queries/errors.scm` reports it as
 `@error.unexpected_tag`. It added 31 states and no `conflicts` entry.
 
+**Words a tag does not take are an `unexpected_argument` inside it.** Every close utility accepts one
+before its scanner token, so `{% else x %}` stays the `else` of its group, `{% endif junk %}` still closes
+its `if` (it used to leave the whole file an `ERROR`), and `{% static "a.css" "b.css" %}` is a `static_tag`.
+Each word is `token(prec(-1, /[^\s%]+/))`: tree-sitter weighs lexical precedence before match length, so a
+token an argument really takes wins wherever one is valid (`b|upper` stays a filtered value) and a loose
+word only matches where nothing else can. The node costs -1 of dynamic precedence, which is why
+`unexpected_tag` costs -2 or -4: a misused tag its group does take has to beat reading it as a stray.
+A separator after any argument can now also start stray words, so it needs `conflicts` entries for
+`unexpected_argument`, `predicate` and `_translate_option`, and it took the table from 3,363 states to
+4,894 and the Wasm build from 251KB to 319KB.
+
+Two consequences. A repeat the scanner refuses — `{% with a=1 a=2 %}`, `{% blocktrans trimmed trimmed %}`
+— is reported as an unexpected argument rather than an `ERROR`. And where a keyword is valid after the
+arguments (`reversed`, `as`, `only`), a stray word shaped like an identifier is still an `ERROR`:
+`{% for a in b zqx %}` puts it on `b`, most likely because keyword extraction lexes `zqx` as an
+`identifier`, which is not valid there, before the loose-word token is considered.
+
 Where several tags share a name the group holds only once — `{% if %}{% else %}{% else %}{% else %}` — reading
-any of them as the stray parses, so the ties are broken by dynamic precedence: `unexpected_tag` is -1 when
-`_group_held` confirms the innermost group already holds the name and -2 otherwise, so each tag flagged
+any of them as the stray parses, so the ties are broken by dynamic precedence: `unexpected_tag` is -2 when
+`_group_held` confirms the innermost group already holds the name and -4 otherwise, so each tag flagged
 before its time costs one more, and the first still opens the block however many follow.
 
 **Builtin names must stay keyword-extractable, or the fallbacks swallow them.** `word: $.identifier` turns
@@ -368,7 +385,8 @@ A branch that is also a `@local.scope` confines its bindings whichever way the b
 `context.push()` as the loop body, so `empty_block` is a scope alongside `for_block`.
 
 `queries/errors.scm` collects what an editor should report: `(ERROR)` as `@error.syntax`, `(MISSING)` as
-`@error.missing`, and every missing-tag marker as `@error.missing_tag`. A tree holding only markers has
+`@error.missing`, every missing-tag marker as `@error.missing_tag`, and `unexpected_tag` and
+`unexpected_argument` as `@error.unexpected_tag` and `@error.unexpected_argument`. A tree holding only markers has
 no `has_error`, so a tool that checks that flag alone misses them. Adding a tag group means adding its
 marker there, since no supertype matches them all.
 
@@ -423,8 +441,8 @@ unavoidable limitation, or a case where this grammar is the more permissive one 
   binds an `identifier`, because the keyword is not valid where a binding name is — but `{{ True.x }}` is
   an error here and an ordinary two-part lookup in Django, which renders `string_if_invalid`.
 - A `with` binding written twice (`{% with a=1 a=2 %}`, and the same in `{% include %}` and
-  `{% blocktranslate %}`) is an error here and not in Django, where `token_kwargs` builds a dict and the
-  later value wins. It has no use, so it is treated as the mistake it almost certainly is.
+  `{% blocktranslate %}`) is reported here, as an `unexpected_argument`, and not in Django, where
+  `token_kwargs` builds a dict and the later value wins. It has no use, so it is treated as the mistake it almost certainly is.
 - `{% csp_nonce_attr "a" media="b" %}` is accepted, matching Django, which only rejects it at render time.
 - A misspelled tag or filter cannot be caught: `{{ x|lenght }}` is indistinguishable from a filter some
   library registered. Cross-referencing names against `{% load %}` needs the project's Python, so it
@@ -437,7 +455,7 @@ unavoidable limitation, or a case where this grammar is the more permissive one 
   redefines `length` with a different arity gets a false error here.
 - Django's `static` tags ignore what follows their argument: `StaticNode.handle_token` looks for `as` two
   bits from the end, so `{% static "a" junk %}` and `{% static "a" as u v %}` are accepted there and
-  rejected here, and `PrefixNode.handle_token` raises `IndexError` rather than `TemplateSyntaxError` on
+  reported here as an `unexpected_argument`, and `PrefixNode.handle_token` raises `IndexError` rather than `TemplateSyntaxError` on
   `{% get_static_prefix as %}`.
 - Django's `{% cache %}` takes its fragment name as the raw word in that position and finds the cache to
   use by testing whether the last word starts with `using=`, and only when something precedes it. So

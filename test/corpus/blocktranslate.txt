@@ -380,13 +380,29 @@ Blocktrans With Plural And No Count
 
 ==================
 Blocktrans Counting Two Bindings
-:error
 ==================
 
 {% blocktrans count n=x c=d %}one{% plural %}many{% endblocktrans %}
 
 ---
 
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_block
+      (blocktrans_tag
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (unexpected_argument))
+      (content)
+      (plural_block
+        (plural_tag)
+        (content)))
+    (endblocktrans_tag))
+  (content))
 
 ==================
 Blocktrans With Nothing To Bind
@@ -400,13 +416,21 @@ Blocktrans With Nothing To Bind
 
 ==================
 Blocktrans With An Unknown Option
-:error
 ==================
 
 {% blocktrans bogus %}hi{% endblocktrans %}
 
 ---
 
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_block
+      (blocktrans_tag
+        (unexpected_argument))
+      (content))
+    (endblocktrans_tag))
+  (content))
 
 ==================
 Blocktrans With Asvar And No Name
@@ -478,73 +502,155 @@ Blocktrans With Two Plurals
 
 ==================
 Blocktrans With An Argument On Plural
-:error
 ==================
 
 {% blocktrans count n=x %}one{% plural extra %}many{% endblocktrans %}
 
 ---
 
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_block
+      (blocktrans_tag
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (content)
+      (plural_block
+        (plural_tag
+          (unexpected_argument))
+        (content)))
+    (endblocktrans_tag))
+  (content))
 
 ==================
 Blocktrans With Trimmed Twice
-:error
 ==================
 
 {% blocktrans trimmed trimmed %}hi{% endblocktrans %}
 
 ---
 
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_block
+      (blocktrans_tag
+        (unexpected_argument))
+      (content))
+    (endblocktrans_tag))
+  (content))
 
 ==================
 Blocktrans With With Twice
-:error
 ==================
 
 {% blocktrans with a=b with c=d %}hi{% endblocktrans %}
 
 ---
 
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_block
+      (blocktrans_tag
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (unexpected_argument))
+      (content))
+    (endblocktrans_tag))
+  (content))
 
 ==================
 Blocktrans With Context Twice
-:error
 ==================
 
 {% blocktrans context "a" context "b" %}hi{% endblocktrans %}
 
 ---
 
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_block
+      (blocktrans_tag
+        (filtered_value
+          (value
+            (literal
+              (string))))
+        (unexpected_argument))
+      (content))
+    (endblocktrans_tag))
+  (content))
 
 ==================
 Blocktrans With Asvar Twice
-:error
 ==================
 
 {% blocktrans asvar x asvar y %}hi{% endblocktrans %}
 
 ---
 
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_block
+      (blocktrans_tag
+        (identifier)
+        (unexpected_argument))
+      (content))
+    (endblocktrans_tag))
+  (content))
 
 ==================
 Blocktrans With Count Twice
-:error
 ==================
 
 {% blocktrans count n=x count m=y %}a{% plural %}b{% endblocktrans %}
 
 ---
 
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_block
+      (blocktrans_tag
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))
+        (unexpected_argument))
+      (content)
+      (plural_block
+        (plural_tag)
+        (content)))
+    (endblocktrans_tag))
+  (content))
 
 ==================
 Blocktranslate With Trimmed Twice
-:error
 ==================
 
 {% blocktranslate trimmed trimmed %}hi{% endblocktranslate %}
 
 ---
 
+(template
+  (content)
+  (blocktranslate_group
+    (blocktranslate_block
+      (blocktranslate_tag
+        (unexpected_argument))
+      (content))
+    (endblocktranslate_tag))
+  (content))
 
 ==================
 Blocktrans Repeating An Option Of The Tag Before It
@@ -570,10 +676,23 @@ Blocktrans Repeating An Option Of The Tag Before It
 
 ==================
 Blocktrans With A Binding Twice
-:error
 ==================
 
 {% blocktrans with a=1 a=2 %}x{% endblocktrans %}
 
 ---
 
+(template
+  (content)
+  (blocktranslate_group
+    (blocktrans_block
+      (blocktrans_tag
+        (identifier)
+        (filtered_value
+          (value
+            (literal
+              (number))))
+        (unexpected_argument))
+      (content))
+    (endblocktrans_tag))
+  (content))
