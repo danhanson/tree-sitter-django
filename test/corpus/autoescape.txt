@@ -17,9 +17,9 @@ Autoescape
 (template
   (content)
   (autoescape_group
-    (autoescape_clause
-      (autoescape_block)
+    (autoescape_block
+      (autoescape_tag)
       (template
         (content)))
-    (endautoescape_block))
+    (endautoescape_tag))
   (content))

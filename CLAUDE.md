@@ -50,16 +50,16 @@ that place it:
   `$._sep`. Newlines included: Django matches tags with `re.DOTALL`, so tags may span lines.
 - `part(...)` — one tag part, taking the whitespace that separates it from the part before.
 - `joined(first, ...rest)` — parts separated from _each other_, with no leading separator (`not in`).
-- `block(tag, ...args)` — `{%`, optional separator, tag name, args, optional separator, `%}`; tags may
+- `tag(name, ...args)` — `{%`, optional separator, tag name, args, optional separator, `%}`; tags may
   hug their delimiters (`{%cycle 1%}`).
 - `asVariable($)` — the `as name` clause. Every tag that takes one names the target `field("variable", …)`;
   do not invent a second name for it.
-- `simpleTag($, tag, args, kwargs)` — a tag registered with Django's `simple_tag`, which always accepts
+- `simpleTag($, name, args, kwargs)` — a tag registered with Django's `simple_tag`, which always accepts
   positional filter expressions, then `name=value` keywords, then `as name`. `args`: `true` (`*args`), a
   count (at most N), or `false`. `kwargs`: `true` (`**kwargs`), `false`, or `{name: rule}` for a known
   signature. Put the Python signature in a comment above the call site.
 - `arrangements(items)` — every ordered subset of `items`, so that a tag's options may be written in any
-  order but never twice. Used by `translate_block` and `include_block`; keyword arguments are guarded by the scanner
+  order but never twice. Used by `translate_tag` and `include_tag`; keyword arguments are guarded by the scanner
   instead. Grows as `Σ C(n,k)·k!` (65 for four names), which is
   why it is only used for signatures that name their arguments.
 - `wordAsValueRules(word)` / `wordAsValue($, word, continued)` — a tag's own keyword written where a value
@@ -86,82 +86,82 @@ Consequences worth knowing before editing a rule:
   table is built and discards the other parse outright, which is how a bare `{% if x is y %}` came to be
   an error.
 
-### A tag group is a sequence of clauses
+### A tag group is a sequence of blocks
 
 Every group is split so that each tag that opens a body owns a node of its own:
 
 ```js
-if_block: ($) => startBlock("if", part($.predicate)),
-if_clause: ($) => seq($.if_block, optional($.template)),
-endif_block: ($) => endBlock("endif"),
+if_tag: ($) => startTag("if", part($.predicate)),
+if_block: ($) => seq($.if_tag, optional($.template)),
+endif_tag: ($) => endTag("endif"),
 if_group: ($) =>
   seq(
-    $.if_clause,
-    repeat($.elif_clause),
-    optional($.else_clause),
-    choice($.endif_block, alias($._missing_block, $.missing_endif_block)),
+    $.if_block,
+    repeat($.elif_block),
+    optional($.else_block),
+    choice($.endif_tag, alias($._missing_tag, $.missing_endif_tag)),
   ),
 ```
 
-**A clause is complete without the closing tag, and that is the point.** While a template is being edited
+**A block is complete without the closing tag, and that is the point.** While a template is being edited
 the closer usually is not there yet, and a group rule cannot be reduced without it — so `{% if a %}{% x %}`
 used to produce a top-level `ERROR` with the body's `template` parented to nothing that says which tag
-opened it. A clause reduces anyway, so it survives error recovery and tooling can walk up from the cursor
+opened it. A block reduces anyway, so it survives error recovery and tooling can walk up from the cursor
 to find the enclosing tag. That is what makes completion of `{% elif %}`, `{% else %}`, `{% empty %}` and
 the end tags possible.
 
-**Every `{% %}` is a node of its own, named `<tag>_block`** after the tag as Django spells it: `if_block`,
-`elif_block`, `endif_block`, `block_block`, `templatetag_block`, `custom_tag_block`. A clause is its
-opening block and a body; a group is its clauses and its end block. A block ends at `%}` and nothing can
+**Every `{% %}` is a node of its own, named `<name>_tag`** after the tag's name as Django spells it: `if_tag`,
+`elif_tag`, `endif_tag`, `block_tag`, `templatetag_tag`, `custom_tag`. A block is its
+opening tag and a body; a group is its blocks and its end tag. A tag ends at `%}` and nothing can
 extend it, so it reduces on whatever token follows — the end of input included — and a half-written
 template still holds the last `{% for … %}` or `{% endif %}` typed as a whole node, not as loose tokens.
-Stripping `_block` gives the name; a new tag, or a tag group's new part, follows the same scheme.
+Stripping `_tag` gives the tag name; a new tag, or a tag group's new part, follows the same scheme.
 
 A group's last child is its end block or, where the end tag is missing, a zero-width marker named for it
-(`missing_endif_block`; see the scanner section). So an unterminated group still reduces to a group node,
-and a group's tag written where no open group can hold it is an `unexpected_block` (see the load section
+(`missing_endif_tag`; see the scanner section). So an unterminated group still reduces to a group node,
+and a group's tag written where no open group can hold it is an `unexpected_tag` (see the load section
 below), so only a body the grammar cannot read produces an `ERROR`.
 
-Every tag is built from ten inline utility rules — `simpleBlockOpen`/`simpleBlockClose`,
-`startBlockOpen`/`startBlockClose`,
-`followBlockOpen`/`followBlockClose`, `repeatBlockOpen`/`repeatBlockClose`, `endBlockOpen`/`endBlockClose` —
-through the helpers `block` (a tag outside any group, from `simpleBlockOpen`/`simpleBlockClose`), `startBlock`, `followBlock` (a middle tag a group
-holds at most once: `else`, `empty`, `plural`), `repeatBlock` (one it may repeat: `elif`) and `endBlock`.
+Every tag is built from ten inline utility rules — `simpleTagOpen`/`simpleTagClose`,
+`startTagOpen`/`startTagClose`,
+`followTagOpen`/`followTagClose`, `repeatTagOpen`/`repeatTagClose`, `endTagOpen`/`endTagClose` —
+through the helpers `tag` (a tag outside any group, from `simpleTagOpen`/`simpleTagClose`), `startTag`, `followTag` (a middle tag a group
+holds at most once: `else`, `empty`, `plural`), `repeatTag` (one it may repeat: `elif`) and `endTag`.
 They are inline rules rather than JS helpers so that a grammar extending this one can use them. **Every
 tag must begin with one of the opens**, one an extending grammar adds included: the token they read the
-tag's name with is valid wherever a tag's name is and the scanner always returns it, so a tag written from a bare `"{%"` never matches: its name is read as a `custom_tag_block` instead,
-with no error to show for it. Choose `followBlock` or `repeatBlock` by what the grammar allows, because the
-scanner trusts it: a tag marked once-only that can in fact repeat is an `unexpected_block` from its
+tag's name with is valid wherever a tag's name is and the scanner always returns it, so a tag written from a bare `"{%"` never matches: its name is read as a `custom_tag` instead,
+with no error to show for it. Choose `followTag` or `repeatTag` by what the grammar allows, because the
+scanner trusts it: a tag marked once-only that can in fact repeat is an `unexpected_tag` from its
 second use on, and one marked repeatable that cannot is never flagged when repeated.
 
 The names themselves need no hand-maintained list either: in the generated `src/node-types.json`, a group's
-`children` are its clause types and its end block, and a clause's children include its opening block, so
-the candidates for a group are its end block plus the opening block of each clause it can hold. For
-`if_group` that is `endif_block` from the group and `if_block`, `elif_block`, `else_block` from its three
-clauses. Going the other way — from a clause the cursor sits in to the
-groups that can hold it — is the same table read backwards, which is what a clause needs when error
+`children` are its block types and its end tag, and a block's children include its opening tag, so
+the candidates for a group are its end tag plus the opening tag of each block it can hold. For
+`if_group` that is `endif_tag` from the group and `if_tag`, `elif_tag`, `else_tag` from its three
+blocks. Going the other way — from a block the cursor sits in to the
+groups that can hold it — is the same table read backwards, which is what a block needs when error
 recovery has left it without its group.
 
 Do not reach for lookahead to solve that instead: `ts_language_next_state` follows only the shift on `{%`,
 which lands in the "a tag starts here" state no matter how the tree is shaped.
 
-`else_clause` is shared by `if_group` and `ifchanged_group`. `comment_clause` and `verbatim_clause` hold raw
-scanner text that admits no tags. `blocktranslate_group` has one clause per spelling, `blocktrans_clause` and
-`blocktranslate_clause`, because each must be closed by its own end tag; the counted form nests a
-`plural_clause` inside it, since `{% plural %}` is only valid after `count`. The clause has to know which
-form its opening block was, so `blocktransRules` builds each as a hidden rule (`_blocktrans_block`,
-`_blocktrans_count_block`) and aliases both to the one visible `blocktrans_block` where the clause uses
+`else_block` is shared by `if_group` and `ifchanged_group`. `comment_block` and `verbatim_block` hold raw
+scanner text that admits no tags. `blocktranslate_group` has one block per spelling, `blocktrans_block` and
+`blocktranslate_block`, because each must be closed by its own end tag; the counted form nests a
+`plural_block` inside it, since `{% plural %}` is only valid after `count`. The block has to know which
+form its opening tag was, so `blocktransRules` builds each as a hidden rule (`_blocktrans_tag`,
+`_blocktrans_count_tag`) and aliases both to the one visible `blocktrans_tag` where the block uses
 it. Their bodies are
-`_translate_body`, not `template`, which is why these four clauses need no `conflicts` entry — the rule
+`_translate_body`, not `template`, which is why these four blocks need no `conflicts` entry — the rule
 below is about a body that can itself start with `{%`.
 
-**Every clause needs a `conflicts` entry.** The generator offers a left associativity instead; taking it is
+**Every block needs a `conflicts` entry.** The generator offers a left associativity instead; taking it is
 what broke `{% for %}` in `06aa870`, where `prec.left` resolved the shift/reduce on `{%` statically and
 silently discarded the parse in which the body continues, so every tag inside a loop became an `ERROR`.
 
-Sharing the clauses also made the table markedly smaller — 7,200 states and a 515KB library became 5,150
+Sharing the blocks also made the table markedly smaller — 7,200 states and a 515KB library became 5,150
 and 383KB — for the same reason hoisting `blocktranslate`'s pieces into hidden rules did: the automaton
-stops duplicating the body states in every group's inline context. Giving every `{% %}` its own `_block`
+stops duplicating the body states in every group's inline context. Giving every `{% %}` its own `_tag`
 rule shrank it again, from 1,999 states to 1,818, by the same mechanism. The group stack's tokens (see the
 scanner section) cost 247, to 3,304.
 
@@ -177,34 +177,34 @@ whitespace first, so a pipe there must be tight. Hence `_filtered_value_spaced` 
 A library's tags and filters are registered in Python, so the grammar cannot know their names, their
 arity, or whether a tag is a block tag. Two fallback rules accept them:
 
-- `custom_tag_block` — `simpleTag($, $.identifier)`, i.e. what `simple_tag`/`inclusion_tag` accept, which is how
+- `custom_tag` — `simpleTag($, $.identifier)`, i.e. what `simple_tag`/`inclusion_tag` accept, which is how
   a tag is registered unless it needs the parser itself.
 - `_custom_filter`, the last alternative of `filter`, whose name is `$.identifier` rather than one of the
   builtin literals. Hidden, so the tree is what an inline alternative would give, but named so that a
-  grammar extending this one can filter it out of `filter`'s `members` the way it can `custom_tag_block` — see
+  grammar extending this one can filter it out of `filter`'s `members` the way it can `custom_tag` — see
   the extension section in `README.md`.
 
 **A name that only exists inside a tag group has to be reserved instead.** `endif`, `else`, `empty` and
 the rest are tokens only in the state their group opens, so where a tag is named the lexer reads them as an
-identifier and `custom_tag_block` takes them: `{% endif %}` on its own parsed as a tag from some library. They are
+identifier and `custom_tag` takes them: `{% endif %}` on its own parsed as a tag from some library. They are
 listed in `NAMES_INSIDE_A_TAG_GROUP` and applied through the `tag_name` reserved context, which wraps
-`custom_tag_block`'s name **and nothing else** — a reserved context replaces the global one inside whatever it
+`custom_tag`'s name **and nothing else** — a reserved context replaces the global one inside whatever it
 wraps, so wrapping the whole rule would un-reserve `as` and reject `{% mytag endif %}`. Adding a tag group
 with a new part or end tag means adding its name there too.
 
-**The same names are what `unexpected_block` accepts.** Once reserved, a group's tag written where no open
+**The same names are what `unexpected_tag` accepts.** Once reserved, a group's tag written where no open
 group can hold it — `{% endif %}` with nothing open, `{% else %}` in a `{% for %}` — used to be an `ERROR`,
 and error recovery placed it badly: every tag starts with `{%` and the read token, which the parser has
 already accepted when the name turns out to be wrong, so recovery rewinds to just after them and folds the
-stray tag into whichever tag comes next, which then holds the `ERROR`. `unexpected_block` takes any of
+stray tag into whichever tag comes next, which then holds the `ERROR`. `unexpected_tag` takes any of
 `NAMES_INSIDE_A_TAG_GROUP` with loose arguments, so there is nothing to recover; `prec.dynamic(-1)` keeps it
 from displacing a tag the group does take, and `queries/errors.scm` reports it as
-`@error.unexpected_block`. It added 31 states and no `conflicts` entry.
+`@error.unexpected_tag`. It added 31 states and no `conflicts` entry.
 
 Where several tags share a name the group holds only once — `{% if %}{% else %}{% else %}{% else %}` — reading
-any of them as the stray parses, so the ties are broken by dynamic precedence: `unexpected_block` is -1 when
+any of them as the stray parses, so the ties are broken by dynamic precedence: `unexpected_tag` is -1 when
 `_group_held` confirms the innermost group already holds the name and -2 otherwise, so each tag flagged
-before its time costs one more, and the first stays the clause however many follow.
+before its time costs one more, and the first still opens the block however many follow.
 
 **Builtin names must stay keyword-extractable, or the fallbacks swallow them.** `word: $.identifier` turns
 each builtin's name into its own token, which the lexer prefers wherever it is valid, so a builtin commits
@@ -235,7 +235,7 @@ no ordering predicate to express it. What such a tool needs to know about Django
 A library's filters go in their own arity tables (`L10N_FILTERS_WITHOUT_ARGUMENT`,
 `TZ_FILTERS_WITH_ARGUMENT`, …) rather than into the builtin ones, so that the builtin parity check still has an exact list to compare against.
 
-Modelling a library name makes it keyword-extracted, so it no longer reaches `custom_tag_block`. A project that
+Modelling a library name makes it keyword-extracted, so it no longer reaches `custom_tag`. A project that
 registers its own tag under one of these names and a different signature therefore gets a parse error. That
 is accepted: these names are common enough that shadowing them is the mistake.
 
@@ -273,7 +273,7 @@ Eighteen external tokens, for the constraints a context-free grammar cannot expr
   reads the tag's name into `read_word`. The other four sit right before `%}` and check that it follows:
   push opens a group expecting `"end"` + `read_word` (every Django end tag is spelled that way), follow
   records a middle tag the innermost group may hold only once, repeat records nothing, and close pops the
-  innermost group once `read_word` is what it expects. `_group_held` belongs to `unexpected_block` (see the load section) and returns only when
+  innermost group once `read_word` is what it expects. `_group_held` belongs to `unexpected_tag` (see the load section) and returns only when
   the innermost group already holds a tag named `read_word`. Reading `count` (`_bt_option`) marks the group about
   to be pushed as waiting for `plural`, which its follow clears. An entry is
   `{expected, name, middles, awaits_plural}`, serialized as `expected:name:middles:flag` and a newline per
@@ -281,12 +281,12 @@ Eighteen external tokens, for the constraints a context-free grammar cannot expr
   the error state rather than overrun it. Push and follow before `%}` cost 247 states over the table-driven
   scanner (3,057 to 3,304), because argument-final states stop being shared with tags where the token is not
   valid; after `%}`, where each tag's states are its own, saved only 15.
-- `_missing_block` — the marker where a group's required tag block is missing, aliased at each use to
-  `missing_endX_block` or `missing_plural_block` (`MISSING_BLOCKS`). It is placed only at the end of input;
+- `_missing_tag` — the marker where a group's required tag block is missing, aliased at each use to
+  `missing_endX_tag` or `missing_plural_tag` (`MISSING_TAGS`). It is placed only at the end of input;
   before the end tag of a group enclosing the innermost one; before an `endblock`/`endpartialdef` naming a
   block further out; or before a second `plural`, since a blocktranslate body holds no tag that could take it.
   Any other tag is taken to be the innermost group's, as Django's parser takes it — a middle tag it has not
-  held yet, and a second of one it holds only once, which is an `unexpected_block` inside it. Marking the
+  held yet, and a second of one it holds only once, which is an `unexpected_tag` inside it. Marking the
   group closed before a second `else` was tried and dropped: inside `{% block %}`, where most template code
   sits, there is always an enclosing group to hand the `else` to, so the inner group's own end tag became a
   stray instead. A counted blocktranslate is missing its
@@ -330,7 +330,7 @@ Zero-width guards carry one hazard: `recover_with_missing` can supply one withou
 during tree-sitter's mark-everything-valid recovery pass, so new guards go **below** it — and above the
 whitespace loop, which skips the separator the grammar still has to match. A guard must also never be valid
 where `content` is: a zero-width token at a content boundary preempts the internal lexer and `content` stops
-matching. `_missing_block` is the one exception, and is safe only because it returns a token solely at the end
+matching. `_missing_tag` is the one exception, and is safe only because it returns a token solely at the end
 of input or at `{%`, where `content` cannot match. It is scanned above the raw-text scanners, which find
 nothing at the end of an empty body.
 
@@ -343,13 +343,13 @@ got the right markers. Junk inside an end tag does leave the whole file an `ERRO
 
 `queries/highlights.scm` lists tag and filter names explicitly, so adding either to the grammar means
 adding it there too; filter names appear there without their colon. A name the grammar does not know is
-captured through its field instead (`(filter name: (identifier))`, `(custom_tag_block tag: (identifier))`).
+captured through its field instead (`(filter filter_name: (identifier))`, `(custom_tag tag_name: (identifier))`).
 
 `queries/libraries.scm` is not a query editors run themselves; it is data for a linter, and every tag or
 filter added from a library belongs in it. `queries/locals.scm` relies on the `variable:` field to tell a
 binding from a reference — another reason to keep `asVariable` uniform. `{% blocktranslate %}`'s `asvar`
 target carries an `asvar:` field instead, because it is written inside the tag but assigned outside it:
-the scope on `blocktrans_clause` / `blocktranslate_clause` confines the `with` and `count` bindings, and would swallow `asvar`
+the scope on `blocktrans_block` / `blocktranslate_block` confines the `with` and `count` bindings, and would swallow `asvar`
 too if it were spelled the same way. `queries/exports.scm` names it for a tool to
 bind in the scope around the block, which a locals query cannot do: it places a definition in the innermost
 scope containing it and offers no way out again.
@@ -359,16 +359,16 @@ scope containing it and offers no way out again.
 `{% if a %}{% now "Y" as n %}{% endif %}{{ n }}` may reach `{{ n }}` with nothing bound. A locals query
 cannot: it matches a reference to the definition whose scope contains it and has no notion of a path not
 taken. A group is exhaustive iff it has a `@conditional.default`, so each pattern captures the group
-alongside one of its parts and a tool needs no list of which clause belongs to which group. Adding a tag
+alongside one of its parts and a tool needs no list of which block belongs to which group. Adding a tag
 group whose body may be skipped means adding it there — `{% cache %}` is the non-obvious one, since a
 cache hit skips the body outright and `CacheNode` pushes no context.
 
 A branch that is also a `@local.scope` confines its bindings whichever way the branch goes, which is why
 `{% for %}` is inert for that check: `ForNode` renders `nodelist_empty` **inside** the same
-`context.push()` as the loop body, so `empty_clause` is a scope alongside `for_clause`.
+`context.push()` as the loop body, so `empty_block` is a scope alongside `for_block`.
 
 `queries/errors.scm` collects what an editor should report: `(ERROR)` as `@error.syntax`, `(MISSING)` as
-`@error.missing`, and every missing-tag marker as `@error.missing_block`. A tree holding only markers has
+`@error.missing`, and every missing-tag marker as `@error.missing_tag`. A tree holding only markers has
 no `has_error`, so a tool that checks that flag alone misses them. Adding a tag group means adding its
 marker there, since no supertype matches them all.
 
@@ -428,8 +428,8 @@ unavoidable limitation, or a case where this grammar is the more permissive one 
 - `{% csp_nonce_attr "a" media="b" %}` is accepted, matching Django, which only rejects it at render time.
 - A misspelled tag or filter cannot be caught: `{{ x|lenght }}` is indistinguishable from a filter some
   library registered. Cross-referencing names against `{% load %}` needs the project's Python, so it
-  belongs in a linter; the `load_block` rule already parses the library and `from` names for one to use.
-- `{% mytag %}…{% endmytag %}` parses as two sibling `custom_tag_block`s. Nesting them would mean guessing that
+  belongs in a linter; the `load_tag` rule already parses the library and `from` names for one to use.
+- `{% mytag %}…{% endmytag %}` parses as two sibling `custom_tag`s. Nesting them would mean guessing that
   an unknown tag is a block tag.
 - A custom tag's contents are only assumed to be the `simple_tag` shape. `@register.tag` receives the raw
   token and may parse anything, so `{% mytag <<>> %}` is rejected here and not by Django.
@@ -447,6 +447,6 @@ unavoidable limitation, or a case where this grammar is the more permissive one 
 - `partial`/`partialdef` are Django builtins as of Django 6; `elif`/`else`/`empty` are modelled as parts of
   their enclosing tag rather than as separate tags.
 - An unterminated group parses here and raises `TemplateSyntaxError` in Django: `{% if a %}x`, or a
-  `{% for %}` closed while an `{% if %}` inside it is still open, holds a `missing_endif_block` marker
+  `{% for %}` closed while an `{% if %}` inside it is still open, holds a `missing_endif_tag` marker
   where the end tag belongs. The marker is the error, reported through `queries/errors.scm`; a check
   for `ERROR` nodes alone accepts the tree.

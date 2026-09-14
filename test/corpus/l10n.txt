@@ -9,11 +9,11 @@ Localize
 (template
   (content)
   (localize_group
-    (localize_clause
-      (localize_block)
+    (localize_block
+      (localize_tag)
       (template
         (content)))
-    (endlocalize_block))
+    (endlocalize_tag))
   (content))
 
 ==================
@@ -27,11 +27,11 @@ Localize On
 (template
   (content)
   (localize_group
-    (localize_clause
-      (localize_block)
+    (localize_block
+      (localize_tag)
       (template
         (content)))
-    (endlocalize_block))
+    (endlocalize_tag))
   (content))
 
 ==================
@@ -45,11 +45,11 @@ Localize Off
 (template
   (content)
   (localize_group
-    (localize_clause
-      (localize_block)
+    (localize_block
+      (localize_tag)
       (template
         (content)))
-    (endlocalize_block))
+    (endlocalize_tag))
   (content))
 
 ==================
@@ -63,11 +63,11 @@ Localize Hugging Its Delimiters
 (template
   (content)
   (localize_group
-    (localize_clause
-      (localize_block)
+    (localize_block
+      (localize_tag)
       (template
         (content)))
-    (endlocalize_block))
+    (endlocalize_tag))
   (content))
 
 ==================
@@ -81,16 +81,16 @@ Localize Nested
 (template
   (content)
   (localize_group
-    (localize_clause
-      (localize_block)
+    (localize_block
+      (localize_tag)
       (template
         (localize_group
-          (localize_clause
-            (localize_block)
+          (localize_block
+            (localize_tag)
             (template
               (content)))
-          (endlocalize_block))))
-    (endlocalize_block))
+          (endlocalize_tag))))
+    (endlocalize_tag))
   (content))
 
 ==================
@@ -124,11 +124,11 @@ Localize Unclosed
 (template
   (content)
   (localize_group
-    (localize_clause
-      (localize_block)
+    (localize_block
+      (localize_tag)
       (template
         (content)))
-    (missing_endlocalize_block)))
+    (missing_endlocalize_tag)))
 
 
 ==================

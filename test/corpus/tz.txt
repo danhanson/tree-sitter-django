@@ -9,11 +9,11 @@ Localtime
 (template
   (content)
   (localtime_group
-    (localtime_clause
-      (localtime_block)
+    (localtime_block
+      (localtime_tag)
       (template
         (content)))
-    (endlocaltime_block))
+    (endlocaltime_tag))
   (content))
 
 ==================
@@ -27,11 +27,11 @@ Localtime On
 (template
   (content)
   (localtime_group
-    (localtime_clause
-      (localtime_block)
+    (localtime_block
+      (localtime_tag)
       (template
         (content)))
-    (endlocaltime_block))
+    (endlocaltime_tag))
   (content))
 
 ==================
@@ -45,11 +45,11 @@ Localtime Off
 (template
   (content)
   (localtime_group
-    (localtime_clause
-      (localtime_block)
+    (localtime_block
+      (localtime_tag)
       (template
         (content)))
-    (endlocaltime_block))
+    (endlocaltime_tag))
   (content))
 
 ==================
@@ -83,15 +83,15 @@ Timezone
 (template
   (content)
   (timezone_group
-    (timezone_clause
-      (timezone_block
+    (timezone_block
+      (timezone_tag
         (filtered_value
           (value
             (literal
               (string)))))
       (template
         (content)))
-    (endtimezone_block))
+    (endtimezone_tag))
   (content))
 
 ==================
@@ -105,15 +105,15 @@ Timezone With A Variable
 (template
   (content)
   (timezone_group
-    (timezone_clause
-      (timezone_block
+    (timezone_block
+      (timezone_tag
         (filtered_value
           (value
             (variable_attribute
               (identifier)))))
       (template
         (content)))
-    (endtimezone_block))
+    (endtimezone_tag))
   (content))
 
 ==================
@@ -127,8 +127,8 @@ Timezone With A Filtered Argument
 (template
   (content)
   (timezone_group
-    (timezone_clause
-      (timezone_block
+    (timezone_block
+      (timezone_tag
         (filtered_value
           (value
             (variable_attribute
@@ -137,7 +137,7 @@ Timezone With A Filtered Argument
             (filter))))
       (template
         (content)))
-    (endtimezone_block))
+    (endtimezone_tag))
   (content))
 
 ==================
@@ -170,7 +170,7 @@ Get Current Timezone
 
 (template
   (content)
-  (get_current_timezone_block
+  (get_current_timezone_tag
     variable: (identifier))
   (content))
 

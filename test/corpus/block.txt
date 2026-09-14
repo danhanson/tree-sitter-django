@@ -17,12 +17,12 @@ Block
 (template
   (content)
   (block_group
-    (block_clause
-      (block_block
+    (block_block
+      (block_tag
         name: (push_block))
       (template
         (content)))
-    (endblock_block
+    (endblock_tag
       (pop_block)))
   (content))
 
@@ -45,12 +45,12 @@ Block Matching End Tag
 (template
   (content)
   (block_group
-    (block_clause
-      (block_block
+    (block_block
+      (block_tag
         name: (push_block))
       (template
         (content)))
-    (endblock_block
+    (endblock_tag
       (pop_block)))
   (content))
 
@@ -75,21 +75,21 @@ Nested Blocks
 (template
   (content)
   (block_group
-    (block_clause
-      (block_block
+    (block_block
+      (block_tag
         name: (push_block))
       (template
         (content)
         (block_group
-          (block_clause
-            (block_block
+          (block_block
+            (block_tag
               name: (push_block))
             (template
               (content)))
-          (endblock_block
+          (endblock_tag
             (pop_block)))
         (content)))
-    (endblock_block
+    (endblock_tag
       (pop_block)))
   (content))
 
@@ -114,21 +114,21 @@ Nested Blocks End Tag
 (template
   (content)
   (block_group
-    (block_clause
-      (block_block
+    (block_block
+      (block_tag
         name: (push_block))
       (template
         (content)
         (block_group
-          (block_clause
-            (block_block
+          (block_block
+            (block_tag
               name: (push_block))
             (template
               (content)))
-          (endblock_block
+          (endblock_tag
             (pop_block)))
         (content)))
-    (endblock_block
+    (endblock_tag
       (pop_block)))
   (content))
 
@@ -153,20 +153,20 @@ Nested Blocks Mixed Tags
 (template
   (content)
   (block_group
-    (block_clause
-      (block_block
+    (block_block
+      (block_tag
         name: (push_block))
       (template
         (content)
         (block_group
-          (block_clause
-            (block_block
+          (block_block
+            (block_tag
               name: (push_block))
             (template
               (content)))
-          (endblock_block
+          (endblock_tag
             (pop_block)))
         (content)))
-    (endblock_block
+    (endblock_tag
       (pop_block)))
   (content))

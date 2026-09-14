@@ -10,5 +10,5 @@ Csrf Token
 
 (template
   (content)
-  (csrf_token_block)
+  (csrf_token_tag)
   (content))

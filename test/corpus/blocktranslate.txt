@@ -9,10 +9,10 @@ Blocktrans
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block)
+    (blocktrans_block
+      (blocktrans_tag)
       (content))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -26,10 +26,10 @@ Blocktranslate
 (template
   (content)
   (blocktranslate_group
-    (blocktranslate_clause
-      (blocktranslate_block)
+    (blocktranslate_block
+      (blocktranslate_tag)
       (content))
-    (endblocktranslate_block))
+    (endblocktranslate_tag))
   (content))
 
 ==================
@@ -43,9 +43,9 @@ Blocktrans Empty
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block))
-    (endblocktrans_block))
+    (blocktrans_block
+      (blocktrans_tag))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -59,15 +59,15 @@ Blocktrans With A Placeholder
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block)
+    (blocktrans_block
+      (blocktrans_tag)
       (content)
       (template_variable
         (filtered_value
           (value
             (variable_attribute
               (identifier))))))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -81,10 +81,10 @@ Blocktrans Trimmed
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block)
+    (blocktrans_block
+      (blocktrans_tag)
       (content))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -98,15 +98,15 @@ Blocktrans With
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         variable: (identifier)
         (filtered_value
           (value
             (variable_attribute
               (identifier)))))
       (content))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -120,8 +120,8 @@ Blocktrans With Several Bindings
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         variable: (identifier)
         (filtered_value
           (value
@@ -133,7 +133,7 @@ Blocktrans With Several Bindings
             (variable_attribute
               (identifier)))))
       (content))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -147,8 +147,8 @@ Blocktrans With A Filtered Binding
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         variable: (identifier)
         (filtered_value
           (value
@@ -157,7 +157,7 @@ Blocktrans With A Filtered Binding
           (filter_expression
             (filter))))
       (content))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -171,14 +171,14 @@ Blocktrans With Context
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         (filtered_value
           (value
             (literal
               (string)))))
       (content))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -192,11 +192,11 @@ Blocktrans With Asvar
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         asvar: (identifier))
       (content))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -210,18 +210,18 @@ Blocktrans With Count And Plural
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         variable: (identifier)
         (filtered_value
           (value
             (variable_attribute
               (identifier)))))
       (content)
-      (plural_clause
-        (plural_block)
+      (plural_block
+        (plural_tag)
         (content)))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -235,17 +235,17 @@ Blocktrans With An Empty Singular
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         variable: (identifier)
         (filtered_value
           (value
             (variable_attribute
               (identifier)))))
-      (plural_clause
-        (plural_block)
+      (plural_block
+        (plural_tag)
         (content)))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -259,17 +259,17 @@ Blocktranslate With An Empty Plural
 (template
   (content)
   (blocktranslate_group
-    (blocktranslate_clause
-      (blocktranslate_block
+    (blocktranslate_block
+      (blocktranslate_tag
         variable: (identifier)
         (filtered_value
           (value
             (variable_attribute
               (identifier)))))
       (content)
-      (plural_clause
-        (plural_block)))
-    (endblocktranslate_block))
+      (plural_block
+        (plural_tag)))
+    (endblocktranslate_tag))
   (content))
 
 ==================
@@ -283,8 +283,8 @@ Blocktrans With Every Option
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         variable: (identifier)
         (filtered_value
           (value
@@ -301,10 +301,10 @@ Blocktrans With Every Option
               (string))))
         asvar: (identifier))
       (content)
-      (plural_clause
-        (plural_block)
+      (plural_block
+        (plural_tag)
         (content)))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -318,11 +318,11 @@ Blocktrans With Its Options Reordered
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         asvar: (identifier))
       (content))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -356,16 +356,16 @@ Blocktrans With Count And No Plural
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         (identifier)
         (filtered_value
           (value
             (variable_attribute
               (identifier)))))
       (content)
-      (missing_plural_block))
-    (endblocktrans_block))
+      (missing_plural_tag))
+    (endblocktrans_tag))
   (content))
 
 ==================
@@ -459,21 +459,21 @@ Blocktrans With Two Plurals
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         (identifier)
         (filtered_value
           (value
             (variable_attribute
               (identifier)))))
       (content)
-      (plural_clause
-        (plural_block)
+      (plural_block
+        (plural_tag)
         (content)))
-    (missing_endblocktrans_block))
-  (unexpected_block)
+    (missing_endblocktrans_tag))
+  (unexpected_tag)
   (content)
-  (unexpected_block)
+  (unexpected_tag)
   (content))
 
 ==================
@@ -557,15 +557,15 @@ Blocktrans Repeating An Option Of The Tag Before It
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block)
+    (blocktrans_block
+      (blocktrans_tag)
       (content))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block)
+    (blocktrans_block
+      (blocktrans_tag)
       (content))
-    (endblocktrans_block))
+    (endblocktrans_tag))
   (content))
 
 ==================

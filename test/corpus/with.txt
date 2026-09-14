@@ -11,8 +11,8 @@ With Basic
 (template
   (content)
   (with_group
-    (with_clause
-      (with_block
+    (with_block
+      (with_tag
         variable: (identifier)
         (filtered_value
           (value
@@ -27,7 +27,7 @@ With Basic
               (variable_attribute
                 (identifier)))))
         (content)))
-    (endwith_block))
+    (endwith_tag))
   (content))
 
 ==================
@@ -43,8 +43,8 @@ With Multiple Variables
 (template
   (content)
   (with_group
-    (with_clause
-      (with_block
+    (with_block
+      (with_tag
         variable: (identifier)
         (filtered_value
           (value
@@ -63,7 +63,7 @@ With Multiple Variables
               (variable_attribute
                 (identifier)))))
         (content)))
-    (endwith_block))
+    (endwith_tag))
   (content))
 
 ==================
@@ -97,8 +97,8 @@ With Repeating A Binding Of The Tag Before It
 (template
   (content)
   (with_group
-    (with_clause
-      (with_block
+    (with_block
+      (with_tag
         variable: (identifier)
         (filtered_value
           (value
@@ -106,10 +106,10 @@ With Repeating A Binding Of The Tag Before It
               (number)))))
       (template
         (content)))
-    (endwith_block))
+    (endwith_tag))
   (with_group
-    (with_clause
-      (with_block
+    (with_block
+      (with_tag
         variable: (identifier)
         (filtered_value
           (value
@@ -117,7 +117,7 @@ With Repeating A Binding Of The Tag Before It
               (number)))))
       (template
         (content)))
-    (endwith_block))
+    (endwith_tag))
   (content))
 
 ==================
@@ -131,8 +131,8 @@ With A Binding Named After A Literal
 (template
   (content)
   (with_group
-    (with_clause
-      (with_block
+    (with_block
+      (with_tag
         variable: (identifier)
         (filtered_value
           (value
@@ -140,5 +140,5 @@ With A Binding Named After A Literal
               (number)))))
       (template
         (content)))
-    (endwith_block))
+    (endwith_tag))
   (content))

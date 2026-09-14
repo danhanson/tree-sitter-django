@@ -9,8 +9,8 @@ Missing Endif At End Of Input
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
@@ -18,7 +18,7 @@ Missing Endif At End Of Input
                 (identifier))))))
       (template
         (content)))
-    (missing_endif_block)))
+    (missing_endif_tag)))
 
 ==================
 Missing Endfor After Empty
@@ -31,8 +31,8 @@ Missing Endfor After Empty
 (template
   (content)
   (for_group
-    (for_clause
-      (for_block
+    (for_block
+      (for_tag
         (identifier)
         (filtered_value
           (value
@@ -40,11 +40,11 @@ Missing Endfor After Empty
               (identifier)))))
       (template
         (content)))
-    (empty_clause
-      (empty_block)
+    (empty_block
+      (empty_tag)
       (template
         (content)))
-    (missing_endfor_block)))
+    (missing_endfor_tag)))
 
 ==================
 Missing Endblock At End Of Input
@@ -57,12 +57,12 @@ Missing Endblock At End Of Input
 (template
   (content)
   (block_group
-    (block_clause
-      (block_block
+    (block_block
+      (block_tag
         (push_block))
       (template
         (content)))
-    (missing_endblock_block)))
+    (missing_endblock_tag)))
 
 ==================
 Missing Endpartialdef At End Of Input
@@ -75,12 +75,12 @@ Missing Endpartialdef At End Of Input
 (template
   (content)
   (partialdef_group
-    (partialdef_clause
-      (partialdef_block
+    (partialdef_block
+      (partialdef_tag
         (push_partial))
       (template
         (content)))
-    (missing_endpartialdef_block)))
+    (missing_endpartialdef_tag)))
 
 ==================
 Missing Endverbatim With An Empty Body
@@ -93,11 +93,11 @@ Missing Endverbatim With An Empty Body
 (template
   (content)
   (verbatim_group
-    (verbatim_clause
-      (verbatim_block
+    (verbatim_block
+      (verbatim_tag
         (push_verbatim))
       (verbatim_content))
-    (missing_endverbatim_block)))
+    (missing_endverbatim_tag)))
 
 ==================
 Missing Endverbatim After A Tag In Its Text
@@ -110,11 +110,11 @@ Missing Endverbatim After A Tag In Its Text
 (template
   (content)
   (verbatim_group
-    (verbatim_clause
-      (verbatim_block
+    (verbatim_block
+      (verbatim_tag
         (push_verbatim))
       (verbatim_content))
-    (missing_endverbatim_block)))
+    (missing_endverbatim_tag)))
 
 ==================
 Missing Endcomment At End Of Input
@@ -127,10 +127,10 @@ Missing Endcomment At End Of Input
 (template
   (content)
   (comment_group
-    (comment_clause
-      (comment_block)
+    (comment_block
+      (comment_tag)
       (comment_content))
-    (missing_endcomment_block)))
+    (missing_endcomment_tag)))
 
 ==================
 Missing Endif Before An Outer End Tag
@@ -143,8 +143,8 @@ Missing Endif Before An Outer End Tag
 (template
   (content)
   (for_group
-    (for_clause
-      (for_block
+    (for_block
+      (for_tag
         (identifier)
         (filtered_value
           (value
@@ -152,15 +152,15 @@ Missing Endif Before An Outer End Tag
               (identifier)))))
       (template
         (if_group
-          (if_clause
-            (if_block
+          (if_block
+            (if_tag
               (predicate
                 (filtered_value
                   (value
                     (variable_attribute
                       (identifier)))))))
-          (missing_endif_block))))
-    (endfor_block))
+          (missing_endif_tag))))
+    (endfor_tag))
   (content))
 
 ==================
@@ -174,8 +174,8 @@ Unseen Outer Else Is Not A Missing Tag
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
@@ -183,18 +183,18 @@ Unseen Outer Else Is Not A Missing Tag
                 (identifier))))))
       (template
         (for_group
-          (for_clause
-            (for_block
+          (for_block
+            (for_tag
               (identifier)
               (filtered_value
                 (value
                   (variable_attribute
                     (identifier)))))
             (template
-              (unexpected_block)
+              (unexpected_tag)
               (content)))
-          (missing_endfor_block))))
-    (endif_block))
+          (missing_endfor_tag))))
+    (endif_tag))
   (content))
 
 ==================
@@ -208,20 +208,20 @@ Missing Endwith Before An Outer Endblock
 (template
   (content)
   (block_group
-    (block_clause
-      (block_block
+    (block_block
+      (block_tag
         (push_block))
       (template
         (with_group
-          (with_clause
-            (with_block
+          (with_block
+            (with_tag
               (identifier)
               (filtered_value
                 (value
                   (literal
                     (number))))))
-          (missing_endwith_block))))
-    (endblock_block
+          (missing_endwith_tag))))
+    (endblock_tag
       (pop_block)))
   (content))
 
@@ -236,8 +236,8 @@ Missing Two End Tags At End Of Input
 (template
   (content)
   (for_group
-    (for_clause
-      (for_block
+    (for_block
+      (for_tag
         (identifier)
         (filtered_value
           (value
@@ -245,8 +245,8 @@ Missing Two End Tags At End Of Input
               (identifier)))))
       (template
         (if_group
-          (if_clause
-            (if_block
+          (if_block
+            (if_tag
               (predicate
                 (filtered_value
                   (value
@@ -254,8 +254,8 @@ Missing Two End Tags At End Of Input
                       (identifier))))))
             (template
               (content)))
-          (missing_endif_block))))
-    (missing_endfor_block)))
+          (missing_endif_tag))))
+    (missing_endfor_tag)))
 
 ==================
 Missing Endblock Before An Outer Name
@@ -268,16 +268,16 @@ Missing Endblock Before An Outer Name
 (template
   (content)
   (block_group
-    (block_clause
-      (block_block
+    (block_block
+      (block_tag
         (push_block))
       (template
         (block_group
-          (block_clause
-            (block_block
+          (block_block
+            (block_tag
               (push_block)))
-          (missing_endblock_block))))
-    (endblock_block
+          (missing_endblock_tag))))
+    (endblock_tag
       (pop_block)))
   (content))
 
@@ -292,16 +292,16 @@ Missing Endpartialdef Before An Outer Name
 (template
   (content)
   (partialdef_group
-    (partialdef_clause
-      (partialdef_block
+    (partialdef_block
+      (partialdef_tag
         (push_partial))
       (template
         (partialdef_group
-          (partialdef_clause
-            (partialdef_block
+          (partialdef_block
+            (partialdef_tag
               (push_partial)))
-          (missing_endpartialdef_block))))
-    (endpartialdef_block
+          (missing_endpartialdef_tag))))
+    (endpartialdef_tag
       (pop_partial)))
   (content))
 
@@ -316,16 +316,16 @@ Missing Plural At End Of Input
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         (identifier)
         (filtered_value
           (value
             (variable_attribute
               (identifier)))))
       (content)
-      (missing_plural_block))
-    (missing_endblocktrans_block)))
+      (missing_plural_tag))
+    (missing_endblocktrans_tag)))
 
 ==================
 Missing Plural Before Endblocktranslate
@@ -338,16 +338,16 @@ Missing Plural Before Endblocktranslate
 (template
   (content)
   (blocktranslate_group
-    (blocktranslate_clause
-      (blocktranslate_block
+    (blocktranslate_block
+      (blocktranslate_tag
         (identifier)
         (filtered_value
           (value
             (variable_attribute
               (identifier)))))
       (content)
-      (missing_plural_block))
-    (endblocktranslate_block))
+      (missing_plural_tag))
+    (endblocktranslate_tag))
   (content))
 
 ==================
@@ -361,18 +361,18 @@ Missing Endblocktrans After Plural
 (template
   (content)
   (blocktranslate_group
-    (blocktrans_clause
-      (blocktrans_block
+    (blocktrans_block
+      (blocktrans_tag
         (identifier)
         (filtered_value
           (value
             (variable_attribute
               (identifier)))))
       (content)
-      (plural_clause
-        (plural_block)
+      (plural_block
+        (plural_tag)
         (content)))
-    (missing_endblocktrans_block)))
+    (missing_endblocktrans_tag)))
 
 ==================
 Missing Endfor Before A Tag Without Spaces
@@ -385,8 +385,8 @@ Missing Endfor Before A Tag Without Spaces
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
@@ -394,15 +394,15 @@ Missing Endfor Before A Tag Without Spaces
                 (identifier))))))
       (template
         (for_group
-          (for_clause
-            (for_block
+          (for_block
+            (for_tag
               (identifier)
               (filtered_value
                 (value
                   (variable_attribute
                     (identifier))))))
-          (missing_endfor_block))))
-    (endif_block))
+          (missing_endfor_tag))))
+    (endif_tag))
   (content))
 
 ==================
@@ -417,8 +417,8 @@ endif %}
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
@@ -426,15 +426,15 @@ endif %}
                 (identifier))))))
       (template
         (for_group
-          (for_clause
-            (for_block
+          (for_block
+            (for_tag
               (identifier)
               (filtered_value
                 (value
                   (variable_attribute
                     (identifier))))))
-          (missing_endfor_block))))
-    (endif_block))
+          (missing_endfor_tag))))
+    (endif_tag))
   (content))
 
 ==================
@@ -448,18 +448,18 @@ Missing Endif After A Custom End Tag
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
               (variable_attribute
                 (identifier))))))
       (template
-        (custom_tag_block
+        (custom_tag
           (identifier))
         (content)))
-    (missing_endif_block)))
+    (missing_endif_tag)))
 
 ==================
 Second Else After A Nested Else Is Unexpected
@@ -472,8 +472,8 @@ Second Else After A Nested Else Is Unexpected
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
@@ -481,8 +481,8 @@ Second Else After A Nested Else Is Unexpected
                 (identifier))))))
       (template
         (if_group
-          (if_clause
-            (if_block
+          (if_block
+            (if_tag
               (predicate
                 (filtered_value
                   (value
@@ -490,15 +490,15 @@ Second Else After A Nested Else Is Unexpected
                       (identifier))))))
             (template
               (content)))
-          (else_clause
-            (else_block)
+          (else_block
+            (else_tag)
             (template
               (content)
-              (unexpected_block)
+              (unexpected_tag)
               (content)))
-          (endif_block))
+          (endif_tag))
         (content)))
-    (missing_endif_block)))
+    (missing_endif_tag)))
 
 ==================
 Second Empty After A Nested Empty Is Unexpected
@@ -511,8 +511,8 @@ Second Empty After A Nested Empty Is Unexpected
 (template
   (content)
   (for_group
-    (for_clause
-      (for_block
+    (for_block
+      (for_tag
         (identifier)
         (filtered_value
           (value
@@ -520,8 +520,8 @@ Second Empty After A Nested Empty Is Unexpected
               (identifier)))))
       (template
         (for_group
-          (for_clause
-            (for_block
+          (for_block
+            (for_tag
               (identifier)
               (filtered_value
                 (value
@@ -529,15 +529,15 @@ Second Empty After A Nested Empty Is Unexpected
                     (identifier)))))
             (template
               (content)))
-          (empty_clause
-            (empty_block)
+          (empty_block
+            (empty_tag)
             (template
               (content)
-              (unexpected_block)
+              (unexpected_tag)
               (content)))
-          (endfor_block))
+          (endfor_tag))
         (content)))
-    (missing_endfor_block)))
+    (missing_endfor_tag)))
 
 ==================
 Else Of An If Nested In An Else
@@ -550,8 +550,8 @@ Else Of An If Nested In An Else
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
@@ -559,12 +559,12 @@ Else Of An If Nested In An Else
                 (identifier))))))
       (template
         (content)))
-    (else_clause
-      (else_block)
+    (else_block
+      (else_tag)
       (template
         (if_group
-          (if_clause
-            (if_block
+          (if_block
+            (if_tag
               (predicate
                 (filtered_value
                   (value
@@ -572,12 +572,12 @@ Else Of An If Nested In An Else
                       (identifier))))))
             (template
               (content)))
-          (else_clause
-            (else_block)
+          (else_block
+            (else_tag)
             (template
               (content)))
-          (endif_block))))
-    (endif_block))
+          (endif_tag))))
+    (endif_tag))
   (content))
 
 ==================
@@ -591,8 +591,8 @@ Elif Of An If Nested In An Elif
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
@@ -600,8 +600,8 @@ Elif Of An If Nested In An Elif
                 (identifier))))))
       (template
         (content)))
-    (elif_clause
-      (elif_block
+    (elif_block
+      (elif_tag
         (predicate
           (filtered_value
             (value
@@ -609,8 +609,8 @@ Elif Of An If Nested In An Elif
                 (identifier))))))
       (template
         (if_group
-          (if_clause
-            (if_block
+          (if_block
+            (if_tag
               (predicate
                 (filtered_value
                   (value
@@ -618,8 +618,8 @@ Elif Of An If Nested In An Elif
                       (identifier))))))
             (template
               (content)))
-          (elif_clause
-            (elif_block
+          (elif_block
+            (elif_tag
               (predicate
                 (filtered_value
                   (value
@@ -627,8 +627,8 @@ Elif Of An If Nested In An Elif
                       (identifier))))))
             (template
               (content)))
-          (endif_block))))
-    (endif_block))
+          (endif_tag))))
+    (endif_tag))
   (content))
 
 ==================
@@ -642,8 +642,8 @@ Empty Of A For Nested In An Empty
 (template
   (content)
   (for_group
-    (for_clause
-      (for_block
+    (for_block
+      (for_tag
         (identifier)
         (filtered_value
           (value
@@ -651,12 +651,12 @@ Empty Of A For Nested In An Empty
               (identifier)))))
       (template
         (content)))
-    (empty_clause
-      (empty_block)
+    (empty_block
+      (empty_tag)
       (template
         (for_group
-          (for_clause
-            (for_block
+          (for_block
+            (for_tag
               (identifier)
               (filtered_value
                 (value
@@ -664,12 +664,12 @@ Empty Of A For Nested In An Empty
                     (identifier)))))
             (template
               (content)))
-          (empty_clause
-            (empty_block)
+          (empty_block
+            (empty_tag)
             (template
               (content)))
-          (endfor_block))))
-    (endfor_block))
+          (endfor_tag))))
+    (endfor_tag))
   (content))
 
 ==================
@@ -683,8 +683,8 @@ Else Of An Ifchanged Nested In An Else Of An If
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
@@ -692,20 +692,20 @@ Else Of An Ifchanged Nested In An Else Of An If
                 (identifier))))))
       (template
         (content)))
-    (else_clause
-      (else_block)
+    (else_block
+      (else_tag)
       (template
         (ifchanged_group
-          (ifchanged_clause
-            (ifchanged_block)
+          (ifchanged_block
+            (ifchanged_tag)
             (template
               (content)))
-          (else_clause
-            (else_block)
+          (else_block
+            (else_tag)
             (template
               (content)))
-          (endifchanged_block))))
-    (endif_block))
+          (endifchanged_tag))))
+    (endif_tag))
   (content))
 
 ==================
@@ -719,16 +719,16 @@ Else Of An If Nested In An Else Of An Ifchanged
 (template
   (content)
   (ifchanged_group
-    (ifchanged_clause
-      (ifchanged_block)
+    (ifchanged_block
+      (ifchanged_tag)
       (template
         (content)))
-    (else_clause
-      (else_block)
+    (else_block
+      (else_tag)
       (template
         (if_group
-          (if_clause
-            (if_block
+          (if_block
+            (if_tag
               (predicate
                 (filtered_value
                   (value
@@ -736,12 +736,12 @@ Else Of An If Nested In An Else Of An Ifchanged
                       (identifier))))))
             (template
               (content)))
-          (else_clause
-            (else_block)
+          (else_block
+            (else_tag)
             (template
               (content)))
-          (endif_block))))
-    (endifchanged_block))
+          (endif_tag))))
+    (endifchanged_tag))
   (content))
 
 ==================
@@ -755,8 +755,8 @@ Third Else Is Unexpected Too
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
@@ -764,15 +764,15 @@ Third Else Is Unexpected Too
                 (identifier))))))
       (template
         (content)))
-    (else_clause
-      (else_block)
+    (else_block
+      (else_tag)
       (template
         (content)
-        (unexpected_block)
+        (unexpected_tag)
         (content)
-        (unexpected_block)
+        (unexpected_tag)
         (content)))
-    (endif_block))
+    (endif_tag))
   (content))
 
 ==================
@@ -786,8 +786,8 @@ Second And Third Empty Are Unexpected
 (template
   (content)
   (for_group
-    (for_clause
-      (for_block
+    (for_block
+      (for_tag
         (identifier)
         (filtered_value
           (value
@@ -795,15 +795,15 @@ Second And Third Empty Are Unexpected
               (identifier)))))
       (template
         (content)))
-    (empty_clause
-      (empty_block)
+    (empty_block
+      (empty_tag)
       (template
         (content)
-        (unexpected_block)
+        (unexpected_tag)
         (content)
-        (unexpected_block)
+        (unexpected_tag)
         (content)))
-    (endfor_block))
+    (endfor_tag))
   (content))
 
 ==================
@@ -817,19 +817,19 @@ Second And Third Else Of An Ifchanged Are Unexpected
 (template
   (content)
   (ifchanged_group
-    (ifchanged_clause
-      (ifchanged_block)
+    (ifchanged_block
+      (ifchanged_tag)
       (template
         (content)))
-    (else_clause
-      (else_block)
+    (else_block
+      (else_tag)
       (template
         (content)
-        (unexpected_block)
+        (unexpected_tag)
         (content)
-        (unexpected_block)
+        (unexpected_tag)
         (content)))
-    (endifchanged_block))
+    (endifchanged_tag))
   (content))
 
 ==================
@@ -843,13 +843,13 @@ Second Else Inside A Block Is Unexpected
 (template
   (content)
   (block_group
-    (block_clause
-      (block_block
+    (block_block
+      (block_tag
         (push_block))
       (template
         (if_group
-          (if_clause
-            (if_block
+          (if_block
+            (if_tag
               (predicate
                 (filtered_value
                   (value
@@ -857,14 +857,14 @@ Second Else Inside A Block Is Unexpected
                       (identifier))))))
             (template
               (content)))
-          (else_clause
-            (else_block)
+          (else_block
+            (else_tag)
             (template
               (content)
-              (unexpected_block)
+              (unexpected_tag)
               (content)))
-          (endif_block))))
-    (endblock_block
+          (endif_tag))))
+    (endblock_tag
       (pop_block)))
   (content))
 
@@ -879,8 +879,8 @@ Second Else Of An If In A For Is Unexpected
 (template
   (content)
   (for_group
-    (for_clause
-      (for_block
+    (for_block
+      (for_tag
         (identifier)
         (filtered_value
           (value
@@ -888,8 +888,8 @@ Second Else Of An If In A For Is Unexpected
               (identifier)))))
       (template
         (if_group
-          (if_clause
-            (if_block
+          (if_block
+            (if_tag
               (predicate
                 (filtered_value
                   (value
@@ -897,14 +897,14 @@ Second Else Of An If In A For Is Unexpected
                       (identifier))))))
             (template
               (content)))
-          (else_clause
-            (else_block)
+          (else_block
+            (else_tag)
             (template
               (content)
-              (unexpected_block)
+              (unexpected_tag)
               (content)))
-          (endif_block))))
-    (endfor_block))
+          (endif_tag))))
+    (endfor_tag))
   (content))
 
 ==================
@@ -918,17 +918,17 @@ Stray End Tag After A Missing One
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
               (variable_attribute
                 (identifier))))))
       (template
-        (unexpected_block)
+        (unexpected_tag)
         (content)))
-    (missing_endif_block)))
+    (missing_endif_tag)))
 
 ==================
 Endblock Naming No Open Block
@@ -941,19 +941,19 @@ Endblock Naming No Open Block
 (template
   (content)
   (block_group
-    (block_clause
-      (block_block
+    (block_block
+      (block_tag
         (push_block))
       (template
         (block_group
-          (block_clause
-            (block_block
+          (block_block
+            (block_tag
               (push_block))
             (template
-              (unexpected_block)
+              (unexpected_tag)
               (content)))
-          (missing_endblock_block))))
-    (missing_endblock_block)))
+          (missing_endblock_tag))))
+    (missing_endblock_tag)))
 
 ==================
 Second Else Is Not A Missing Tag
@@ -966,18 +966,18 @@ Second Else Is Not A Missing Tag
 (template
   (content)
   (if_group
-    (if_clause
-      (if_block
+    (if_block
+      (if_tag
         (predicate
           (filtered_value
             (value
               (variable_attribute
                 (identifier)))))))
-    (else_clause
-      (else_block)
+    (else_block
+      (else_tag)
       (template
-        (unexpected_block)))
-    (endif_block))
+        (unexpected_tag)))
+    (endif_tag))
   (content))
 
 ==================

@@ -13,12 +13,12 @@ Partialdef Basic
 (template
   (content)
   (partialdef_group
-    (partialdef_clause
-      (partialdef_block
+    (partialdef_block
+      (partialdef_tag
         (push_partial))
       (template
         (content)))
-    (endpartialdef_block
+    (endpartialdef_tag
       (pop_partial)))
   (content))
 
@@ -37,11 +37,11 @@ Partialdef Inline
 (template
   (content)
   (partialdef_group
-    (partialdef_clause
-      (partialdef_block
+    (partialdef_block
+      (partialdef_tag
         (push_partial))
       (template
         (content)))
-    (endpartialdef_block
+    (endpartialdef_tag
       (pop_partial)))
   (content))

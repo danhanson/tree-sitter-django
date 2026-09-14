@@ -15,81 +15,81 @@
 ; heads, so that the capture is both the name to look up and the range to
 ; report. A paired tag names the opening tag only.
 
-(static_block
-  tag: ("static") @library.static)
+(static_tag
+  tag_name: ("static") @library.static)
 
-(get_static_prefix_block
-  tag: ("get_static_prefix") @library.static)
+(get_static_prefix_tag
+  tag_name: ("get_static_prefix") @library.static)
 
-(get_media_prefix_block
-  tag: ("get_media_prefix") @library.static)
+(get_media_prefix_tag
+  tag_name: ("get_media_prefix") @library.static)
 
-(blocktrans_block
-  tag: ("blocktrans") @library.i18n)
+(blocktrans_tag
+  tag_name: ("blocktrans") @library.i18n)
 
-(blocktranslate_block
-  tag: ("blocktranslate") @library.i18n)
+(blocktranslate_tag
+  tag_name: ("blocktranslate") @library.i18n)
 
-(translate_block
-  tag: [
+(translate_tag
+  tag_name: [
     ("trans")
     ("translate")] @library.i18n)
 
-(language_block
-  tag: ("language") @library.i18n)
+(language_tag
+  tag_name: ("language") @library.i18n)
 
-(get_available_languages_block
-  tag: ("get_available_languages") @library.i18n)
+(get_available_languages_tag
+  tag_name: ("get_available_languages") @library.i18n)
 
-(get_current_language_block
-  tag: ("get_current_language") @library.i18n)
+(get_current_language_tag
+  tag_name: ("get_current_language") @library.i18n)
 
-(get_current_language_bidi_block
-  tag: ("get_current_language_bidi") @library.i18n)
+(get_current_language_bidi_tag
+  tag_name: ("get_current_language_bidi") @library.i18n)
 
-(get_language_info_block
-  tag: ("get_language_info") @library.i18n)
+(get_language_info_tag
+  tag_name: ("get_language_info") @library.i18n)
 
-(get_language_info_list_block
-  tag: ("get_language_info_list") @library.i18n)
+(get_language_info_list_tag
+  tag_name: ("get_language_info_list") @library.i18n)
 
 (filter
-  name: [
+  filter_name: [
     ("language_bidi")
     ("language_name")
     ("language_name_local")
     ("language_name_translated")] @library.i18n)
 
-(cache_block
-  tag: ("cache") @library.cache)
+(cache_tag
+  tag_name: ("cache") @library.cache)
 
-(localize_block
-  tag: ("localize") @library.l10n)
+(localize_tag
+  tag_name: ("localize") @library.l10n)
 
 (filter
-  name: [
+  filter_name: [
     ("localize")
     ("unlocalize")] @library.l10n)
 
-(localtime_block
-  tag: ("localtime") @library.tz)
+(localtime_tag
+  tag_name: ("localtime") @library.tz)
 
-(timezone_block
-  tag: ("timezone") @library.tz)
+(timezone_tag
+  tag_name: ("timezone") @library.tz)
 
-(get_current_timezone_block
-  tag: ("get_current_timezone") @library.tz)
+(get_current_timezone_tag
+  tag_name: ("get_current_timezone") @library.tz)
 
 (filter
-  name: [
+  filter_name: [
     ("localtime")
     ("timezone")
     ("utc")] @library.tz)
 
 ; "{% load static %}" makes every name in the library available; "{% load
 ; static from staticfiles %}" makes only the names listed available.
-(load_block
+(load_tag
   (library) @load.library)
 
-(load_block
+(load_tag
   (identifier) @load.name)

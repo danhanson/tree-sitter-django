@@ -9,11 +9,11 @@ Verbatim Basic
 (template
   (content)
   (verbatim_group
-    (verbatim_clause
-      (verbatim_block
+    (verbatim_block
+      (verbatim_tag
         (push_verbatim))
       (verbatim_content))
-    (endverbatim_block
+    (endverbatim_tag
       (pop_verbatim)))
   (content))
 
@@ -28,10 +28,10 @@ Verbatim Empty
 (template
   (content)
   (verbatim_group
-    (verbatim_clause
-      (verbatim_block
+    (verbatim_block
+      (verbatim_tag
         (push_verbatim)))
-    (endverbatim_block
+    (endverbatim_tag
       (pop_verbatim)))
   (content))
 
@@ -49,11 +49,11 @@ Verbatim Ignores Tags
 (template
   (content)
   (verbatim_group
-    (verbatim_clause
-      (verbatim_block
+    (verbatim_block
+      (verbatim_tag
         (push_verbatim))
       (verbatim_content))
-    (endverbatim_block
+    (endverbatim_tag
       (pop_verbatim)))
   (content))
 
@@ -68,11 +68,11 @@ Verbatim With Name
 (template
   (content)
   (verbatim_group
-    (verbatim_clause
-      (verbatim_block
+    (verbatim_block
+      (verbatim_tag
         (push_verbatim))
       (verbatim_content))
-    (endverbatim_block
+    (endverbatim_tag
       (pop_verbatim)))
   (content))
 
@@ -89,10 +89,10 @@ Avoid template rendering via the {% verbatim %}{% endverbatim %} block.
 (template
   (content)
   (verbatim_group
-    (verbatim_clause
-      (verbatim_block
+    (verbatim_block
+      (verbatim_tag
         (push_verbatim))
       (verbatim_content))
-    (endverbatim_block
+    (endverbatim_tag
       (pop_verbatim)))
   (content))

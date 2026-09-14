@@ -8,7 +8,7 @@ Load Single Library
 
 (template
   (content)
-  (load_block
+  (load_tag
     (library
       (identifier)))
   (content))
@@ -23,7 +23,7 @@ Load Multiple Libraries
 
 (template
   (content)
-  (load_block
+  (load_tag
     (library
       (identifier))
     (library
@@ -40,7 +40,7 @@ Load Dotted Library
 
 (template
   (content)
-  (load_block
+  (load_tag
     (library
       (identifier)
       (identifier)))
@@ -56,7 +56,7 @@ Load Names From Library
 
 (template
   (content)
-  (load_block
+  (load_tag
     (identifier)
     (identifier)
     (library

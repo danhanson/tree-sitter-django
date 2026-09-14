@@ -4,13 +4,13 @@
 variable: (identifier) @variable.parameter
 
 
-(block_block
+(block_tag
     (push_block) @type)
 
-(partialdef_block
+(partialdef_tag
     (push_partial) @type)
 
-(verbatim_block
+(verbatim_tag
     (push_verbatim) @type)
 
 (comment_content) @comment
@@ -47,7 +47,7 @@ variable: (identifier) @variable.parameter
 (library
     (identifier) @module)
 
-tag: [
+tag_name: [
     ("autoescape")
     ("endautoescape")
     ("block")
@@ -120,7 +120,7 @@ tag: [
     ("endwith")] @function
 
 (filter
-    name: [
+    filter_name: [
         ("add")
         ("addslashes")
         ("capfirst")
@@ -190,10 +190,10 @@ tag: [
 
 ; a filter or tag a "load" brought in, whose name the grammar does not know
 (filter
-    name: (identifier) @function.call)
+    filter_name: (identifier) @function.call)
 
-(custom_tag_block
-    tag: (identifier) @function.call)
+(custom_tag
+    tag_name: (identifier) @function.call)
 
-(load_block
+(load_tag
     (identifier) @function)

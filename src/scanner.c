@@ -39,8 +39,8 @@ enum TokenType {
    * and fail if the tag has already been given one by that name */
   KwargName,
   /* zero width, where a tag group's required tag is missing; see
-   * scan_missing_block */
-  MissingBlock,
+   * scan_missing_tag */
+  MissingTag,
   /* zero width, after "{%": read the tag's name */
   GroupOpenTagRead,
   /* zero width, before the "%}" of a tag that opens a group: push the group */
@@ -53,7 +53,7 @@ enum TokenType {
   GroupRepeat,
   /* zero width, before the "%}" of a tag that closes a group: pop the group */
   GroupClose,
-  /* zero width, before the "%}" of an unexpected_block: returned only when
+  /* zero width, before the "%}" of an unexpected_tag: returned only when
    * the innermost group already holds a tag by that name, which makes this the
    * likelier stray of the two */
   GroupHeld,
@@ -469,7 +469,7 @@ static unsigned check_name(TSLexer *const lexer, const Name *const name) {
   return name->size;
 }
 
-static bool check_close_block(TSLexer *const lexer) {
+static bool check_close_tag(TSLexer *const lexer) {
   while (check_space(lexer->lookahead)) {
     lexer->advance(lexer, false);
   }
@@ -481,9 +481,9 @@ static bool check_close_block(TSLexer *const lexer) {
 }
 
 /* Marks the name just read as the token, then checks that only "%}" follows. */
-static bool check_close_block_from(TSLexer *const lexer) {
+static bool check_close_tag_from(TSLexer *const lexer) {
   lexer->mark_end(lexer);
-  return check_close_block(lexer);
+  return check_close_tag(lexer);
 }
 
 const char inline_chars[] = "inline";
@@ -495,7 +495,7 @@ static bool check_inline(TSLexer *const lexer) {
     }
     lexer->advance(lexer, false);
   }
-  return check_close_block(lexer);
+  return check_close_tag(lexer);
 }
 
 static void skip_whitespace(TSLexer *const lexer) {
@@ -715,7 +715,7 @@ static bool scan_group_tag_end(
     } else {
       OpenGroup *const group = array_back(&scanner->stack);
       if (name_in_list(&scanner->read_word, &group->middles)) {
-        // a second one of these parses as an unexpected_block, which has no follow
+        // a second one of these parses as an unexpected_tag, which has no follow
         lexer->log(lexer, "refused %s: the parser gives it to the innermost group, which already holds one",
           log_name(&scanner->read_word, buffer));
         return false;
@@ -785,11 +785,11 @@ typedef enum {
  * block further out; and before a second plural, since a blocktranslate body
  * holds no tag that could take it. Any other tag is taken to be the innermost
  * group's, as Django takes it: a second of a tag the group holds only once, such
- * as a second "else", is an unexpected_block inside the group rather than a sign
+ * as a second "else", is an unexpected_tag inside the group rather than a sign
  * that it has ended. A counted blocktranslate still waiting for its plural is
  * missing it before anything but "plural". The marker closes the group as the
  * missing tag would have, or for a plural records it, leaving the group open. */
-static MissingResult scan_missing_block(
+static MissingResult scan_missing_tag(
   struct Scanner *const scanner,
   TSLexer *const lexer,
   const bool *const valid_symbols
@@ -838,7 +838,7 @@ static MissingResult scan_missing_block(
         array_delete(&name);
       }
     } else if (name_in_list(&word, &innermost->middles)) {
-      // a second of a tag the group holds only once is an unexpected_block in it
+      // a second of a tag the group holds only once is an unexpected_tag in it
       missing = name_is(&word, "plural");
     } else {
       missing = outer_group_expects(scanner, &word);
@@ -853,7 +853,7 @@ static MissingResult scan_missing_block(
   } else {
     pop_group(scanner);
   }
-  lexer->result_symbol = MissingBlock;
+  lexer->result_symbol = MissingTag;
   return Missing;
 }
 
@@ -947,8 +947,8 @@ bool tree_sitter_django_external_scanner_scan(
    * down, which skips the separator the grammar still has to match, and below
    * the MatcherError check, which keeps them from being scanned during error
    * recovery. */
-  if (valid_symbols[MissingBlock]) {
-    switch (scan_missing_block(scanner, lexer, valid_symbols)) {
+  if (valid_symbols[MissingTag]) {
+    switch (scan_missing_tag(scanner, lexer, valid_symbols)) {
       case Missing:
         return true;
       case NotMissingAfterReading:
@@ -1038,7 +1038,7 @@ bool tree_sitter_django_external_scanner_scan(
     }
     const unsigned match_amt = check_name(lexer, &group->name);
     const bool has_next_char = group->name.size ? check_name_char(lexer->lookahead) : check_name_start_char(lexer->lookahead);
-    if (match_amt == group->name.size && !has_next_char && check_close_block_from(lexer)) {
+    if (match_amt == group->name.size && !has_next_char && check_close_tag_from(lexer)) {
       lexer->result_symbol = token;
       return true;
     }
@@ -1061,7 +1061,7 @@ bool tree_sitter_django_external_scanner_scan(
     if (read_name(lexer, &name)) {
       // validate tokens after name
       lexer->mark_end(lexer);
-      if (check_close_block(lexer) || token == PushPartial && check_inline(lexer)) {
+      if (check_close_tag(lexer) || token == PushPartial && check_inline(lexer)) {
         array_delete(&scanner->pending_name);
         scanner->pending_name = name;
         lexer->result_symbol = token;

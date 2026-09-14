@@ -10,5 +10,5 @@ Debug
 
 (template
   (content)
-  (debug_block)
+  (debug_tag)
   (content))

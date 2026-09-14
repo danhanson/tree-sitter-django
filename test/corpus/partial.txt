@@ -8,6 +8,6 @@ Partial Basic
 
 (template
   (content)
-  (partial_block
+  (partial_tag
     (identifier))
   (content))

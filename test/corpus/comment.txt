@@ -11,10 +11,10 @@ This is ignored
 (template
   (content)
   (comment_group
-    (comment_clause
-      (comment_block)
+    (comment_block
+      (comment_tag)
       (comment_content))
-    (endcomment_block))
+    (endcomment_tag))
   (content))
 
 ==================
@@ -28,9 +28,9 @@ Comment Empty
 (template
   (content)
   (comment_group
-    (comment_clause
-      (comment_block))
-    (endcomment_block))
+    (comment_block
+      (comment_tag))
+    (endcomment_tag))
   (content))
 
 ==================
@@ -46,11 +46,11 @@ This is ignored
 (template
   (content)
   (comment_group
-    (comment_clause
-      (comment_block
+    (comment_block
+      (comment_tag
         (string))
       (comment_content))
-    (endcomment_block))
+    (endcomment_tag))
   (content))
 
 ==================
@@ -66,8 +66,8 @@ Contains {% if x %} tag-like text
 (template
   (content)
   (comment_group
-    (comment_clause
-      (comment_block)
+    (comment_block
+      (comment_tag)
       (comment_content))
-    (endcomment_block))
+    (endcomment_tag))
   (content))

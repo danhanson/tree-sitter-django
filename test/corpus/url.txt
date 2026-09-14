@@ -8,7 +8,7 @@ Url Basic
 
 (template
   (content)
-  (url_block
+  (url_tag
     (string))
   (content))
 
@@ -22,7 +22,7 @@ Url With Positional Args
 
 (template
   (content)
-  (url_block
+  (url_tag
     (string)
     (filtered_value
       (value
@@ -44,7 +44,7 @@ Url With Keyword Args
 
 (template
   (content)
-  (url_block
+  (url_tag
     (string)
     (identifier)
     (filtered_value
@@ -63,7 +63,7 @@ Url With As
 
 (template
   (content)
-  (url_block
+  (url_tag
     (string)
     variable: (identifier))
   (content))

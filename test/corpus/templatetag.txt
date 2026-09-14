@@ -8,7 +8,7 @@ Templatetag Openblock
 
 (template
   (content)
-  (templatetag_block)
+  (templatetag_tag)
   (content))
 
 ==================
@@ -21,5 +21,5 @@ Templatetag Closevariable
 
 (template
   (content)
-  (templatetag_block)
+  (templatetag_tag)
   (content))

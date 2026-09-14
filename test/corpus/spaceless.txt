@@ -13,9 +13,9 @@ Spaceless Basic
 (template
   (content)
   (spaceless_group
-    (spaceless_clause
-      (spaceless_block)
+    (spaceless_block
+      (spaceless_tag)
       (template
         (content)))
-    (endspaceless_block))
+    (endspaceless_tag))
   (content))

@@ -8,7 +8,7 @@ Querystring Empty
 
 (template
   (content)
-  (querystring_block)
+  (querystring_tag)
   (content))
 
 ==================
@@ -21,7 +21,7 @@ Querystring With Key Value
 
 (template
   (content)
-  (querystring_block
+  (querystring_tag
     (identifier)
     (filtered_value
       (value
@@ -39,7 +39,7 @@ Querystring With Identifier And Key Value
 
 (template
   (content)
-  (querystring_block
+  (querystring_tag
     (filtered_value
       (value
         (variable_attribute
@@ -61,7 +61,7 @@ Querystring With Expression Argument And As
 
 (template
   (content)
-  (querystring_block
+  (querystring_tag
     (filtered_value
       (value
         (variable_attribute
@@ -85,7 +85,7 @@ Querystring With Two Keys
 
 (template
   (content)
-  (querystring_block
+  (querystring_tag
     (identifier)
     (filtered_value
       (value

@@ -8,7 +8,7 @@ Trans
 
 (template
   (content)
-  (translate_block
+  (translate_tag
     (filtered_value
       (value
         (literal
@@ -25,7 +25,7 @@ Translate
 
 (template
   (content)
-  (translate_block
+  (translate_tag
     (filtered_value
       (value
         (literal
@@ -42,7 +42,7 @@ Trans With A Variable
 
 (template
   (content)
-  (translate_block
+  (translate_tag
     (filtered_value
       (value
         (variable_attribute
@@ -59,7 +59,7 @@ Trans With A Filtered Message
 
 (template
   (content)
-  (translate_block
+  (translate_tag
     (filtered_value
       (value
         (literal
@@ -78,7 +78,7 @@ Trans Noop
 
 (template
   (content)
-  (translate_block
+  (translate_tag
     (filtered_value
       (value
         (literal
@@ -95,7 +95,7 @@ Trans With As
 
 (template
   (content)
-  (translate_block
+  (translate_tag
     (filtered_value
       (value
         (literal
@@ -113,7 +113,7 @@ Trans With Context
 
 (template
   (content)
-  (translate_block
+  (translate_tag
     (filtered_value
       (value
         (literal
@@ -134,7 +134,7 @@ Trans With Every Option
 
 (template
   (content)
-  (translate_block
+  (translate_tag
     (filtered_value
       (value
         (literal
@@ -156,7 +156,7 @@ Trans With Its Options Reordered
 
 (template
   (content)
-  (translate_block
+  (translate_tag
     (filtered_value
       (value
         (literal
@@ -228,7 +228,7 @@ Get Available Languages
 
 (template
   (content)
-  (get_available_languages_block
+  (get_available_languages_tag
     variable: (identifier))
   (content))
 
@@ -252,7 +252,7 @@ Get Current Language
 
 (template
   (content)
-  (get_current_language_block
+  (get_current_language_tag
     variable: (identifier))
   (content))
 
@@ -266,7 +266,7 @@ Get Current Language Bidi
 
 (template
   (content)
-  (get_current_language_bidi_block
+  (get_current_language_bidi_tag
     variable: (identifier))
   (content))
 
@@ -280,7 +280,7 @@ Get Language Info
 
 (template
   (content)
-  (get_language_info_block
+  (get_language_info_tag
     (filtered_value
       (value
         (literal
@@ -298,7 +298,7 @@ Get Language Info For A Variable
 
 (template
   (content)
-  (get_language_info_block
+  (get_language_info_tag
     (filtered_value
       (value
         (variable_attribute
@@ -336,7 +336,7 @@ Get Language Info List
 
 (template
   (content)
-  (get_language_info_list_block
+  (get_language_info_list_tag
     (filtered_value
       (value
         (variable_attribute
@@ -355,15 +355,15 @@ Language
 (template
   (content)
   (language_group
-    (language_clause
-      (language_block
+    (language_block
+      (language_tag
         (filtered_value
           (value
             (literal
               (string)))))
       (template
         (content)))
-    (endlanguage_block))
+    (endlanguage_tag))
   (content))
 
 ==================
@@ -377,15 +377,15 @@ Language With A Variable
 (template
   (content)
   (language_group
-    (language_clause
-      (language_block
+    (language_block
+      (language_tag
         (filtered_value
           (value
             (variable_attribute
               (identifier)))))
       (template
         (content)))
-    (endlanguage_block))
+    (endlanguage_tag))
   (content))
 
 ==================
@@ -513,7 +513,7 @@ Translate With A Context From An Attribute Of Noop
 
 (template
   (content)
-  (translate_block
+  (translate_tag
     (filtered_value
       (value
         (literal
@@ -535,7 +535,7 @@ Translate With A Filtered Context Named After Noop
 
 (template
   (content)
-  (translate_block
+  (translate_tag
     (filtered_value
       (value
         (literal

@@ -9,7 +9,7 @@ Extends With String
 
 (template
   (content)
-  (extends_block
+  (extends_tag
     (filtered_value
       (value
         (literal
@@ -27,7 +27,7 @@ Extends With Variable
 
 (template
   (content)
-  (extends_block
+  (extends_tag
     (filtered_value
       (value
         (variable_attribute

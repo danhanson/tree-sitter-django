@@ -53,7 +53,7 @@ Five of the files in `queries/` are query files an editor loads:
 - **`highlights.scm`** — syntax highlighting. Tag and filter names are listed one by one, so a name the
   grammar knows is captured as `@function` and a name it is only tolerating as `@function.call`.
 - **`locals.scm`** — scopes, definitions and references, so an editor can resolve a variable to the tag
-  that bound it. A definition is a `variable:` field; the scopes are the clauses whose bindings do not
+  that bound it. A definition is a `variable:` field; the scopes are the blocks whose bindings do not
   outlive them (`{% with %}`, `{% for %}`, `{% empty %}`, `{% block %}`, `{% partialdef %}`,
   `{% blocktranslate %}`).
 - **`tags.scm`** — the symbol index behind `tree-sitter tag`. A `{% partialdef %}` and the names a
@@ -62,14 +62,14 @@ Five of the files in `queries/` are query files an editor loads:
   the HTML around the tags can be parsed by its own grammar. It names no language, leaving the editor to
   supply one.
 - **`errors.scm`** — what to report as a problem: `(ERROR)` as `@error.syntax`, tree-sitter's own
-  `(MISSING)` as `@error.missing`, and `@error.missing_block` for the marker placed where a group's required
+  `(MISSING)` as `@error.missing`, and `@error.missing_tag` for the marker placed where a group's required
   tag is missing. An unterminated `{% if a %}x` parses as an `if_group` ending in a zero-width
-  `missing_endif_block` rather than as an `ERROR`, so completion and the scope queries keep working while
+  `missing_endif_tag` rather than as an `ERROR`, so completion and the scope queries keep working while
   a template is being written — and the tree reports no error of its own, so this query is how to find
   it. A marker is placed only where the scanner can tell: at the end of input, before an end tag that
   belongs to an enclosing group, or before an `{% endblock %}` naming a block further out.
   A group's tag written where no open group can hold it, such as `{% else %}` inside a `{% for %}`, is an
-  `unexpected_block`, captured as `@error.unexpected_block`.
+  `unexpected_tag`, captured as `@error.unexpected_tag`.
 
 The other three are data for a tool rather than queries an editor runs. Each captures the two halves of a
 relation a tree-sitter query cannot express, and the tool does the join:
@@ -119,11 +119,11 @@ them is treated as the mistake.
 A library's tags and filters are registered in Python, so the grammar cannot know their names, their
 arity, or whether a tag opens a body. Two fallback rules accept them:
 
-- **Tags.** Any tag the grammar does not recognise parses as `custom_tag_block`, with the shape `simple_tag` and
+- **Tags.** Any tag the grammar does not recognise parses as `custom_tag`, with the shape `simple_tag` and
   `inclusion_tag` give: positional filter expressions, then `name=value` keyword arguments, then an
-  optional `as name`. So `{% mytag a b|upper "s" k=1 as out %}` parses, with the name on the `tag:` field.
+  optional `as name`. So `{% mytag a b|upper "s" k=1 as out %}` parses, with the name on the `tag_name:` field.
   A keyword argument written twice is refused, as `parse_bits` refuses it.
-- **Filters.** An unknown filter parses as `(filter name: (identifier))` with at most one `:argument`,
+- **Filters.** An unknown filter parses as `(filter filter_name: (identifier))` with at most one `:argument`,
   which is all Django's expression regex allows. No arity check is possible.
 
 Both are captured as `@function.call` rather than `@function`, so an editor can distinguish a name the
@@ -131,21 +131,21 @@ grammar knows from one it is only tolerating.
 
 What the fallbacks cannot do:
 
-- **A block tag is not nested.** `{% mytag %}…{% endmytag %}` is two sibling `custom_tag_block`s; pairing them
+- **A block tag is not nested.** `{% mytag %}…{% endmytag %}` is two sibling `custom_tag`s; pairing them
   would mean guessing that an unknown tag opens a body.
 - **A tag registered with `@register.tag` may parse anything**, since it receives the raw token, so one
   whose arguments are not the `simple_tag` shape — `{% mytag <<>> %}` — is an error here and not in Django.
 - **A misspelled name cannot be caught.** `{{ x|lenght }}` is indistinguishable from a filter some library
   registered. Cross-referencing names against `{% load %}` needs the project's Python, so it belongs in a
-  linter; `queries/libraries.scm` and the `load_block` rule supply what one needs.
+  linter; `queries/libraries.scm` and the `load_tag` rule supply what one needs.
 - **Names that only exist inside a tag group are reserved**, so `{% endif %}` or `{% empty %}` standing on
-  its own is an `unexpected_block`, reported by `errors.scm`, rather than a call to a custom tag of that name.
+  its own is an `unexpected_tag`, reported by `errors.scm`, rather than a call to a custom tag of that name.
 
 ### Adding rules for your own tags and filters
 
 For a project whose custom tags deserve real rules rather than the fallbacks, use this grammar as a base
 grammar. `grammar(base, {...})` merges your rules into it, and a rule that redefines one the base already
-has receives it as `previous`. A tag is an alternative of `tag_block_group`; a filter is an
+has receives it as `previous`. A tag is an alternative of `template_tag`; a filter is an
 alternative of `filter`.
 
 ```js
@@ -154,16 +154,15 @@ import django from "tree-sitter-django/grammar";
 export default grammar(django, {
   name: "djangox",
 
-  conflicts: ($, previous) => [...previous, [$.loop_clause]],
+  conflicts: ($, previous) => [...previous, [$.loop_block]],
 
   rules: {
-    tag_block_group: ($, previous) =>
-      choice(previous, $.map_block, $.loop_group),
+    template_tag: ($, previous) => choice(previous, $.map_tag, $.loop_group),
 
     // {% map items over rows %}
-    map_block: ($) =>
+    map_tag: ($) =>
       seq(
-        $.simpleBlockOpen,
+        $.simpleTagOpen,
         field("tag", "map"),
         $._sep,
         $.filtered_value,
@@ -171,28 +170,25 @@ export default grammar(django, {
         "over",
         $._sep,
         $.filtered_value,
-        $.simpleBlockClose,
+        $.simpleTagClose,
       ),
 
     // {% loop x %}…{% endloop %}
-    loop_block: ($) =>
+    loop_tag: ($) =>
       seq(
-        $.startBlockOpen,
+        $.startTagOpen,
         field("tag", "loop"),
         $._sep,
         $.identifier,
-        $.startBlockClose,
+        $.startTagClose,
       ),
-    loop_clause: ($) => seq($.loop_block, optional($.template)),
-    endloop_block: ($) =>
-      seq($.endBlockOpen, field("tag", "endloop"), $.endBlockClose),
+    loop_block: ($) => seq($.loop_tag, optional($.template)),
+    endloop_tag: ($) =>
+      seq($.endTagOpen, field("tag", "endloop"), $.endTagClose),
     loop_group: ($) =>
       seq(
-        $.loop_clause,
-        choice(
-          $.endloop_block,
-          alias($._missing_block, $.missing_endloop_block),
-        ),
+        $.loop_block,
+        choice($.endloop_tag, alias($._missing_tag, $.missing_endloop_tag)),
       ),
 
     // {{ value|shout:"!" }}
@@ -208,31 +204,31 @@ export default grammar(django, {
 Seven things to know:
 
 - **Whitespace is explicit.** `extras` is empty, because Django splits a tag's contents before parsing any
-  argument, so every separator has to be written out. The `part`/`block`/`simpleTag` helpers the base
+  argument, so every separator has to be written out. The `part`/`tag`/`simpleTag` helpers the base
   grammar is built from are private to it, but the separator is the hidden rule `$._sep`, and it and the
-  tag utilities (`simpleBlockOpen` and the rest) are rules, so an extending grammar uses them as they are.
-- **Every tag begins with one of the opens**: `$.simpleBlockOpen`, with `$.simpleBlockClose` at its end, for a
-  tag outside any group such as `map_block`, and `startBlockOpen`, `followBlockOpen`, `repeatBlockOpen` or
-  `endBlockOpen` for the tags of a group. Its
+  tag utilities (`simpleTagOpen` and the rest) are rules, so an extending grammar uses them as they are.
+- **Every tag begins with one of the opens**: `$.simpleTagOpen`, with `$.simpleTagClose` at its end, for a
+  tag outside any group such as `map_tag`, and `startTagOpen`, `followTagOpen`, `repeatTagOpen` or
+  `endTagOpen` for the tags of a group. Its
   zero-width token hands the tag's name to the scanner and is taken wherever a tag can start, so a tag
   written from a bare `"{%"` never matches: `{% map items over rows %}` would quietly parse as a
-  `custom_tag_block` instead.
+  `custom_tag` instead.
 - **A new name wins over the fallback.** `shout` becomes a token of its own, so it commits to your
   alternative and your arity applies — `{{ x|shout }}` is now an error, while names you have not modelled
-  still fall through to `(filter name: (identifier))`.
+  still fall through to `(filter filter_name: (identifier))`.
 - **A tag with a body is split the way the base grammar's are**, so every `{% %}` is a node of its own:
-  a `loop_block` ending in `$.startBlockClose`, a `loop_clause` of that block and the body, an
-  `endloop_block` built from `$.endBlockOpen` and `$.endBlockClose`, and a `loop_group` of the clause and the
-  end block. A middle tag uses `followBlockOpen`/`followBlockClose` if the group holds it at most once, and
-  `repeatBlockOpen`/`repeatBlockClose` if it may repeat; the scanner trusts that choice. The clause needs a
-  `conflicts` entry, as every clause in the base grammar does. The generator offers an associativity
+  a `loop_tag` ending in `$.startTagClose`, a `loop_block` of that tag and the body, an
+  `endloop_tag` built from `$.endTagOpen` and `$.endTagClose`, and a `loop_group` of the block and the
+  end tag. A middle tag uses `followTagOpen`/`followTagClose` if the group holds it at most once, and
+  `repeatTagOpen`/`repeatTagClose` if it may repeat; the scanner trusts that choice. The block needs a
+  `conflicts` entry, as every block in the base grammar does. The generator offers an associativity
   instead; taking it silently discards the parse in which the body continues.
-- **End tags are not reserved**, a stray `{% endmap %}` parses as a `custom_tag_block` rather than an error — `reserved` takes no
-  `previous`, so the `tag_name` list cannot be added to a name at a time. Instead you may drop the `custom_tag_block` rule to avoid parsing end tags as custom tags.
+- **End tags are not reserved**, a stray `{% endmap %}` parses as a `custom_tag` rather than an error — `reserved` takes no
+  `previous`, so the `tag_name` list cannot be added to a name at a time. Instead you may drop the `custom_tag` rule to avoid parsing end tags as custom tags.
 - **Your groups get missing-tag markers.** The scanner knows no group by name — a group is closed by `end`
-  followed by its opening tag's name — so the `alias($._missing_block, $.missing_endloop_block)` choice
+  followed by its opening tag's name — so the `alias($._missing_tag, $.missing_endloop_tag)` choice
   above is all it takes: an unclosed `{% loop x %}`, or one left open inside an `{% if %}` that
-  `{% endif %}` closes, holds a `missing_endloop_block`. Add the name to your copy of `errors.scm`.
+  `{% endif %}` closes, holds a `missing_endloop_tag`. Add the name to your copy of `errors.scm`.
 - **The external scanner has to be re-exported under your grammar's name**, or block-name matching and the
   repeated-argument guards will not link. Give your grammar a `src/scanner.c` that renames the base's five entry points to the
   ones your generated `parser.c` calls, and includes it:
@@ -254,13 +250,13 @@ build step can hand the compiler an absolute path from `import.meta.resolve` whe
 layout makes the relative one unreliable.
 
 **Turning the fallbacks off.** A grammar that models every tag and filter its project uses probably does
-not want `custom_tag_block` and `_custom_filter` accepting unrecognized names as they allow typos to parse. `previous` is the base rule whose `members` are filterable. We can filter out these rules to make the grammar more strict:
+not want `custom_tag` and `_custom_filter` accepting unrecognized names as they allow typos to parse. `previous` is the base rule whose `members` are filterable. We can filter out these rules to make the grammar more strict:
 
 ```js
-tag_block_group: ($, previous) =>
+template_tag: ($, previous) =>
   choice(
-    ...previous.members.filter((m) => m.name !== "custom_tag_block"),
-    $.map_block,
+    ...previous.members.filter((m) => m.name !== "custom_tag"),
+    $.map_tag,
   ),
 
 filter: ($, previous) =>
