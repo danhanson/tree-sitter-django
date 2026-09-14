@@ -136,12 +136,8 @@ function endTag(name, ...args) {
  * The "as name" clause that binds a tag's result in the context. Django spells
  * it the same way in every tag that takes one, so the grammar names the target
  * the same way too, matching the bindings in "for" and "with".
- * @param {GrammarSymbols<string>} $
- * @returns {SeqRule}
  */
-function asVariable($) {
-  return part("as", field("variable", $.identifier));
-}
+const asVariable = part("as", field("variable", sym("identifier")));
 
 /**
  * A tag's own keyword written where a value goes, with the tree an ordinary
@@ -181,15 +177,14 @@ function wordAsValueRules(word) {
 
 /**
  * The rules wordAsValueRules() built, where a value goes.
- * @param {GrammarSymbols<string>} $
  * @param {string} word
  * @param {boolean} continued whether a "." or a "|" has to follow the word
  * @returns {RuleOrLiteral}
  */
-function wordAsValue($, word, continued) {
+function wordAsValue(word, continued) {
   return alias(
-    $[`_${word}_${continued ? "continued" : "bare"}`],
-    $.filtered_value,
+    sym(`_${word}_${continued ? "continued" : "bare"}`),
+    sym("filtered_value"),
   );
 }
 
@@ -243,7 +238,6 @@ function arrangements(items) {
  * spelled here is what parse_bits() would allow: too many arguments, an
  * unknown keyword or a repeated one are all syntax errors there.
  *
- * @param {GrammarSymbols<string>} $
  * @param {boolean|number} args how many positional arguments the signature
  *   takes: true for any number (*args), a count for at most that many, or
  *   false for none
@@ -253,34 +247,43 @@ function arrangements(items) {
  * @param {RuleOrLiteral} name
  * @returns {SeqRule}
  */
-function simpleTag($, name, args = true, kwargs = true) {
+function simpleTag(name, args = true, kwargs = true) {
   const parts = [];
   if (args === true) {
-    parts.push(repeat(part($.filtered_value)));
+    parts.push(repeat(part(sym("filtered_value"))));
   } else if (typeof args === "number" && args > 0) {
     // at most `args` of them, so each further one nests inside the last
-    let rule = part($.filtered_value);
+    let rule = part(sym("filtered_value"));
     for (let i = 1; i < args; ++i) {
-      rule = seq(part($.filtered_value), optional(rule));
+      rule = seq(part(sym("filtered_value")), optional(rule));
     }
     parts.push(optional(rule));
   }
   if (kwargs === true) {
     // parse_bits refuses a keyword argument the tag already holds, whatever
     // **kwargs it takes, so the scanner keeps the names rather than the grammar
-    parts.unshift($._tag_open);
+    parts.unshift(sym("_tag_open"));
     parts.push(
-      repeat(part(seq($._kwarg_name, $.identifier, "=", $.filtered_value))),
+      repeat(
+        part(
+          seq(
+            sym("_kwarg_name"),
+            sym("identifier"),
+            "=",
+            sym("filtered_value"),
+          ),
+        ),
+      ),
     );
   } else if (kwargs) {
-    parts.unshift($._tag_open);
+    parts.unshift(sym("_tag_open"));
     // a known signature: any of the names it accepts, in any order, none twice
     const named = Object.entries(kwargs).map(([name, value]) =>
-      part(seq($._kwarg_name, name, "=", value)),
+      part(seq(sym("_kwarg_name"), name, "=", value)),
     );
     parts.push(repeat(choice(...named)));
   }
-  return tag(name, ...parts, optional(asVariable($)));
+  return tag(name, ...parts, optional(asVariable));
 }
 
 /**
@@ -867,21 +870,21 @@ const django = grammar({
       ),
     // csp_nonce_attr(context, media=None)
     csp_nonce_attr_tag: ($) =>
-      simpleTag($, "csp_nonce_attr", 1, { media: $.filtered_value }),
+      simpleTag("csp_nonce_attr", 1, { media: $.filtered_value }),
     csrf_token_tag: ($) => tag("csrf_token"),
     /**
      * A tag a "load" brought in. Its arguments cannot be known here, so what
      * is accepted is what Library.simple_tag and Library.inclusion_tag take,
      * which is how a tag is registered unless it needs the parser itself.
      */
-    custom_tag: ($) => simpleTag($, reserved("group_tag_names", $.identifier)),
+    custom_tag: ($) => simpleTag(reserved("group_tag_names", $.identifier)),
     cycle_tag: ($) =>
       tag(
         "cycle",
         repeat1(part($.filtered_value)),
         optional(
           seq(
-            asVariable($),
+            asVariable,
             // only the as-form takes the flag
             optional(part("silent")),
           ),
@@ -905,7 +908,7 @@ const django = grammar({
         choice($.endfilter_tag, alias($._missing_tag, $.missing_endfilter_tag)),
       ),
     firstof_tag: ($) =>
-      tag("firstof", repeat1(part($.filtered_value)), optional(asVariable($))),
+      tag("firstof", repeat1(part($.filtered_value)), optional(asVariable)),
     for_tag: ($) =>
       startTag(
         "for",
@@ -926,11 +929,8 @@ const django = grammar({
         // when the flag follows it as well
         choice(
           seq(part($.filtered_value), optional(part("reversed"))),
-          seq(
-            part(wordAsValue($, "reversed", true)),
-            optional(part("reversed")),
-          ),
-          seq(part(wordAsValue($, "reversed", false)), part("reversed")),
+          seq(part(wordAsValue("reversed", true)), optional(part("reversed"))),
+          seq(part(wordAsValue("reversed", false)), part("reversed")),
         ),
       ),
     for_block: ($) => seq($.for_tag, optional($.template)),
@@ -948,28 +948,23 @@ const django = grammar({
      * or "for <expression> as <name>", and rejects anything further.
      */
     get_available_languages_tag: ($) =>
-      tag("get_available_languages", asVariable($)),
-    get_current_language_tag: ($) => tag("get_current_language", asVariable($)),
+      tag("get_available_languages", asVariable),
+    get_current_language_tag: ($) => tag("get_current_language", asVariable),
     get_current_language_bidi_tag: ($) =>
-      tag("get_current_language_bidi", asVariable($)),
+      tag("get_current_language_bidi", asVariable),
     get_language_info_tag: ($) =>
-      tag("get_language_info", part("for", $.filtered_value), asVariable($)),
+      tag("get_language_info", part("for", $.filtered_value), asVariable),
     get_language_info_list_tag: ($) =>
-      tag(
-        "get_language_info_list",
-        part("for", $.filtered_value),
-        asVariable($),
-      ),
+      tag("get_language_info_list", part("for", $.filtered_value), asVariable),
     /**
      * django.templatetags.tz. get_current_timezone_tag requires exactly
      * "as <name>", so unlike get_static_prefix the clause is not optional and
      * nothing may follow it.
      */
-    get_current_timezone_tag: ($) => tag("get_current_timezone", asVariable($)),
-    get_media_prefix_tag: ($) =>
-      tag("get_media_prefix", optional(asVariable($))),
+    get_current_timezone_tag: ($) => tag("get_current_timezone", asVariable),
+    get_media_prefix_tag: ($) => tag("get_media_prefix", optional(asVariable)),
     get_static_prefix_tag: ($) =>
-      tag("get_static_prefix", optional(asVariable($))),
+      tag("get_static_prefix", optional(asVariable)),
     if_tag: ($) => startTag("if", part($.predicate)),
     if_block: ($) => seq($.if_tag, optional($.template)),
     elif_tag: ($) => repeatTag("elif", part($.predicate)),
@@ -1069,7 +1064,7 @@ const django = grammar({
         part(choice("w", "p", "b")),
         optional(part("random")),
       ),
-    now_tag: ($) => tag("now", part($.string), optional(asVariable($))),
+    now_tag: ($) => tag("now", part($.string), optional(asVariable)),
     partial_tag: ($) => tag("partial", part($.identifier)),
     partialdef_tag: ($) =>
       startTag("partialdef", $.push_partial, optional(part("inline"))),
@@ -1084,14 +1079,14 @@ const django = grammar({
         ),
       ),
     // querystring(context, *args, **kwargs)
-    querystring_tag: ($) => simpleTag($, "querystring"),
+    querystring_tag: ($) => simpleTag("querystring"),
     regroup_tag: ($) =>
       tag(
         "regroup",
         part($.filtered_value),
         part("by"),
         part($.attribute),
-        optional(asVariable($)),
+        optional(asVariable),
       ),
     resetcycle_tag: ($) => tag("resetcycle", optional(part($.identifier))),
     spaceless_tag: ($) => startTag("spaceless"),
@@ -1106,7 +1101,7 @@ const django = grammar({
         ),
       ),
     static_tag: ($) =>
-      tag("static", part($.filtered_value), optional(asVariable($))),
+      tag("static", part($.filtered_value), optional(asVariable)),
     templatetag_tag: ($) =>
       tag(
         "templatetag",
@@ -1151,9 +1146,9 @@ const django = grammar({
             // the whole bit, so a lookup that only begins with one is fine
             part(
               "context",
-              choice($.filtered_value, wordAsValue($, "noop", true)),
+              choice($.filtered_value, wordAsValue("noop", true)),
             ),
-            asVariable($),
+            asVariable,
           ]),
         ),
       ),
@@ -1204,7 +1199,7 @@ const django = grammar({
             repeat1(part(seq($.identifier, "=", $.filtered_value))),
           ),
         ),
-        optional(asVariable($)),
+        optional(asVariable),
       ),
     verbatim_tag: ($) => startTag("verbatim", $.push_verbatim),
     verbatim_block: ($) => seq($.verbatim_tag, optional($.verbatim_content)),
@@ -1223,7 +1218,7 @@ const django = grammar({
         part($.filtered_value),
         part($.filtered_value),
         part($.filtered_value),
-        optional(asVariable($)),
+        optional(asVariable),
       ),
     with_tag: ($) => startTag("with", $._tag_open, $._tag_kwargs),
     with_block: ($) => seq($.with_tag, optional($.template)),
