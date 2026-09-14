@@ -204,19 +204,35 @@ from displacing a tag the group does take, and `queries/errors.scm` reports it a
 **Words a tag does not take are an `unexpected_argument` inside it.** Every close utility accepts one
 before its scanner token, so `{% else x %}` stays the `else` of its group, `{% endif junk %}` still closes
 its `if` (it used to leave the whole file an `ERROR`), and `{% static "a.css" "b.css" %}` is a `static_tag`.
-Each word is `token(prec(-1, /[^\s%]+/))`: tree-sitter weighs lexical precedence before match length, so a
-token an argument really takes wins wherever one is valid (`b|upper` stays a filtered value) and a loose
-word only matches where nothing else can. The node costs -1 of dynamic precedence, which is why
-`unexpected_tag` costs -2 or -4: a misused tag its group does take has to beat reading it as a stray.
-A separator after any argument can now also start stray words, so it needs `conflicts` entries for
-`unexpected_argument`, `predicate` and `_translate_option`, and it took the table from 3,363 states to
-4,894 and the Wasm build from 251KB to 319KB.
+The node is a run of hidden `_unexpected_word`s, and three details make it work:
 
-Two consequences. A repeat the scanner refuses — `{% with a=1 a=2 %}`, `{% blocktrans trimmed trimmed %}`
-— is reported as an unexpected argument rather than an `ERROR`. And where a keyword is valid after the
-arguments (`reversed`, `as`, `only`), a stray word shaped like an identifier is still an `ERROR`:
-`{% for a in b zqx %}` puts it on `b`, most likely because keyword extraction lexes `zqx` as an
-`identifier`, which is not valid there, before the loose-word token is considered.
+- **Lexical precedence -1.** A loose word is `token(prec(-1, /[^\s%]+/))`. Tree-sitter weighs lexical
+  precedence before match length, so a token an argument really takes wins wherever one is valid
+  (`b|upper` stays a filtered value) and a loose word only matches where nothing else can.
+- **Identifiers are words too.** Wherever a keyword is valid — after `{% for a in b`, where `reversed` may
+  follow, or after `as`, `only`, `noop`, `silent` — tree-sitter lexes every word as an `identifier` to
+  check for the keyword, and the loose-word token never gets a turn. So a word may also be an
+  `identifier`, aliased to an anonymous `unexpected_word` so `queries/locals.scm` does not count it as a
+  reference, with whatever touches it (`a=2`, `x.y|upper`, `"z"|lower:"q"`) as an immediate tail.
+- **-1 of dynamic precedence per word**, not per node, so a reading that flags more words than it must
+  always loses: `{% cycle a b as x silent zqx %}` flags `zqx`, not everything after `a`. `unexpected_tag`
+  costs -2 or -4 so that a misused tag its group does take beats reading it as a stray.
+
+A tag with a known keyword signature (`simpleTag` given names, so far only `csp_nonce_attr`) needs one more
+piece: the scanner's `_kwarg_name` accepts any name followed by `=` and commits the parser to a keyword
+argument before the name is checked, so `{% csp_nonce_attr other="b" %}` would be an `ERROR`. `simpleTag`
+offers `_unexpected_keyword` — an identifier and its tail, aliased to `unexpected_argument` — beside the
+names it knows.
+
+A separator after any argument can now also start stray words, so this needs `conflicts` entries for
+`unexpected_argument`, `predicate`, `_translate_option`, and `_unexpected_word` with `variable_attribute`,
+`resetcycle_tag` and `library`. It took the table from 3,363 states to 4,913 and the Wasm build from 251KB to
+323KB. Two consequences: a repeat the scanner refuses — `{% with a=1 a=2 %}`, `{% blocktrans trimmed trimmed %}`
+— is reported as an unexpected argument rather than an `ERROR`; and a stray **reserved** word is still an
+`ERROR`, since `not`, `if`, `in`, `is`, `as`, `for` and `from` can never be an identifier:
+`{% trans "hi" as x as y %}` errors on the second `as`. A tag missing a required argument, such as
+`{% with a = 1 %}`, is an `ERROR` too; `unexpected_argument` only takes words after a tag that is otherwise
+complete.
 
 Where several tags share a name the group holds only once — `{% if %}{% else %}{% else %}{% else %}` — reading
 any of them as the stray parses, so the ties are broken by dynamic precedence: `unexpected_tag` is -2 when

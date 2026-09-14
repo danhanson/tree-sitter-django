@@ -163,13 +163,26 @@ Include With Only Before With
 
 ==================
 Include With A Binding Twice
-:error
 ==================
 
 {% include "t.html" with a=1 a=2 %}
 
 ---
 
+(template
+  (content)
+  (include_tag
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (unexpected_argument))
+  (content))
 
 ==================
 Include Without A Name
@@ -193,33 +206,62 @@ Include With Nothing To Bind
 
 ==================
 Include With With Twice
-:error
 ==================
 
 {% include "t.html" with a=1 with b=2 %}
 
 ---
 
+(template
+  (content)
+  (include_tag
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (unexpected_argument))
+  (content))
 
 ==================
 Include With Only Twice
-:error
 ==================
 
 {% include "t.html" only only %}
 
 ---
 
+(template
+  (content)
+  (include_tag
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (unexpected_argument))
+  (content))
 
 ==================
 Include With An Unknown Option
-:error
 ==================
 
 {% include "t.html" bogus %}
 
 ---
 
+(template
+  (content)
+  (include_tag
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (unexpected_argument))
+  (content))
 
 ==================
 Include With A Legacy Binding

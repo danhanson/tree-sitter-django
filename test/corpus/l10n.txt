@@ -95,13 +95,22 @@ Localize Nested
 
 ==================
 Localize With Another Argument
-:error
 ==================
 
 {% localize maybe %}x{% endlocalize %}
 
 ---
 
+(template
+  (content)
+  (localize_group
+    (localize_block
+      (localize_tag
+        (unexpected_argument))
+      (template
+        (content)))
+    (endlocalize_tag))
+  (content))
 
 ==================
 Localize With Two Arguments

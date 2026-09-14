@@ -180,13 +180,21 @@ Trans Without A Message
 
 ==================
 Trans With An Option Twice
-:error
 ==================
 
 {% trans "hi" noop noop %}
 
 ---
 
+(template
+  (content)
+  (translate_tag
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (unexpected_argument))
+  (content))
 
 ==================
 Trans With As Twice
@@ -200,13 +208,21 @@ Trans With As Twice
 
 ==================
 Trans With An Unknown Option
-:error
 ==================
 
 {% trans "hi" bogus %}
 
 ---
 
+(template
+  (content)
+  (translate_tag
+    (filtered_value
+      (value
+        (literal
+          (string))))
+    (unexpected_argument))
+  (content))
 
 ==================
 Trans With Context And No Value

@@ -294,13 +294,23 @@ A Name Reserved For A Tag Is Still An Argument
 
 ==================
 Custom Tag With A Keyword Argument Twice
-:error
 ==================
 
 {% mytag a=1 a=2 %}
 
 ---
 
+(template
+  (content)
+  (custom_tag
+    (identifier)
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (unexpected_argument))
+  (content))
 
 ==================
 Custom Tag With Keyword Arguments And As

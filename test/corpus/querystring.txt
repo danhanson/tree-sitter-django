@@ -100,19 +100,43 @@ Querystring With Two Keys
 
 ==================
 Querystring With A Key Twice
-:error
 ==================
 
 {% querystring page=2 page=3 %}
 
 ---
 
+(template
+  (content)
+  (querystring_tag
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (unexpected_argument))
+  (content))
 
 ==================
 Querystring With A Key Repeated Later
-:error
 ==================
 
 {% querystring a=1 b=2 a=3 %}
 
 ---
+
+(template
+  (content)
+  (querystring_tag
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (identifier)
+    (filtered_value
+      (value
+        (literal
+          (number))))
+    (unexpected_argument))
+  (content))

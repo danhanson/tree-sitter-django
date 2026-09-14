@@ -2893,6 +2893,33 @@
                     ]
                   }
                 ]
+              },
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "SYMBOL",
+                    "name": "_sep"
+                  },
+                  {
+                    "type": "SEQ",
+                    "members": [
+                      {
+                        "type": "SYMBOL",
+                        "name": "_kwarg_name"
+                      },
+                      {
+                        "type": "ALIAS",
+                        "content": {
+                          "type": "SYMBOL",
+                          "name": "_unexpected_keyword"
+                        },
+                        "named": true,
+                        "value": "unexpected_argument"
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -7381,30 +7408,101 @@
       ]
     },
     "unexpected_argument": {
+      "type": "REPEAT1",
+      "content": {
+        "type": "SYMBOL",
+        "name": "_unexpected_word"
+      }
+    },
+    "_unexpected_word": {
       "type": "PREC_DYNAMIC",
       "value": -1,
       "content": {
-        "type": "REPEAT1",
-        "content": {
-          "type": "SEQ",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "_sep"
-            },
-            {
-              "type": "TOKEN",
-              "content": {
-                "type": "PREC",
-                "value": -1,
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "_sep"
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "TOKEN",
                 "content": {
-                  "type": "PATTERN",
-                  "value": "[^\\s%]+"
+                  "type": "PREC",
+                  "value": -1,
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^\\s%]+"
+                  }
                 }
+              },
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "ALIAS",
+                    "content": {
+                      "type": "SYMBOL",
+                      "name": "identifier"
+                    },
+                    "named": false,
+                    "value": "unexpected_word"
+                  },
+                  {
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "IMMEDIATE_TOKEN",
+                        "content": {
+                          "type": "PREC",
+                          "value": -1,
+                          "content": {
+                            "type": "PATTERN",
+                            "value": "[^\\s%]+"
+                          }
+                        }
+                      },
+                      {
+                        "type": "BLANK"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "_unexpected_keyword": {
+      "type": "PREC_DYNAMIC",
+      "value": -1,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "ALIAS",
+            "content": {
+              "type": "SYMBOL",
+              "name": "identifier"
+            },
+            "named": false,
+            "value": "unexpected_word"
+          },
+          {
+            "type": "IMMEDIATE_TOKEN",
+            "content": {
+              "type": "PREC",
+              "value": -1,
+              "content": {
+                "type": "PATTERN",
+                "value": "[^\\s%]+"
               }
             }
-          ]
-        }
+          }
+        ]
       }
     },
     "url_tag": {
@@ -7908,6 +8006,18 @@
     ],
     [
       "unexpected_argument"
+    ],
+    [
+      "variable_attribute",
+      "_unexpected_word"
+    ],
+    [
+      "resetcycle_tag",
+      "_unexpected_word"
+    ],
+    [
+      "library",
+      "_unexpected_word"
     ],
     [
       "library",

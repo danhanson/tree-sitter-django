@@ -159,13 +159,17 @@ Get Media Prefix With As
 
 ==================
 Get Static Prefix Without As
-:error
 ==================
 
 {% get_static_prefix prefix %}
 
 ---
 
+(template
+  (content)
+  (get_static_prefix_tag
+    (unexpected_argument))
+  (content))
 
 ==================
 Get Static Prefix Without A Variable

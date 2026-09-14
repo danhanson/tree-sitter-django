@@ -54,13 +54,22 @@ Localtime Off
 
 ==================
 Localtime With Another Argument
-:error
 ==================
 
 {% localtime maybe %}x{% endlocaltime %}
 
 ---
 
+(template
+  (content)
+  (localtime_group
+    (localtime_block
+      (localtime_tag
+        (unexpected_argument))
+      (template
+        (content)))
+    (endlocaltime_tag))
+  (content))
 
 ==================
 Localtime With Two Arguments

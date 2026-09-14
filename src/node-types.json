@@ -4678,6 +4678,10 @@
     "named": false
   },
   {
+    "type": "unexpected_word",
+    "named": false
+  },
+  {
     "type": "unlocalize",
     "named": false
   },

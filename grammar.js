@@ -281,7 +281,14 @@ function simpleTag(name, args = true, kwargs = true) {
     const named = Object.entries(kwargs).map(([name, value]) =>
       part(seq(sym("_kwarg_name"), name, "=", value)),
     );
-    parts.push(repeat(choice(...named)));
+    // a name the signature does not take is flagged in place
+    const unexpected = part(
+      seq(
+        sym("_kwarg_name"),
+        alias(sym("_unexpected_keyword"), sym("unexpected_argument")),
+      ),
+    );
+    parts.push(repeat(choice(...named, unexpected)));
   }
   return tag(name, ...parts, optional(asVariable));
 }
@@ -517,6 +524,9 @@ const django = grammar({
     [$.predicate],
     [$._translate_option],
     [$.unexpected_argument],
+    [$.variable_attribute, $._unexpected_word],
+    [$.resetcycle_tag, $._unexpected_word],
+    [$.library, $._unexpected_word],
     [$.library, $.load_tag],
     [$._filtered_value_spaced],
     [$._filter_expression_spaced],
@@ -1218,14 +1228,50 @@ const django = grammar({
      * Words a tag does not take, kept inside the tag they were written in. Every
      * close utility accepts them before its "%}", so a misused tag keeps its own
      * node, "{% else x %}" is still the else of its group, and error recovery
-     * has nothing to repair. Each word is a token of lexical precedence -1, so
-     * that a token an argument really takes wins wherever one is valid, even
-     * over a longer match: "b|upper" is still a filtered value. The node costs
-     * -1 of dynamic precedence, less than any unexpected_tag, and
-     * queries/errors.scm reports it.
+     * has nothing to repair. queries/errors.scm reports it.
      */
-    unexpected_argument: ($) =>
-      prec.dynamic(-1, repeat1(seq(SEP, token(prec(-1, /[^\s%]+/))))),
+    unexpected_argument: ($) => repeat1($._unexpected_word),
+    /**
+     * One word of an unexpected_argument, costing -1 of dynamic precedence of
+     * its own, so that a reading flagging more words than it must always loses:
+     * "{% cycle a b as x silent zqx %}" flags zqx, not everything after a.
+     *
+     * The word is a token of lexical precedence -1, so that a token an argument
+     * really takes wins wherever one is valid, even over a longer match:
+     * "b|upper" is still a filtered value. Where a keyword is valid, as after
+     * "{% for a in b" where "reversed" may follow, tree-sitter lexes every word
+     * as an identifier to check for the keyword, so an identifier is a word
+     * here too, followed by whatever touches it ("a=2", "x.y|upper"). It is
+     * aliased so that queries/locals.scm does not take it for a reference.
+     */
+    _unexpected_word: ($) =>
+      prec.dynamic(
+        -1,
+        seq(
+          SEP,
+          choice(
+            token(prec(-1, /[^\s%]+/)),
+            seq(
+              alias($.identifier, "unexpected_word"),
+              optional(token.immediate(prec(-1, /[^\s%]+/))),
+            ),
+          ),
+        ),
+      ),
+    /**
+     * A "name=value" argument whose name a tag with a known signature does not
+     * take. The scanner's _kwarg_name reads any name followed by "=", which
+     * commits the parser to a keyword argument before the name is known, so
+     * the name the signature lacks is taken here rather than after the tag.
+     */
+    _unexpected_keyword: ($) =>
+      prec.dynamic(
+        -1,
+        seq(
+          alias($.identifier, "unexpected_word"),
+          token.immediate(prec(-1, /[^\s%]+/)),
+        ),
+      ),
     url_tag: ($) =>
       tag(
         "url",
