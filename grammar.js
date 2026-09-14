@@ -1172,20 +1172,20 @@ const django = grammar({
         prec.dynamic(
           -1,
           seq(
-            sym("simpleTagOpen"),
+            $.simpleTagOpen,
             field("tag_name", choice(...NAMES_INSIDE_A_TAG_GROUP)),
             repeat(seq(SEP, /[^\s%]+/)),
             $._group_held,
-            sym("simpleTagClose"),
+            $.simpleTagClose,
           ),
         ),
         prec.dynamic(
           -2,
           seq(
-            sym("simpleTagOpen"),
+            $.simpleTagOpen,
             field("tag_name", choice(...NAMES_INSIDE_A_TAG_GROUP)),
             repeat(seq(SEP, /[^\s%]+/)),
-            sym("simpleTagClose"),
+            $.simpleTagClose,
           ),
         ),
       ),
