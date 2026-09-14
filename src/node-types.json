@@ -168,6 +168,10 @@
         "named": true
       },
       {
+        "type": "unexpected_block",
+        "named": true
+      },
+      {
         "type": "url_block",
         "named": true
       },
@@ -3048,6 +3052,106 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "unexpected_block",
+    "named": true,
+    "fields": {
+      "tag": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "elif",
+            "named": false
+          },
+          {
+            "type": "else",
+            "named": false
+          },
+          {
+            "type": "empty",
+            "named": false
+          },
+          {
+            "type": "endautoescape",
+            "named": false
+          },
+          {
+            "type": "endblock",
+            "named": false
+          },
+          {
+            "type": "endblocktrans",
+            "named": false
+          },
+          {
+            "type": "endblocktranslate",
+            "named": false
+          },
+          {
+            "type": "endcache",
+            "named": false
+          },
+          {
+            "type": "endcomment",
+            "named": false
+          },
+          {
+            "type": "endfilter",
+            "named": false
+          },
+          {
+            "type": "endfor",
+            "named": false
+          },
+          {
+            "type": "endif",
+            "named": false
+          },
+          {
+            "type": "endifchanged",
+            "named": false
+          },
+          {
+            "type": "endlanguage",
+            "named": false
+          },
+          {
+            "type": "endlocalize",
+            "named": false
+          },
+          {
+            "type": "endlocaltime",
+            "named": false
+          },
+          {
+            "type": "endpartialdef",
+            "named": false
+          },
+          {
+            "type": "endspaceless",
+            "named": false
+          },
+          {
+            "type": "endtimezone",
+            "named": false
+          },
+          {
+            "type": "endverbatim",
+            "named": false
+          },
+          {
+            "type": "endwith",
+            "named": false
+          },
+          {
+            "type": "plural",
+            "named": false
+          }
+        ]
+      }
     }
   },
   {

@@ -39,3 +39,5 @@
     (missing_endverbatim_block)
     (missing_endwith_block)
     (missing_plural_block)] @error.missing_block
+
+(unexpected_block) @error.unexpected_block

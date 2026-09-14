@@ -230,25 +230,32 @@ Builtin Filter With An Argument It Does Not Take
 
 ---
 
+
 ==================
 Custom Tag Does Not Cover An End Tag
-:error
 ==================
 
 {% endif %}
 
 ---
 
+(template
+  (content)
+  (unexpected_block)
+  (content))
 
 ==================
 Custom Tag Does Not Cover A Part Of A Tag Group
-:error
 ==================
 
 {% else %}
 
 ---
 
+(template
+  (content)
+  (unexpected_block)
+  (content))
 
 ==================
 A Name Reserved For A Tag Is Still A Variable

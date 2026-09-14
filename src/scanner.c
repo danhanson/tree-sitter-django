@@ -18,11 +18,11 @@ static bool strings_equal(const char *left, const char *right) {
 enum TokenType {
   /* indicates that an error occurred */
   MatcherError,
-  /* push name on stack to match with later */
+  /* check a close tag's name against the innermost open group */
   PopBlock,     // [ name ] %}
   PopPartial,   // [ name ] %}
   PopVerbatim,  // [ name ] %}
-  /* pop name when done with it */
+  /* read the name an opening tag gives its group */
   PushBlock,    // name %}
   PushPartial,  // name [ inline ] %}
   PushVerbatim, // [ name ] %}
@@ -39,13 +39,24 @@ enum TokenType {
    * and fail if the tag has already been given one by that name */
   KwargName,
   /* zero width, where a tag group's required tag is missing; see
-   * scan_missing_tag */
-  MissingTag,
-  /* zero width, before the name of a tag that opens a group: push the group */
-  GroupOpen,
-  /* zero width, before the name of a tag that closes a group, or of the plural
-   * of a counted blocktranslate: pop the group, or record its plural */
+   * scan_missing_block */
+  MissingBlock,
+  /* zero width, after "{%": read the tag's name */
+  GroupOpenTagRead,
+  /* zero width, before the "%}" of a tag that opens a group: push the group */
+  GroupOpenTagPush,
+  /* zero width, before the "%}" of a middle tag a group holds once, such as
+   * "else": record that the group holds it */
+  GroupFollow,
+  /* zero width, before the "%}" of a middle tag a group may hold any number of
+   * times, such as "elif" */
+  GroupRepeat,
+  /* zero width, before the "%}" of a tag that closes a group: pop the group */
   GroupClose,
+  /* zero width, before the "%}" of an unexpected_block: returned only when
+   * the innermost group already holds a tag by that name, which makes this the
+   * likelier stray of the two */
+  GroupHeld,
 };
 
 /* The options blocktranslate takes, in the order of the bits recording them.
@@ -55,87 +66,29 @@ static const char *const translate_options[] = {
   "with", "count", "context", "trimmed", "asvar",
 };
 
+/* the index of "count" in translate_options */
+#define TRANSLATE_COUNT 1
+
 typedef Array(int32_t) Name;
 
-/* The kinds of tag that open a named region. PushBlock..PushVerbatim and
- * PopBlock..PopVerbatim are declared in this order, so a kind is the offset of
- * its token within either run. */
-typedef enum {
-  BlockTag,
-  PartialTag,
-  VerbatimTag,
-  /* The groups below have no name to match, and are kept only so that a
-   * missing end tag can be told from one that belongs to the group. A counted
-   * blocktranslate is a kind of its own until its plural is read, because
-   * until then "plural" is the tag it is waiting for. */
-  AutoescapeTag,
-  BlocktransTag,
-  BlocktransCountTag,
-  BlocktranslateTag,
-  BlocktranslateCountTag,
-  CacheTag,
-  CommentTag,
-  FilterTag,
-  ForTag,
-  IfTag,
-  IfchangedTag,
-  LanguageTag,
-  LocalizeTag,
-  LocaltimeTag,
-  SpacelessTag,
-  TimezoneTag,
-  WithTag,
-  TagKindCount,
-} TagKind;
-
-/* one letter per kind, in TagKind order, used to serialize an open tag */
-static const char tag_kind_chars[] = "bpvatTrRcmfoihlzesnw";
-
+/* An open tag group. The scanner knows nothing about any particular group: the
+ * grammar reads each tag's name to it, and every group is closed by "end"
+ * followed by the name of the tag that opened it. */
 typedef struct {
-  /* the name of the tag GroupOpen pushes this kind for, or NULL */
-  const char *open_name;
-  /* The names that continue or close the group, space separated: a tag with
-   * one of them belongs to the group, so is no sign its end tag is missing.
-   * The last is the tag that closes it. */
-  const char *own_names;
-  /* The body is raw text in which no tag is read, so only the end of input
-   * can show that the end tag is missing. */
-  bool raw;
-} TagGroup;
-
-static const TagGroup tag_groups[TagKindCount] = {
-  [BlockTag]               = { NULL,             "endblock",          false },
-  [PartialTag]             = { NULL,             "endpartialdef",     false },
-  [VerbatimTag]            = { NULL,             "endverbatim",       true  },
-  [AutoescapeTag]          = { "autoescape",     "endautoescape",     false },
-  [BlocktransTag]          = { "blocktrans",     "endblocktrans",     false },
-  [BlocktransCountTag]     = { NULL,             "plural",            false },
-  [BlocktranslateTag]      = { "blocktranslate", "endblocktranslate", false },
-  [BlocktranslateCountTag] = { NULL,             "plural",            false },
-  [CacheTag]               = { "cache",          "endcache",          false },
-  [CommentTag]             = { "comment",        "endcomment",        true  },
-  [FilterTag]              = { "filter",         "endfilter",         false },
-  [ForTag]                 = { "for",            "empty endfor",      false },
-  [IfTag]                  = { "if",             "elif else endif",   false },
-  [IfchangedTag]           = { "ifchanged",      "else endifchanged", false },
-  [LanguageTag]            = { "language",       "endlanguage",       false },
-  [LocalizeTag]            = { "localize",       "endlocalize",       false },
-  [LocaltimeTag]           = { "localtime",      "endlocaltime",      false },
-  [SpacelessTag]           = { "spaceless",      "endspaceless",      false },
-  [TimezoneTag]            = { "timezone",       "endtimezone",       false },
-  [WithTag]                = { "with",           "endwith",           false },
-};
-
-typedef struct {
-  TagKind kind;
+  /* the name of the tag that closes the group */
+  Name expected;
+  /* the name a block, partialdef or verbatim tag gave the group, or empty */
   Name name;
-} OpenTag;
+  /* the middle tags the group may hold only once and already holds, such as
+   * "else", each followed by NAME_SEP */
+  Name middles;
+  /* a counted blocktranslate, whose plural is still to come */
+  bool awaits_plural;
+} OpenGroup;
 
-/* The open tags, innermost last. Only one stack is needed because the grammar
- * nests these regions: a tag can only be closed by the tag that matches the
- * innermost open one, so its pop token is the only one the parser ever asks
- * for at a close tag. */
-typedef Array(OpenTag) Stack;
+/* The open groups, innermost last. The grammar nests them, so only the
+ * innermost can be closed. */
+typedef Array(OpenGroup) Stack;
 
 struct Scanner {
   bool has_error;
@@ -146,23 +99,34 @@ struct Scanner {
    * read, by the order of translate_options. seen_kwargs holds the
    * "name=value" argument names the tag has been given, each followed by
    * NAME_SEP: parse_bits refuses a repeated keyword argument and the set of
-   * names is open, so the names are kept rather than a mask of known ones. */
+   * names is open, so the names are kept rather than a mask of known ones.
+   *
+   * read_word is the name of the tag being read, pending_name the name its
+   * push token read (for block, partialdef and verbatim), and pending_plural
+   * whether it is a counted blocktranslate; all three wait for the tag's end,
+   * where GroupOpenTagPush turns them into an open group. */
   union {
     struct {
       uint8_t translate_seen;
+      bool pending_plural;
       Name seen_kwargs;
+      Name read_word;
+      Name pending_name;
       Stack stack;
     };
     char error [ERROR_SIZE];
   };
 };
 
-static TagKind kind_for_push(enum TokenType token) {
-  return (TagKind) (token - PushBlock);
+static void delete_group(OpenGroup *const group) {
+  array_delete(&group->expected);
+  array_delete(&group->name);
+  array_delete(&group->middles);
 }
 
-static enum TokenType pop_token_for_kind(TagKind kind) {
-  return (enum TokenType) (PopBlock + kind);
+static void pop_group(struct Scanner *const scanner) {
+  delete_group(array_back(&scanner->stack));
+  array_pop(&scanner->stack);
 }
 
 static void reset_scanner(struct Scanner *const scanner) {
@@ -174,9 +138,12 @@ static void reset_scanner(struct Scanner *const scanner) {
     *scanner = (struct Scanner) {0};
   } else {
     scanner->translate_seen = 0;
+    scanner->pending_plural = false;
     array_delete(&scanner->seen_kwargs);
+    array_delete(&scanner->read_word);
+    array_delete(&scanner->pending_name);
     for (unsigned i = 0; i < scanner->stack.size; ++i) {
-      array_delete(&array_get(&scanner->stack, i)->name);
+      delete_group(array_get(&scanner->stack, i));
     }
     array_delete(&scanner->stack);
   }
@@ -187,14 +154,10 @@ static void reset_scanner(struct Scanner *const scanner) {
 
 /* Copies a name into `out` for a log message, cut short to fit it. A name holds
  * only ASCII letters, digits and underscores, so each code point is one char. */
-static const char *log_name(
-  const int32_t *const codes,
-  const unsigned size,
-  char out[LOG_NAME_SIZE]
-) {
+static const char *log_name(const Name *const name, char out[LOG_NAME_SIZE]) {
   unsigned i = 0;
-  for (; i < size && i < LOG_NAME_SIZE - 1; ++i) {
-    out[i] = (char) codes[i];
+  for (; i < name->size && i < LOG_NAME_SIZE - 1; ++i) {
+    out[i] = (char) name->contents[i];
   }
   out[i] = '\0';
   return out;
@@ -231,13 +194,13 @@ static unsigned write_code(int32_t code, char *out) {
       // 1 byte: 0xxxxxxx
       out[0] = code;
       return 1;
-  } 
+  }
   else if (code <= 0x7FF) {
       // 2 bytes: 110xxxxx 10xxxxxx
       out[0] = (code >> 6)  | 0xC0;
       out[1] = (code & 0x3F) | 0x80;
       return 2;
-  } 
+  }
   else if (code <= 0xFFFF) {
       // 3 bytes: 1110xxxx 10xxxxxx 10xxxxxx
       // Note: Code points U+D800 to U+DFFF are reserved for UTF-16 surrogates and are invalid
@@ -249,7 +212,7 @@ static unsigned write_code(int32_t code, char *out) {
       out[1] = ((code >> 6) & 0x3F) | 0x80;
       out[2] = (code & 0x3F) | 0x80;
       return 3;
-  } 
+  }
   else if (code <= 0x10FFFF) {
       // 4 bytes: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
       out[0] = (code >> 18) | 0xF0;
@@ -261,32 +224,51 @@ static unsigned write_code(int32_t code, char *out) {
   return 0; // Out of Unicode range
 }
 
+/* Writes one code point, or reports that it is invalid or would not fit before
+ * `end`: a stack of open groups holds whole names, so a deep enough nesting
+ * outgrows the buffer tree-sitter serializes into. */
+static bool write_checked(const int32_t code, char **const iter, const char *const end) {
+  if (end - *iter < 4) {
+    return false;
+  }
+  const unsigned write_amt = write_code(code, *iter);
+  if (write_amt == 0) {
+    return false;
+  }
+  *iter += write_amt;
+  return true;
+}
+
+static bool write_name(const Name *const name, char **const iter, const char *const end) {
+  for (unsigned i = 0; i < name->size; ++i) {
+    if (!write_checked(name->contents[i], iter, end)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/* The state is written as:
+ *
+ *   status  "0", or "1" for an error state, which is followed by the error
+ *   mask    translate_seen, as a character from '0'
+ *   plural  pending_plural, '0' or '1'
+ *   seen_kwargs "\n" read_word "\n" pending_name "\n"
+ *   then per open group, outermost first:
+ *     expected ":" name ":" middles ":" awaits_plural "\n"
+ *
+ * No name holds a newline or a colon, so neither needs escaping. */
 unsigned tree_sitter_django_external_scanner_serialize(
   void *payload,
   char *const buffer
 ) {
   struct Scanner *scanner = (struct Scanner*) payload;
+  const char *const end = buffer + TREE_SITTER_SERIALIZATION_BUFFER_SIZE;
 
 write_serialization_error:;
   char *iter = buffer;
-
-  iter += write_code(scanner->has_error + '0', iter);
-  /* Both of these overlay the error string, so they are only read when there is
-   * none; an error state serializes as the empty option mask and no names. */
-  // five options fit in five bits, which stays inside printable ASCII
-  iter += write_code((scanner->has_error ? 0 : scanner->translate_seen) + '0', iter);
-  for (unsigned i = 0; !scanner->has_error && i < scanner->seen_kwargs.size; ++i) {
-    int32_t code = *array_get(&scanner->seen_kwargs, i);
-    unsigned write_amt = write_code(code, iter);
-    if (write_amt == 0) {
-      scanner_error(scanner, "bad code from keyword argument name");
-      goto write_serialization_error;
-    }
-    iter += write_amt;
-  }
-  // a name holds no newline, so this ends the list without escaping anything
-  iter += write_code('\n', iter);
   if (scanner->has_error) {
+    *(iter++) = '1';
     for (int i = 0; i < ERROR_SIZE; ++i) {
       char value = scanner->error[i];
       *(iter++) = value;
@@ -294,22 +276,32 @@ write_serialization_error:;
         break;
       }
     }
-  } else {
-    // Ok scanner requires copying its stack, as "<kind><name> " per open tag
-    for (unsigned i = 0; i < scanner->stack.size; ++i) {
-      OpenTag *tag = array_get(&scanner->stack, i);
-      iter += write_code(tag_kind_chars[tag->kind], iter);
-      for (unsigned j = 0; j < tag->name.size; ++j) {
-        int32_t code = *array_get(&tag->name, j);
-        unsigned write_amt = write_code(code, iter);
-        if (write_amt == 0) {
-          scanner_error(scanner, "bad code from name");
-          goto write_serialization_error;
-        }
-        iter += write_amt;
-      }
-      iter += write_code(NAME_SEP, iter);
-    }
+    return iter - buffer;
+  }
+  bool written = write_checked('0', &iter, end)
+    // five options fit in five bits, which stays inside printable ASCII
+    && write_checked(scanner->translate_seen + '0', &iter, end)
+    && write_checked(scanner->pending_plural ? '1' : '0', &iter, end)
+    && write_name(&scanner->seen_kwargs, &iter, end)
+    && write_checked('\n', &iter, end)
+    && write_name(&scanner->read_word, &iter, end)
+    && write_checked('\n', &iter, end)
+    && write_name(&scanner->pending_name, &iter, end)
+    && write_checked('\n', &iter, end);
+  for (unsigned i = 0; written && i < scanner->stack.size; ++i) {
+    const OpenGroup *const group = array_get(&scanner->stack, i);
+    written = write_name(&group->expected, &iter, end)
+      && write_checked(':', &iter, end)
+      && write_name(&group->name, &iter, end)
+      && write_checked(':', &iter, end)
+      && write_name(&group->middles, &iter, end)
+      && write_checked(':', &iter, end)
+      && write_checked(group->awaits_plural ? '1' : '0', &iter, end)
+      && write_checked('\n', &iter, end);
+  }
+  if (!written) {
+    scanner_error(scanner, "the open groups do not fit the serialization buffer");
+    goto write_serialization_error;
   }
   return iter - buffer;
 }
@@ -351,6 +343,42 @@ static bool check_name_char(const int32_t letter) {
   return check_name_start_char(letter) || '0' <= letter && letter <= '9' || letter == '_';
 }
 
+/* Reads one code point of the serialized state, or reports that none is left. */
+static bool read_checked(const char **const iter, const char *const end, int32_t *const code) {
+  if (*iter >= end) {
+    return false;
+  }
+  const unsigned bytes_read = read_code(*iter, code);
+  if (bytes_read == 0 || (unsigned) (end - *iter) < bytes_read) {
+    return false;
+  }
+  *iter += bytes_read;
+  return true;
+}
+
+/* Reads name characters, and NAME_SEP where `separated`, up to `terminator`. */
+static bool read_field(
+  const char **const iter,
+  const char *const end,
+  Name *const out,
+  const int32_t terminator,
+  const bool separated
+) {
+  int32_t code;
+  for (;;) {
+    if (!read_checked(iter, end, &code)) {
+      return false;
+    }
+    if (code == terminator) {
+      return true;
+    }
+    if (!check_name_char(code) && !(separated && code == NAME_SEP)) {
+      return false;
+    }
+    array_push(out, code);
+  }
+}
+
 void tree_sitter_django_external_scanner_deserialize(
   void *payload,
   const char *buffer,
@@ -361,124 +389,58 @@ void tree_sitter_django_external_scanner_deserialize(
   if (length == 0) {
     return;
   }
-  int32_t code;
-  unsigned bytes_read = read_code(buffer, &code);
-  if (!bytes_read) {
+  const char *iter = buffer;
+  const char *const end = buffer + length;
+  int32_t status;
+  if (!read_checked(&iter, end, &status)) {
     scanner_error(scanner, "received invalid utf8 byte");
     return;
   }
-  if (bytes_read > length) {
-    scanner_error(scanner, "status code truncated by length");
+  if (status == '1') {
+    scanner->has_error = true;
+    unsigned i = 0;
+    for (; i < ERROR_SIZE - 1 && iter < end && *iter != '\0'; ++i) {
+      scanner->error[i] = *(iter++);
+    }
+    scanner->error[i] = '\0';
     return;
   }
-  buffer += bytes_read;
-  unsigned consumed = bytes_read;
-
-  int32_t seen;
-  bytes_read = read_code(buffer, &seen);
-  if (!bytes_read) {
-    scanner_error(scanner, "received invalid utf8 byte");
+  int32_t mask;
+  int32_t plural;
+  if (status != '0' || !read_checked(&iter, end, &mask) || !read_checked(&iter, end, &plural)) {
+    scanner_error(scanner, "received unrecognized scanner status");
     return;
   }
-  consumed += bytes_read;
-  if (consumed > length) {
-    scanner_error(scanner, "option mask truncated by length");
-    return;
-  }
-  buffer += bytes_read;
-  if (seen < '0' || seen > '0' + 0x1F) {
+  if (mask < '0' || mask > '0' + 0x1F || (plural != '0' && plural != '1')) {
     scanner_error(scanner, "received unrecognized option mask");
     return;
   }
-  scanner->translate_seen = (uint8_t) (seen - '0');
-
-  for (;;) {
-    int32_t item;
-    bytes_read = read_code(buffer, &item);
-    if (!bytes_read) {
-      scanner_error(scanner, "received invalid utf8 byte");
-      return;
-    }
-    consumed += bytes_read;
-    if (consumed > length) {
-      scanner_error(scanner, "keyword argument names truncated by length");
-      return;
-    }
-    buffer += bytes_read;
-    if (item == '\n') {
-      break;
-    }
-    if (item != NAME_SEP && !check_name_char(item)) {
-      scanner_error(scanner, "invalid character in keyword argument name");
-      return;
-    }
-    array_push(&scanner->seen_kwargs, item);
+  scanner->translate_seen = (uint8_t) (mask - '0');
+  scanner->pending_plural = plural == '1';
+  if (!read_field(&iter, end, &scanner->seen_kwargs, '\n', true)
+      || !read_field(&iter, end, &scanner->read_word, '\n', false)
+      || !read_field(&iter, end, &scanner->pending_name, '\n', false)) {
+    scanner_error(scanner, "received invalid tag names");
+    return;
   }
-
-  switch (code) {
-    default:
-      scanner_error(scanner, "received unrecognized scanner status");
-      return;
-    case '1': {
-      scanner->has_error = true;
-      for (unsigned i = 0; i < length - consumed; ++i) {
-        char value = *(buffer++);
-        scanner->error[i] = value;
-        if (value == '\0') {
-          break;
-        }
-      }
+  while (iter < end) {
+    OpenGroup group = { array_new(), array_new(), array_new(), false };
+    int32_t awaits_plural;
+    int32_t newline;
+    const bool read = read_field(&iter, end, &group.expected, ':', false)
+      && read_field(&iter, end, &group.name, ':', false)
+      && read_field(&iter, end, &group.middles, ':', true)
+      && read_checked(&iter, end, &awaits_plural)
+      && (awaits_plural == '0' || awaits_plural == '1')
+      && read_checked(&iter, end, &newline)
+      && newline == '\n';
+    if (!read) {
+      delete_group(&group);
+      scanner_error(scanner, "received an invalid open group");
       return;
     }
-    case '0': {
-      scanner->has_error = false;
-      const char *end = buffer + length - consumed;
-      // NULL between tags, and the name being read inside one
-      Name *name = NULL;
-
-      while (buffer < end) {
-        bytes_read = read_code(buffer, &code);
-        if (bytes_read == 0) {
-          scanner_error(scanner, "Bad utf8 byte");
-          return;
-        }
-        buffer += bytes_read;
-        if (buffer > end) {
-          scanner_error(scanner, "Scanner truncated by length");
-          return;
-        }
-        if (name == NULL) {
-          // a tag starts with the letter for its kind
-          int kind = -1;
-          for (int i = 0; i < TagKindCount; ++i) {
-            if (tag_kind_chars[i] == code) {
-              kind = i;
-              break;
-            }
-          }
-          if (kind < 0) {
-            scanner_error(scanner, "Invalid tag kind");
-            return;
-          }
-          OpenTag tag = { (TagKind) kind, array_new() };
-          array_push(&scanner->stack, tag);
-          name = &array_back(&scanner->stack)->name;
-        } else if (code == NAME_SEP) {
-          // an empty name means an unnamed tag (e.g. an anonymous verbatim)
-          name = NULL;
-        } else {
-          bool valid = name->size ? check_name_char(code) : check_name_start_char(code);
-          if (!valid) {
-            scanner_error(scanner, "Invalid character in name");
-            return;
-          }
-          array_push(name, code);
-        }
-      }
-      if (name != NULL) {
-        scanner_error(scanner, "Scanner deserialization finished mid-name");
-      }
-    }
+    group.awaits_plural = awaits_plural == '1';
+    array_push(&scanner->stack, group);
   }
 }
 
@@ -573,6 +535,27 @@ static int read_translate_option(TSLexer *const lexer) {
   return -1;
 }
 
+/* Scans TranslateOption once its whitespace is skipped and the end marked. */
+static bool scan_translate_option(struct Scanner *const scanner, TSLexer *const lexer) {
+  const int option = read_translate_option(lexer);
+  if (option < 0) {
+    return false;
+  }
+  const uint8_t bit = (uint8_t) (1 << option);
+  if (scanner->translate_seen & bit) {
+    lexer->log(lexer, "refused blocktranslate option %s: it is already written once in this tag",
+      translate_options[option]);
+    return false;
+  }
+  scanner->translate_seen |= bit;
+  if (option == TRANSLATE_COUNT) {
+    // the group this tag pushes waits for a plural before its end tag
+    scanner->pending_plural = true;
+  }
+  lexer->result_symbol = TranslateOption;
+  return true;
+}
+
 /* Reads the name of a "name=value" argument, and reports whether the tag can
  * still take it. A name not followed by "=" is not one of these arguments at
  * all, which is what tells this apart from the "as name" clause or the end of
@@ -610,9 +593,10 @@ static bool scan_kwarg_name(struct Scanner *const scanner, TSLexer *const lexer)
         }
       }
       if (same) {
-        char name[LOG_NAME_SIZE];
+        const Name name = { array_get(&scanner->seen_kwargs, start), size, size };
+        char buffer[LOG_NAME_SIZE];
         lexer->log(lexer, "refused keyword argument %s: the tag already holds one by that name",
-          log_name(array_get(&scanner->seen_kwargs, start), size, name));
+          log_name(&name, buffer));
         scanner->seen_kwargs.size = start;
         return false;
       }
@@ -621,51 +605,6 @@ static bool scan_kwarg_name(struct Scanner *const scanner, TSLexer *const lexer)
   }
   array_push(&scanner->seen_kwargs, NAME_SEP);
   return true;
-}
-
-/* NAMES_INSIDE_A_TAG_GROUP in grammar.js, which this must be kept in step with:
- * the names reserved to a tag group, which can therefore never continue the
- * body of a group they do not belong to. */
-static const char group_names[] =
-  "elif else empty endautoescape endblock endblocktrans endblocktranslate "
-  "endcache endcomment endfilter endfor endif endifchanged endlanguage "
-  "endlocalize endlocaltime endpartialdef endspaceless endtimezone endverbatim "
-  "endwith plural";
-
-/* The longest of group_names and of the opening names, "endblocktranslate",
- * is 17. */
-#define GROUP_NAME_MAX 17
-
-/* Whether `word` is one of the space-separated names in `list`. */
-static bool name_in_list(const char *const word, const char *list) {
-  for (;;) {
-    const char *letter = word;
-    while (*letter != '\0' && *letter == *list) {
-      ++letter;
-      ++list;
-    }
-    if (*letter == '\0' && (*list == ' ' || *list == '\0')) {
-      return true;
-    }
-    while (*list != ' ' && *list != '\0') {
-      ++list;
-    }
-    if (*list == '\0') {
-      return false;
-    }
-    ++list;
-  }
-}
-
-/* The last of the space-separated names in `list`. */
-static const char *last_name(const char *list) {
-  const char *last = list;
-  for (; *list != '\0'; ++list) {
-    if (*list == ' ') {
-      last = list + 1;
-    }
-  }
-  return last;
 }
 
 static bool names_equal(const Name *const left, const Name *const right) {
@@ -680,88 +619,150 @@ static bool names_equal(const Name *const left, const Name *const right) {
   return true;
 }
 
-/* Reads a tag's name into `word`, and reports whether it could be the name of
- * a group's tag at all: one longer than any of them is not. */
-static bool read_group_word(TSLexer *const lexer, char word[GROUP_NAME_MAX + 1]) {
-  unsigned size = 0;
-  while (check_name_char(lexer->lookahead)) {
-    if (size < GROUP_NAME_MAX) {
-      word[size] = (char) lexer->lookahead;
+static bool name_is(const Name *const name, const char *const string) {
+  unsigned i = 0;
+  for (; i < name->size; ++i) {
+    if (string[i] == '\0' || name->contents[i] != string[i]) {
+      return false;
     }
-    ++size;
+  }
+  return string[i] == '\0';
+}
+
+/* Whether `word` is one of the names in `list`, each followed by NAME_SEP. */
+static bool name_in_list(const Name *const word, const Name *const list) {
+  unsigned start = 0;
+  for (unsigned i = 0; i < list->size; ++i) {
+    if (list->contents[i] != NAME_SEP) {
+      continue;
+    }
+    if (i - start == word->size) {
+      bool same = true;
+      for (unsigned j = 0; j < word->size; ++j) {
+        if (list->contents[start + j] != word->contents[j]) {
+          same = false;
+          break;
+        }
+      }
+      if (same) {
+        return true;
+      }
+    }
+    start = i + 1;
+  }
+  return false;
+}
+
+/* Whether a tag named `word` closes a group enclosing the innermost one. */
+static bool outer_group_expects(const struct Scanner *const scanner, const Name *const word) {
+  for (unsigned i = scanner->stack.size - 1; i-- > 0;) {
+    if (names_equal(&array_get(&scanner->stack, i)->expected, word)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/* Reads a tag's name, which may be empty. */
+static void read_word(TSLexer *const lexer, Name *const word) {
+  while (check_name_char(lexer->lookahead)) {
+    array_push(word, lexer->lookahead);
     lexer->advance(lexer, false);
   }
-  if (size == 0 || size > GROUP_NAME_MAX) {
-    return false;
-  }
-  word[size] = ' ';
-  return true;
 }
 
-/* Closes the innermost group, as its end tag does; for a counted
- * blocktranslate still waiting for its plural, records the plural instead,
- * which leaves the group open. */
-static void close_group(struct Scanner *const scanner) {
-  OpenTag *const tag = array_back(&scanner->stack);
-  if (tag->kind == BlocktransCountTag || tag->kind == BlocktranslateCountTag) {
-    tag->kind = (TagKind) (tag->kind - 1);
-    return;
-  }
-  array_delete(&tag->name);
-  array_pop(&scanner->stack);
+/* Scans GroupOpenTagRead, zero width after "{%": records the name of the tag
+ * that follows for the tokens at its end, and forgets what the tag before it
+ * left there. It is valid before every tag's name, so it is always returned. */
+static void scan_group_open_tag_read(struct Scanner *const scanner, TSLexer *const lexer) {
+  lexer->mark_end(lexer);
+  array_clear(&scanner->read_word);
+  array_clear(&scanner->pending_name);
+  scanner->pending_plural = false;
+  skip_whitespace(lexer);
+  read_word(lexer, &scanner->read_word);
+  lexer->result_symbol = GroupOpenTagRead;
 }
 
-/* Scans GroupOpen or GroupClose, both zero width before a tag's name. Either
- * may be valid where a tag starts, and nothing else of this scanner is. */
-static bool scan_group_tag(
+/* Scans GroupOpenTagPush, GroupFollow, GroupRepeat, GroupHeld or GroupClose,
+ * once "%}" has been found to follow. */
+static bool scan_group_tag_end(
   struct Scanner *const scanner,
   TSLexer *const lexer,
   const bool *const valid_symbols
 ) {
-  lexer->mark_end(lexer);
-  char word[GROUP_NAME_MAX + 1];
-  if (!read_group_word(lexer, word)) {
+  char buffer[LOG_NAME_SIZE];
+  if (valid_symbols[GroupOpenTagPush]) {
+    OpenGroup group = {
+      array_new(), scanner->pending_name, array_new(), scanner->pending_plural,
+    };
+    scanner->pending_name = (Name) array_new();
+    scanner->pending_plural = false;
+    array_push(&group.expected, 'e');
+    array_push(&group.expected, 'n');
+    array_push(&group.expected, 'd');
+    for (unsigned i = 0; i < scanner->read_word.size; ++i) {
+      array_push(&group.expected, scanner->read_word.contents[i]);
+    }
+    array_push(&scanner->stack, group);
+    lexer->result_symbol = GroupOpenTagPush;
+    return true;
+  }
+  if (valid_symbols[GroupFollow]) {
+    if (scanner->stack.size == 0) {
+      lexer->log(lexer, "not recording %s: the parser is inside a group, but the stack holds none",
+        log_name(&scanner->read_word, buffer));
+    } else {
+      OpenGroup *const group = array_back(&scanner->stack);
+      if (name_in_list(&scanner->read_word, &group->middles)) {
+        // a second one of these parses as an unexpected_block, which has no follow
+        lexer->log(lexer, "refused %s: the parser gives it to the innermost group, which already holds one",
+          log_name(&scanner->read_word, buffer));
+        return false;
+      }
+      for (unsigned i = 0; i < scanner->read_word.size; ++i) {
+        array_push(&group->middles, scanner->read_word.contents[i]);
+      }
+      array_push(&group->middles, NAME_SEP);
+      if (name_is(&scanner->read_word, "plural")) {
+        group->awaits_plural = false;
+      }
+    }
+    lexer->result_symbol = GroupFollow;
+    return true;
+  }
+  if (valid_symbols[GroupRepeat]) {
+    lexer->result_symbol = GroupRepeat;
+    return true;
+  }
+  if (valid_symbols[GroupHeld]) {
+    if (scanner->stack.size == 0
+        || !name_in_list(&scanner->read_word, &array_back(&scanner->stack)->middles)) {
+      return false;
+    }
+    lexer->result_symbol = GroupHeld;
+    return true;
+  }
+  if (!valid_symbols[GroupClose]) {
     return false;
   }
-  if (valid_symbols[GroupOpen]) {
-    for (unsigned kind = 0; kind < TagKindCount; ++kind) {
-      const char *const name = tag_groups[kind].open_name;
-      if (name != NULL && strings_equal(name, word)) {
-        OpenTag tag = { (TagKind) kind, array_new() };
-        array_push(&scanner->stack, tag);
-        lexer->result_symbol = GroupOpen;
-        return true;
-      }
-    }
+  if (scanner->stack.size == 0) {
+    lexer->log(lexer, "refused %s: the parser expects a group to close, but the stack holds none",
+      log_name(&scanner->read_word, buffer));
+    return false;
   }
-  if (valid_symbols[GroupClose]) {
-    if (scanner->stack.size > 0) {
-      const OpenTag *const innermost = array_back(&scanner->stack);
-      const char *const own_names = tag_groups[innermost->kind].own_names;
-      // block, partialdef and verbatim close through their pop tokens
-      if (innermost->kind > VerbatimTag && strings_equal(last_name(own_names), word)) {
-        close_group(scanner);
-        lexer->result_symbol = GroupClose;
-        return true;
-      }
-    }
-    /* The parser takes a close only inside a group, and a tag that belongs to
-     * another group gets a missing-tag marker first, so a closing name refused
-     * here means the stack disagrees with the parser. Any other tag reaches
-     * here on its way to the grammar and is not reported. */
-    for (unsigned kind = VerbatimTag + 1; kind < TagKindCount; ++kind) {
-      if (strings_equal(last_name(tag_groups[kind].own_names), word)) {
-        if (scanner->stack.size == 0) {
-          lexer->log(lexer, "refused %s: the parser expects a group to close, but the stack holds none", word);
-        } else {
-          lexer->log(lexer, "refused %s: the parser expects a group to close, but the innermost on the stack closes with %s",
-            word, last_name(tag_groups[array_back(&scanner->stack)->kind].own_names));
-        }
-        break;
-      }
-    }
+  const OpenGroup *const group = array_back(&scanner->stack);
+  if (!names_equal(&group->expected, &scanner->read_word) || group->awaits_plural) {
+    char expected[LOG_NAME_SIZE];
+    lexer->log(lexer, "refused %s: the parser expects a group to close, but the innermost on the stack %s %s",
+      log_name(&scanner->read_word, buffer),
+      group->awaits_plural ? "still waits for the plural before" : "closes with",
+      log_name(&group->expected, expected));
+    return false;
   }
-  return false;
+  pop_group(scanner);
+  lexer->result_symbol = GroupClose;
+  return true;
 }
 
 typedef enum {
@@ -779,22 +780,31 @@ typedef enum {
  * where nothing else of this scanner is valid but the raw-text tokens, and
  * those are scanned only when this returns NotMissing.
  *
- * The tag is taken to be missing at the end of input; before a tag whose name
- * is reserved to some other group, since it cannot be part of this group's
- * body; and before an endblock or endpartialdef whose name is not the innermost
- * open one but one further out, which it closes instead. The marker then
- * closes the group as the missing tag would have. */
-static MissingResult scan_missing_tag(struct Scanner *const scanner, TSLexer *const lexer) {
+ * The tag is taken to be missing at the end of input; before the end tag of a
+ * group enclosing the innermost one, or an endblock or endpartialdef naming a
+ * block further out; and before a second plural, since a blocktranslate body
+ * holds no tag that could take it. Any other tag is taken to be the innermost
+ * group's, as Django takes it: a second of a tag the group holds only once, such
+ * as a second "else", is an unexpected_block inside the group rather than a sign
+ * that it has ended. A counted blocktranslate still waiting for its plural is
+ * missing it before anything but "plural". The marker closes the group as the
+ * missing tag would have, or for a plural records it, leaving the group open. */
+static MissingResult scan_missing_block(
+  struct Scanner *const scanner,
+  TSLexer *const lexer,
+  const bool *const valid_symbols
+) {
   if (scanner->stack.size == 0) {
     // the marker is only valid inside a group, so the stack has lost track of it
     lexer->log(lexer, "no missing-tag marker: the parser is inside a group, but the stack holds none");
     return NotMissing;
   }
-  const OpenTag *const innermost = array_back(&scanner->stack);
-  const TagGroup *const group = &tag_groups[innermost->kind];
+  OpenGroup *const innermost = array_back(&scanner->stack);
   lexer->mark_end(lexer);
   if (!lexer->eof(lexer)) {
-    if (group->raw || lexer->lookahead != '{') {
+    // tags are not read in a raw body, so only the end of input shows its end is missing
+    const bool raw = valid_symbols[VerbatimContent] || valid_symbols[CommentContent];
+    if (raw || lexer->lookahead != '{') {
       return NotMissing;
     }
     lexer->advance(lexer, false);
@@ -803,66 +813,61 @@ static MissingResult scan_missing_tag(struct Scanner *const scanner, TSLexer *co
     }
     lexer->advance(lexer, false);
     skip_whitespace(lexer);
-    char word[GROUP_NAME_MAX + 1];
-    if (!read_group_word(lexer, word)) {
-      return NotMissingAfterReading;
-    }
-    if (name_in_list(word, group->own_names)) {
-      // the group's own tag, unless it names a block further out
-      if (innermost->kind != BlockTag && innermost->kind != PartialTag) {
-        return NotMissingAfterReading;
-      }
-      if (!check_space(lexer->lookahead) || scanner->stack.size < 2) {
-        return NotMissingAfterReading;
-      }
-      skip_whitespace(lexer);
-      Name name = array_new();
-      bool closes_outer = false;
-      if (read_name(lexer, &name) && !names_equal(&innermost->name, &name)) {
-        for (unsigned i = scanner->stack.size - 1; i-- > 0;) {
-          const OpenTag *const tag = array_get(&scanner->stack, i);
-          if (tag->kind == innermost->kind && names_equal(&tag->name, &name)) {
-            closes_outer = true;
-            break;
+    Name word = array_new();
+    read_word(lexer, &word);
+    bool missing = false;
+    if (word.size == 0) {
+      missing = false;
+    } else if (innermost->awaits_plural) {
+      missing = !name_is(&word, "plural")
+        && (names_equal(&innermost->expected, &word) || outer_group_expects(scanner, &word));
+    } else if (names_equal(&innermost->expected, &word)) {
+      // the group's own end tag, unless it names a block further out
+      if (innermost->name.size > 0 && check_space(lexer->lookahead) && scanner->stack.size > 1) {
+        skip_whitespace(lexer);
+        Name name = array_new();
+        if (read_name(lexer, &name) && !names_equal(&innermost->name, &name)) {
+          for (unsigned i = scanner->stack.size - 1; i-- > 0;) {
+            const OpenGroup *const group = array_get(&scanner->stack, i);
+            if (names_equal(&group->expected, &word) && names_equal(&group->name, &name)) {
+              missing = true;
+              break;
+            }
           }
         }
+        array_delete(&name);
       }
-      array_delete(&name);
-      if (!closes_outer) {
-        return NotMissingAfterReading;
-      }
-    } else if (!name_in_list(word, group_names)) {
+    } else if (name_in_list(&word, &innermost->middles)) {
+      // a second of a tag the group holds only once is an unexpected_block in it
+      missing = name_is(&word, "plural");
+    } else {
+      missing = outer_group_expects(scanner, &word);
+    }
+    array_delete(&word);
+    if (!missing) {
       return NotMissingAfterReading;
     }
   }
-  close_group(scanner);
-  lexer->result_symbol = MissingTag;
+  if (innermost->awaits_plural) {
+    innermost->awaits_plural = false;
+  } else {
+    pop_group(scanner);
+  }
+  lexer->result_symbol = MissingBlock;
   return Missing;
 }
 
-const char endverbatim_chars[] = "endverbatim";
-
-/* Called right after consuming "{%"; checks whether what follows closes the
- * verbatim block identified by `name` (matching a name on the stack, or, if
- * `name` is empty, an unnamed "{% endverbatim %}"). Consumes input either
- * way, since a failed match still belongs in the verbatim block's raw text. */
-static bool check_endverbatim_close(TSLexer *const lexer, const Name *const name) {
+/* Called right after consuming "{%"; checks whether what follows is the tag
+ * that closes `group`: its end tag, with the group's name if it has one. Consumes
+ * input either way, since a failed match still belongs in the raw text. */
+static bool check_group_close(TSLexer *const lexer, const OpenGroup *const group) {
   skip_whitespace(lexer);
-  for (unsigned i = 0; i < sizeof(endverbatim_chars) - 1; ++i) {
-    if (lexer->lookahead != endverbatim_chars[i]) {
-      return false;
-    }
-    lexer->advance(lexer, false);
+  if (check_name(lexer, &group->expected) != group->expected.size) {
+    return false;
   }
   skip_whitespace(lexer);
-  if (name->size > 0) {
-    for (unsigned i = 0; i < name->size; ++i) {
-      if (lexer->lookahead != name->contents[i]) {
-        return false;
-      }
-      lexer->advance(lexer, false);
-    }
-    if (check_name_char(lexer->lookahead)) {
+  if (group->name.size > 0) {
+    if (check_name(lexer, &group->name) != group->name.size || check_name_char(lexer->lookahead)) {
       return false;
     }
     skip_whitespace(lexer);
@@ -874,21 +879,20 @@ static bool check_endverbatim_close(TSLexer *const lexer, const Name *const name
   return lexer->lookahead == '}';
 }
 
-/* Consumes raw verbatim content up to (but not including) the next tag that
- * closes the innermost open verbatim block, since that content must not be
- * parsed as template syntax. A verbatim block opened with a name is only
- * closed by an "endverbatim" tag bearing the same name, which lets an
- * unrelated (e.g. unnamed) "{% verbatim %}...{% endverbatim %}" pair appear
- * unparsed inside a named verbatim block. */
-static bool scan_verbatim_content(struct Scanner *const scanner, TSLexer *const lexer) {
+/* Consumes the raw body of the innermost group, verbatim or comment, up to
+ * (but not including) the tag that closes it, since that text must not be
+ * parsed as template syntax. A verbatim block opened with a name is only closed
+ * by an "endverbatim" tag bearing the same name, which lets an unrelated (e.g.
+ * unnamed) "{% verbatim %}...{% endverbatim %}" pair appear inside it. */
+static bool scan_raw_content(
+  struct Scanner *const scanner,
+  TSLexer *const lexer,
+  const enum TokenType token
+) {
   if (scanner->stack.size == 0) {
     return false;
   }
-  OpenTag *tag = array_back(&scanner->stack);
-  if (tag->kind != VerbatimTag) {
-    return false;
-  }
-  Name *name = &tag->name;
+  const OpenGroup *const group = array_back(&scanner->stack);
   bool consumed_any = false;
   while (true) {
     if (lexer->eof(lexer)) {
@@ -896,7 +900,7 @@ static bool scan_verbatim_content(struct Scanner *const scanner, TSLexer *const 
         return false;
       }
       lexer->mark_end(lexer);
-      lexer->result_symbol = VerbatimContent;
+      lexer->result_symbol = token;
       return true;
     }
     if (lexer->lookahead == '{') {
@@ -904,67 +908,11 @@ static bool scan_verbatim_content(struct Scanner *const scanner, TSLexer *const 
       lexer->advance(lexer, false);
       if (lexer->lookahead == '%') {
         lexer->advance(lexer, false);
-        if (check_endverbatim_close(lexer, name)) {
+        if (check_group_close(lexer, group)) {
           if (!consumed_any) {
             return false;
           }
-          lexer->result_symbol = VerbatimContent;
-          return true;
-        }
-      }
-      consumed_any = true;
-      continue;
-    }
-    lexer->advance(lexer, false);
-    consumed_any = true;
-  }
-}
-
-const char endcomment_chars[] = "endcomment";
-
-/* Called right after consuming "{%"; checks whether what follows closes the
- * comment block. Unlike verbatim, comment blocks have no name to match and
- * cannot be nested, so any "{% endcomment %}" closes the innermost one. */
-static bool check_endcomment_close(TSLexer *const lexer) {
-  skip_whitespace(lexer);
-  for (unsigned i = 0; i < sizeof(endcomment_chars) - 1; ++i) {
-    if (lexer->lookahead != endcomment_chars[i]) {
-      return false;
-    }
-    lexer->advance(lexer, false);
-  }
-  skip_whitespace(lexer);
-  if (lexer->lookahead != '%') {
-    return false;
-  }
-  lexer->advance(lexer, false);
-  return lexer->lookahead == '}';
-}
-
-/* Consumes raw comment content up to (but not including) the next
- * "{% endcomment %}", since comment bodies must not be parsed as template
- * syntax even when they happen to contain tag-like text. */
-static bool scan_comment_content(TSLexer *const lexer) {
-  bool consumed_any = false;
-  while (true) {
-    if (lexer->eof(lexer)) {
-      if (!consumed_any) {
-        return false;
-      }
-      lexer->mark_end(lexer);
-      lexer->result_symbol = CommentContent;
-      return true;
-    }
-    if (lexer->lookahead == '{') {
-      lexer->mark_end(lexer);
-      lexer->advance(lexer, false);
-      if (lexer->lookahead == '%') {
-        lexer->advance(lexer, false);
-        if (check_endcomment_close(lexer)) {
-          if (!consumed_any) {
-            return false;
-          }
-          lexer->result_symbol = CommentContent;
+          lexer->result_symbol = token;
           return true;
         }
       }
@@ -994,11 +942,13 @@ bool tree_sitter_django_external_scanner_scan(
   if (valid_symbols[MatcherError]) {
     return false;
   }
-  /* Above the raw-text scanners, which find nothing at the end of an empty
-   * body, and below the MatcherError check, which keeps these from being
-   * scanned during error recovery. */
-  if (valid_symbols[MissingTag]) {
-    switch (scan_missing_tag(scanner, lexer)) {
+  /* The zero-width tokens below belong here: above the raw-text scanners,
+   * which find nothing at the end of an empty body, above the loop further
+   * down, which skips the separator the grammar still has to match, and below
+   * the MatcherError check, which keeps them from being scanned during error
+   * recovery. */
+  if (valid_symbols[MissingBlock]) {
+    switch (scan_missing_block(scanner, lexer, valid_symbols)) {
       case Missing:
         return true;
       case NotMissingAfterReading:
@@ -1007,19 +957,32 @@ bool tree_sitter_django_external_scanner_scan(
         break;
     }
   }
-  if (valid_symbols[GroupOpen] || valid_symbols[GroupClose]) {
-    return scan_group_tag(scanner, lexer, valid_symbols);
+  if (valid_symbols[GroupOpenTagRead]) {
+    scan_group_open_tag_read(scanner, lexer);
+    return true;
+  }
+  if (valid_symbols[GroupOpenTagPush] || valid_symbols[GroupFollow]
+      || valid_symbols[GroupRepeat] || valid_symbols[GroupClose]
+      || valid_symbols[GroupHeld]) {
+    lexer->mark_end(lexer);
+    const bool spaced = check_space(lexer->lookahead);
+    skip_whitespace(lexer);
+    if (lexer->lookahead == '%') {
+      lexer->advance(lexer, false);
+      return lexer->lookahead == '}' && scan_group_tag_end(scanner, lexer, valid_symbols);
+    }
+    // a blocktranslate option may be written where its tag could also end
+    if (spaced && valid_symbols[TranslateOption]) {
+      return scan_translate_option(scanner, lexer);
+    }
+    return false;
   }
   if (valid_symbols[VerbatimContent]) {
-    return scan_verbatim_content(scanner, lexer);
+    return scan_raw_content(scanner, lexer, VerbatimContent);
   }
   if (valid_symbols[CommentContent]) {
-    return scan_comment_content(lexer);
+    return scan_raw_content(scanner, lexer, CommentContent);
   }
-  /* Both of these are zero width, so the end is marked before anything is
-   * read. They belong above the loop below, which skips the separator the
-   * grammar still has to match, and below the MatcherError check, which is what
-   * keeps them from being scanned during error recovery. */
   if (valid_symbols[TagOpen]) {
     lexer->mark_end(lexer);
     scanner->translate_seen = 0;
@@ -1041,26 +1004,7 @@ bool tree_sitter_django_external_scanner_scan(
       return false;
     }
     skip_whitespace(lexer);
-    int option = read_translate_option(lexer);
-    if (option < 0) {
-      return false;
-    }
-    uint8_t bit = (uint8_t) (1 << option);
-    if (scanner->translate_seen & bit) {
-      lexer->log(lexer, "refused blocktranslate option %s: it is already written once in this tag",
-        translate_options[option]);
-      return false;
-    }
-    scanner->translate_seen |= bit;
-    if (option == 1 && scanner->stack.size > 0) {
-      // "count" makes the group one that waits for a plural
-      OpenTag *const tag = array_back(&scanner->stack);
-      if (tag->kind == BlocktransTag || tag->kind == BlocktranslateTag) {
-        tag->kind = (TagKind) (tag->kind + 1);
-      }
-    }
-    lexer->result_symbol = TranslateOption;
-    return true;
+    return scan_translate_option(scanner, lexer);
   }
   while (check_space(lexer->lookahead)) {
     lexer->advance(lexer, true);
@@ -1075,62 +1019,58 @@ bool tree_sitter_django_external_scanner_scan(
     is_empty = true;
   }
 
-  /* Only the innermost open tag can be closed here, so it is the one and only
-   * candidate: there is never a second name to try, and so never any input to
-   * reread. */
-  // only the kinds that match a name have a pop token
-  if (scanner->stack.size > 0 && array_back(&scanner->stack)->kind <= VerbatimTag) {
-    OpenTag *tag = array_back(&scanner->stack);
-    enum TokenType token = pop_token_for_kind(tag->kind);
-    if (valid_symbols[token]) {
-      if (is_empty) {
-        // we matched a close block without an id
-        array_delete(&tag->name);
-        array_pop(&scanner->stack);
-        lexer->result_symbol = token;
-        return true;
-      }
-      unsigned match_amt = check_name(lexer, &tag->name);
-      bool has_next_char = tag->name.size ? check_name_char(lexer->lookahead) : check_name_start_char(lexer->lookahead);
-      if (match_amt == tag->name.size && !has_next_char && check_close_block_from(lexer)) {
-        array_delete(&tag->name);
-        array_pop(&scanner->stack);
-        lexer->result_symbol = token;
-        return true;
-      }
-      char name[LOG_NAME_SIZE];
-      lexer->log(lexer, "refused %s: it does not name the innermost open \"%s\"",
-        last_name(tag_groups[tag->kind].own_names),
-        log_name(tag->name.contents, tag->name.size, name));
+  /* A close tag's name is checked against the innermost open group, the only
+   * one it can close; GroupClose, at the end of the tag, is what pops it. */
+  for (unsigned token = PopBlock; token <= PopVerbatim; ++token) {
+    if (!valid_symbols[token]) {
+      continue;
+    }
+    char buffer[LOG_NAME_SIZE];
+    if (scanner->stack.size == 0) {
+      lexer->log(lexer, "refused a close tag's name: the parser expects a group to close, but the stack holds none");
       return false;
     }
+    const OpenGroup *const group = array_back(&scanner->stack);
+    if (is_empty) {
+      // a close tag without a name closes the innermost group whatever its name
+      lexer->result_symbol = token;
+      return true;
+    }
+    const unsigned match_amt = check_name(lexer, &group->name);
+    const bool has_next_char = group->name.size ? check_name_char(lexer->lookahead) : check_name_start_char(lexer->lookahead);
+    if (match_amt == group->name.size && !has_next_char && check_close_block_from(lexer)) {
+      lexer->result_symbol = token;
+      return true;
+    }
+    char expected[LOG_NAME_SIZE];
+    lexer->log(lexer, "refused %s: it does not name the innermost open \"%s\"",
+      log_name(&group->expected, expected), log_name(&group->name, buffer));
+    return false;
   }
   for (unsigned token = PushBlock; token <= PushVerbatim; ++token) {
-    if (valid_symbols[token]) {
-      TagKind kind = kind_for_push(token);
-      if (is_empty && token == PushVerbatim) {
-        // use empty string for name to indicate empty push
-        OpenTag tag = { kind, array_new() };
-        array_push(&scanner->stack, tag);
+    if (!valid_symbols[token]) {
+      continue;
+    }
+    if (is_empty && token == PushVerbatim) {
+      // an unnamed verbatim block, whose group GroupOpenTagPush pushes nameless
+      array_clear(&scanner->pending_name);
+      lexer->result_symbol = token;
+      return true;
+    }
+    Name name = array_new();
+    if (read_name(lexer, &name)) {
+      // validate tokens after name
+      lexer->mark_end(lexer);
+      if (check_close_block(lexer) || token == PushPartial && check_inline(lexer)) {
+        array_delete(&scanner->pending_name);
+        scanner->pending_name = name;
         lexer->result_symbol = token;
         return true;
       }
-      Name name = array_new();
-      if (read_name(lexer, &name)) {
-        // validate tokens after name
-        lexer->mark_end(lexer);
-        if (check_close_block(lexer) || token == PushPartial && check_inline(lexer)) {
-          OpenTag tag = { kind, name };
-          array_push(&scanner->stack, tag);
-          lexer->result_symbol = token;
-          return true;
-        }
-      }
-      // name was never pushed onto the stack, just free the local copy
-      array_delete(&name);
-      // single failed push implies failure to match any push
-      return false;
     }
+    array_delete(&name);
+    // single failed push implies failure to match any push
+    return false;
   }
 
   return false;

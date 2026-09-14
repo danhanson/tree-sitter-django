@@ -46,7 +46,8 @@ argument, so `{% cycle 1as x %}` is the single token `1as` — an error, not `1`
 can never be made mandatory, so the separator is an explicit token and every rule is built from helpers
 that place it:
 
-- `SEP` — `/[ \t\r\n]+/`. Newlines included: Django matches tags with `re.DOTALL`, so tags may span lines.
+- `SEP` — `sym("_sep")`, the hidden rule `_sep: /[ \t\r\n]+/`, which a grammar extending this one writes as
+  `$._sep`. Newlines included: Django matches tags with `re.DOTALL`, so tags may span lines.
 - `part(...)` — one tag part, taking the whitespace that separates it from the part before.
 - `joined(first, ...rest)` — parts separated from _each other_, with no leading separator (`not in`).
 - `block(tag, ...args)` — `{%`, optional separator, tag name, args, optional separator, `%}`; tags may
@@ -90,9 +91,16 @@ Consequences worth knowing before editing a rule:
 Every group is split so that each tag that opens a body owns a node of its own:
 
 ```js
-if_clause: ($) => seq(block("if", part($.predicate)), optional($.template)),
+if_block: ($) => startBlock("if", part($.predicate)),
+if_clause: ($) => seq($.if_block, optional($.template)),
+endif_block: ($) => endBlock("endif"),
 if_group: ($) =>
-  seq($.if_clause, repeat($.elif_clause), optional($.else_clause), block("endif")),
+  seq(
+    $.if_clause,
+    repeat($.elif_clause),
+    optional($.else_clause),
+    choice($.endif_block, alias($._missing_block, $.missing_endif_block)),
+  ),
 ```
 
 **A clause is complete without the closing tag, and that is the point.** While a template is being edited
@@ -111,7 +119,20 @@ Stripping `_block` gives the name; a new tag, or a tag group's new part, follows
 
 A group's last child is its end block or, where the end tag is missing, a zero-width marker named for it
 (`missing_endif_block`; see the scanner section). So an unterminated group still reduces to a group node,
-and only a stray tag or a body the grammar cannot read produces an `ERROR`.
+and a group's tag written where no open group can hold it is an `unexpected_block` (see the load section
+below), so only a body the grammar cannot read produces an `ERROR`.
+
+Every tag is built from ten inline utility rules — `simpleBlockOpen`/`simpleBlockClose`,
+`startBlockOpen`/`startBlockClose`,
+`followBlockOpen`/`followBlockClose`, `repeatBlockOpen`/`repeatBlockClose`, `endBlockOpen`/`endBlockClose` —
+through the helpers `block` (a tag outside any group, from `simpleBlockOpen`/`simpleBlockClose`), `startBlock`, `followBlock` (a middle tag a group
+holds at most once: `else`, `empty`, `plural`), `repeatBlock` (one it may repeat: `elif`) and `endBlock`.
+They are inline rules rather than JS helpers so that a grammar extending this one can use them. **Every
+tag must begin with one of the opens**, one an extending grammar adds included: the token they read the
+tag's name with is valid wherever a tag's name is and the scanner always returns it, so a tag written from a bare `"{%"` never matches: its name is read as a `custom_tag_block` instead,
+with no error to show for it. Choose `followBlock` or `repeatBlock` by what the grammar allows, because the
+scanner trusts it: a tag marked once-only that can in fact repeat is an `unexpected_block` from its
+second use on, and one marked repeatable that cannot is never flagged when repeated.
 
 The names themselves need no hand-maintained list either: in the generated `src/node-types.json`, a group's
 `children` are its clause types and its end block, and a clause's children include its opening block, so
@@ -141,7 +162,8 @@ silently discarded the parse in which the body continues, so every tag inside a 
 Sharing the clauses also made the table markedly smaller — 7,200 states and a 515KB library became 5,150
 and 383KB — for the same reason hoisting `blocktranslate`'s pieces into hidden rules did: the automaton
 stops duplicating the body states in every group's inline context. Giving every `{% %}` its own `_block`
-rule shrank it again, from 1,999 states to 1,818, by the same mechanism.
+rule shrank it again, from 1,999 states to 1,818, by the same mechanism. The group stack's tokens (see the
+scanner section) cost 247, to 3,304.
 
 ### Filter pipes differ by context
 
@@ -169,6 +191,20 @@ listed in `NAMES_INSIDE_A_TAG_GROUP` and applied through the `tag_name` reserved
 `custom_tag_block`'s name **and nothing else** — a reserved context replaces the global one inside whatever it
 wraps, so wrapping the whole rule would un-reserve `as` and reject `{% mytag endif %}`. Adding a tag group
 with a new part or end tag means adding its name there too.
+
+**The same names are what `unexpected_block` accepts.** Once reserved, a group's tag written where no open
+group can hold it — `{% endif %}` with nothing open, `{% else %}` in a `{% for %}` — used to be an `ERROR`,
+and error recovery placed it badly: every tag starts with `{%` and the read token, which the parser has
+already accepted when the name turns out to be wrong, so recovery rewinds to just after them and folds the
+stray tag into whichever tag comes next, which then holds the `ERROR`. `unexpected_block` takes any of
+`NAMES_INSIDE_A_TAG_GROUP` with loose arguments, so there is nothing to recover; `prec.dynamic(-1)` keeps it
+from displacing a tag the group does take, and `queries/errors.scm` reports it as
+`@error.unexpected_block`. It added 31 states and no `conflicts` entry.
+
+Where several tags share a name the group holds only once — `{% if %}{% else %}{% else %}{% else %}` — reading
+any of them as the stray parses, so the ties are broken by dynamic precedence: `unexpected_block` is -1 when
+`_group_held` confirms the innermost group already holds the name and -2 otherwise, so each tag flagged
+before its time costs one more, and the first stays the clause however many follow.
 
 **Builtin names must stay keyword-extractable, or the fallbacks swallow them.** `word: $.identifier` turns
 each builtin's name into its own token, which the lexer prefers wherever it is valid, so a builtin commits
@@ -213,12 +249,12 @@ README nothing checks at all. The library-contents differential below, run again
 
 ### External scanner (`src/scanner.c`)
 
-Fifteen external tokens, for the constraints a context-free grammar cannot express:
+Eighteen external tokens, for the constraints a context-free grammar cannot express:
 
-- `push_block`/`push_partial`/`push_verbatim` and the matching `pop_*` — name matching for
-  `{% block a %}…{% endblock a %}`. They share **one** stack of `{kind, name}` entries, not one stack per
-  kind: the grammar already guarantees nesting, so only the innermost open tag can be closed, and there is
-  never a second candidate name to try. Serialized as `<kind><name> ` per entry (`tag_kind_chars`).
+- `push_block`/`push_partial`/`push_verbatim` and the matching `pop_*` — the names in
+  `{% block a %}…{% endblock a %}`. A push token reads the name into `pending_name`, which the group takes
+  when `_group_open_tag_push` pushes it; a pop token checks the written name, or its absence, against the
+  innermost open group, the only one the grammar lets it close, and `_group_close` then pops it.
 - `verbatim_content`, `comment_content` — raw text up to the matching close tag.
 - `_tag_open`, `_bt_option`, `_kwarg_name` — what a tag has already been given, so that a repeated
   argument is refused: `_bt_option` for `{% blocktranslate %}`'s five options, `_kwarg_name` for `name=value`
@@ -230,28 +266,48 @@ Fifteen external tokens, for the constraints a context-free grammar cannot expre
   flags, not a stack, because the tag cannot nest: its body admits no tags. It lives outside the
   `stack`/`error` union, is cleared in both branches of `reset_scanner`, and is serialized after the
   status character, so a GLR stack split copies it like everything else.
-- `_group_open`, `_group_close` — zero width, before the name of a tag that opens or closes a tag group
-  (`groupBlock`). The scanner reads the name ahead of the grammar and pushes or pops a nameless entry, so
-  the stack holds every open group and not only the three whose names it matches; `block`, `partialdef`
-  and `verbatim` still push and pop through their own tokens, and are the only kinds with a pop token.
-  `{% plural %}` goes through `_group_close` too: reading the `count` option (`_bt_option`) turns a
-  blocktranslate entry into its counted kind, which waits for `plural` before its end tag. `tag_groups`
-  holds each kind's opening name and the names that belong to it, and `group_names` **must stay in sync
-  with `NAMES_INSIDE_A_TAG_GROUP`**.
+- `_group_open_tag_read`, `_group_open_tag_push`, `_group_follow`, `_group_repeat`, `_group_close`, `_group_held` —
+  the stack
+  of open groups, which the scanner keeps **without knowing any group by name**, so a grammar extending this
+  one gets it for its own groups. The read token sits right after `{%` in every tag, always returns, and
+  reads the tag's name into `read_word`. The other four sit right before `%}` and check that it follows:
+  push opens a group expecting `"end"` + `read_word` (every Django end tag is spelled that way), follow
+  records a middle tag the innermost group may hold only once, repeat records nothing, and close pops the
+  innermost group once `read_word` is what it expects. `_group_held` belongs to `unexpected_block` (see the load section) and returns only when
+  the innermost group already holds a tag named `read_word`. Reading `count` (`_bt_option`) marks the group about
+  to be pushed as waiting for `plural`, which its follow clears. An entry is
+  `{expected, name, middles, awaits_plural}`, serialized as `expected:name:middles:flag` and a newline per
+  entry; entries hold whole names, so serializing checks `TREE_SITTER_SERIALIZATION_BUFFER_SIZE` and goes to
+  the error state rather than overrun it. Push and follow before `%}` cost 247 states over the table-driven
+  scanner (3,057 to 3,304), because argument-final states stop being shared with tags where the token is not
+  valid; after `%}`, where each tag's states are its own, saved only 15.
 - `_missing_block` — the marker where a group's required tag block is missing, aliased at each use to
-  `missing_endX_block` or `missing_plural_block` (`MISSING_BLOCKS`). It is placed only at the end of
-  input; before a tag whose name is reserved to some other group, which therefore cannot belong to this
-  body; or before an `endblock`/`endpartialdef` naming a block further out than the innermost. It closes
-  the innermost group on the stack as the end tag would, the group reduces with no `ERROR`, and
-  `queries/errors.scm` is what reports it. **It is one token aliased per group, never a token per
-  group**: tree-sitter does not merge parse states whose valid external tokens differ, so a token per
-  group cloned every body state for each kind of group and took the table from 1,818 states to 17,664
-  (it is 3,057 as built). That trade is also why the scanner keeps a stack of every group instead of
-  being told by the token which group it is in. A supertype would be the natural way to match every
-  marker, but the generator silently drops one whose members are aliases, so `errors.scm` lists them.
+  `missing_endX_block` or `missing_plural_block` (`MISSING_BLOCKS`). It is placed only at the end of input;
+  before the end tag of a group enclosing the innermost one; before an `endblock`/`endpartialdef` naming a
+  block further out; or before a second `plural`, since a blocktranslate body holds no tag that could take it.
+  Any other tag is taken to be the innermost group's, as Django's parser takes it — a middle tag it has not
+  held yet, and a second of one it holds only once, which is an `unexpected_block` inside it. Marking the
+  group closed before a second `else` was tried and dropped: inside `{% block %}`, where most template code
+  sits, there is always an enclosing group to hand the `else` to, so the inner group's own end tag became a
+  stray instead. A counted blocktranslate is missing its
+  plural before anything but `plural`. The marker closes the group as its end tag would (or records the
+  plural), the group reduces with no `ERROR`, and `queries/errors.scm` reports it. Tags in a raw body are
+  not read: the marker tells the body is raw from `verbatim_content`/`comment_content` being valid, and only
+  the end of input counts there. **It is one token aliased per group, never a token per group**: tree-sitter
+  does not merge parse states whose valid external tokens differ, so a token per group cloned every body
+  state for each kind of group and took the table from 1,818 states to 17,664. A supertype would be the
+  natural way to match every marker, but the generator silently drops one whose members are aliases, so
+  `errors.scm` lists them.
+
+  What a stack that knows no group cannot tell: a middle tag of an enclosing group that the innermost group
+  has never held — `{% if a %}{% for x in y %}{% else %}` — is an `ERROR`, not a marker. Learning each
+  group's middle tags as they appear was tried first and put false markers on valid nesting such as
+  `{% if %}…{% else %}{% if %}…{% else %}`, because the outer group, having held an `else`, claimed the
+  inner one's.
+
 - `matcher_error` — used by no rule; returned only if the scanner reaches an error state.
 
-`check_space()` defines whitespace for the scanner and **must stay in sync with `SEP`**, because the
+`check_space()` defines whitespace for the scanner and **must stay in sync with `_sep`**, because the
 scanner skips whitespace itself while matching names.
 
 Prefer the grammar over the scanner. A useful test: does the constraint change how the input _parses_?
@@ -277,6 +333,11 @@ where `content` is: a zero-width token at a content boundary preempts the intern
 matching. `_missing_block` is the one exception, and is safe only because it returns a token solely at the end
 of input or at `{%`, where `content` cannot match. It is scanned above the raw-text scanners, which find
 nothing at the end of an empty body.
+
+The group tokens were checked against that hazard with malformed groups — a missing predicate, junk before
+`%}`, in an end tag, in `{% else %}` and in `{% plural %}`, and a mismatched block name. Recovery never
+inserted one of them as `MISSING`, and the stack never fell out of step with the parser: later groups still
+got the right markers. Junk inside an end tag does leave the whole file an `ERROR`.
 
 ### Queries
 

@@ -173,7 +173,6 @@ c
 
 ==================
 Ifchanged With Two Elses
-:error
 ==================
 
 {% ifchanged %}
@@ -186,10 +185,24 @@ c
 
 ---
 
+(template
+  (content)
+  (ifchanged_group
+    (ifchanged_clause
+      (ifchanged_block)
+      (template
+        (content)))
+    (else_clause
+      (else_block)
+      (template
+        (content)
+        (unexpected_block)
+        (content)))
+    (endifchanged_block))
+  (content))
 
 ==================
 Ifchanged With An Argument On Else
-:error
 ==================
 
 {% ifchanged %}
@@ -199,3 +212,15 @@ b
 {% endifchanged %}
 
 ---
+
+(template
+  (content)
+  (ifchanged_group
+    (ifchanged_clause
+      (ifchanged_block)
+      (template
+        (content)
+        (unexpected_block)
+        (content)))
+    (endifchanged_block))
+  (content))

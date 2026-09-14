@@ -68,6 +68,8 @@ Five of the files in `queries/` are query files an editor loads:
   a template is being written — and the tree reports no error of its own, so this query is how to find
   it. A marker is placed only where the scanner can tell: at the end of input, before an end tag that
   belongs to an enclosing group, or before an `{% endblock %}` naming a block further out.
+  A group's tag written where no open group can hold it, such as `{% else %}` inside a `{% for %}`, is an
+  `unexpected_block`, captured as `@error.unexpected_block`.
 
 The other three are data for a tool rather than queries an editor runs. Each captures the two halves of a
 relation a tree-sitter query cannot express, and the tool does the join:
@@ -137,7 +139,7 @@ What the fallbacks cannot do:
   registered. Cross-referencing names against `{% load %}` needs the project's Python, so it belongs in a
   linter; `queries/libraries.scm` and the `load_block` rule supply what one needs.
 - **Names that only exist inside a tag group are reserved**, so `{% endif %}` or `{% empty %}` standing on
-  its own is an error rather than a call to a custom tag of that name.
+  its own is an `unexpected_block`, reported by `errors.scm`, rather than a call to a custom tag of that name.
 
 ### Adding rules for your own tags and filters
 
@@ -149,27 +151,48 @@ alternative of `filter`.
 ```js
 import django from "tree-sitter-django/grammar";
 
-const SEP = /[ \t\r\n]+/;
-
 export default grammar(django, {
   name: "djangox",
 
+  conflicts: ($, previous) => [...previous, [$.loop_clause]],
+
   rules: {
+    tag_block_group: ($, previous) =>
+      choice(previous, $.map_block, $.loop_group),
+
     // {% map items over rows %}
-    tag_block_group: ($, previous) => choice(previous, $.map_block),
     map_block: ($) =>
       seq(
-        "{%",
-        optional(SEP),
-        "map",
-        SEP,
+        $.simpleBlockOpen,
+        field("tag", "map"),
+        $._sep,
         $.filtered_value,
-        SEP,
+        $._sep,
         "over",
-        SEP,
+        $._sep,
         $.filtered_value,
-        optional(SEP),
-        "%}",
+        $.simpleBlockClose,
+      ),
+
+    // {% loop x %}…{% endloop %}
+    loop_block: ($) =>
+      seq(
+        $.startBlockOpen,
+        field("tag", "loop"),
+        $._sep,
+        $.identifier,
+        $.startBlockClose,
+      ),
+    loop_clause: ($) => seq($.loop_block, optional($.template)),
+    endloop_block: ($) =>
+      seq($.endBlockOpen, field("tag", "endloop"), $.endBlockClose),
+    loop_group: ($) =>
+      seq(
+        $.loop_clause,
+        choice(
+          $.endloop_block,
+          alias($._missing_block, $.missing_endloop_block),
+        ),
       ),
 
     // {{ value|shout:"!" }}
@@ -182,23 +205,34 @@ export default grammar(django, {
 });
 ```
 
-Six things to know:
+Seven things to know:
 
 - **Whitespace is explicit.** `extras` is empty, because Django splits a tag's contents before parsing any
   argument, so every separator has to be written out. The `part`/`block`/`simpleTag` helpers the base
-  grammar is built from are private to it, hence the `SEP` above.
+  grammar is built from are private to it, but the separator is the hidden rule `$._sep`, and it and the
+  tag utilities (`simpleBlockOpen` and the rest) are rules, so an extending grammar uses them as they are.
+- **Every tag begins with one of the opens**: `$.simpleBlockOpen`, with `$.simpleBlockClose` at its end, for a
+  tag outside any group such as `map_block`, and `startBlockOpen`, `followBlockOpen`, `repeatBlockOpen` or
+  `endBlockOpen` for the tags of a group. Its
+  zero-width token hands the tag's name to the scanner and is taken wherever a tag can start, so a tag
+  written from a bare `"{%"` never matches: `{% map items over rows %}` would quietly parse as a
+  `custom_tag_block` instead.
 - **A new name wins over the fallback.** `shout` becomes a token of its own, so it commits to your
   alternative and your arity applies — `{{ x|shout }}` is now an error, while names you have not modelled
   still fall through to `(filter name: (identifier))`.
 - **A tag with a body is split the way the base grammar's are**, so every `{% %}` is a node of its own:
-  a `map_block` for the opening tag, a `map_clause` of that block and the body, an `endmap_block`, and a
-  `map_group` of the clause and the end block. The clause needs a `conflicts` entry, as every clause in
-  the base grammar does: `conflicts: ($, previous) => [...previous, [$.map_clause]]`. The generator
-  offers an associativity instead; taking it silently discards the parse in which the body continues.
+  a `loop_block` ending in `$.startBlockClose`, a `loop_clause` of that block and the body, an
+  `endloop_block` built from `$.endBlockOpen` and `$.endBlockClose`, and a `loop_group` of the clause and the
+  end block. A middle tag uses `followBlockOpen`/`followBlockClose` if the group holds it at most once, and
+  `repeatBlockOpen`/`repeatBlockClose` if it may repeat; the scanner trusts that choice. The clause needs a
+  `conflicts` entry, as every clause in the base grammar does. The generator offers an associativity
+  instead; taking it silently discards the parse in which the body continues.
 - **End tags are not reserved**, a stray `{% endmap %}` parses as a `custom_tag_block` rather than an error — `reserved` takes no
   `previous`, so the `tag_name` list cannot be added to a name at a time. Instead you may drop the `custom_tag_block` rule to avoid parsing end tags as custom tags.
-- **Your own tag groups get no missing-tag markers.** Which groups the scanner tracks is fixed in its
-  tables, so an unterminated `{% map %}` is an `ERROR`.
+- **Your groups get missing-tag markers.** The scanner knows no group by name — a group is closed by `end`
+  followed by its opening tag's name — so the `alias($._missing_block, $.missing_endloop_block)` choice
+  above is all it takes: an unclosed `{% loop x %}`, or one left open inside an `{% if %}` that
+  `{% endif %}` closes, holds a `missing_endloop_block`. Add the name to your copy of `errors.scm`.
 - **The external scanner has to be re-exported under your grammar's name**, or block-name matching and the
   repeated-argument guards will not link. Give your grammar a `src/scanner.c` that renames the base's five entry points to the
   ones your generated `parser.c` calls, and includes it:

@@ -10,8 +10,12 @@
  * A newline separates parts like any other whitespace, since Django matches a
  * tag with re.DOTALL and splits its contents on whitespace of any kind. The
  * scanner skips the same characters when it matches a name of its own.
+ *
+ * The pattern is the hidden rule _sep, which SEP refers to, rather than a regex
+ * written inline, so that a grammar extending this one can write $._sep and
+ * share the one token instead of repeating the pattern.
  */
-const SEP = /[ \t\r\n]+/;
+const SEP = sym("_sep");
 
 /**
  * Parts of a tag, each separated from the one before it by whitespace.
@@ -44,37 +48,87 @@ function part(first, ...rest) {
  */
 function block(tag, ...args) {
   return seq(
-    "{%",
-    optional(SEP),
+    sym("simpleBlockOpen"),
     field("tag", tag),
     ...args,
-    optional(SEP),
-    "%}",
+    sym("simpleBlockClose"),
   );
 }
 
 /**
- * A tag that opens or closes a tag group. The scanner keeps a stack of the
- * groups that are open, which is what lets it tell a missing end tag from one
- * that belongs to the group, so `marker` is a zero-width token placed before the
- * tag's name: the scanner reads the name ahead of the grammar to push or pop the
- * group. block, partialdef and verbatim push and pop through the tokens that
- * match their names instead.
+ * The tags of a tag group. The scanner keeps a stack of the groups that are
+ * open, which is what lets it tell a missing end tag from one that belongs to
+ * the group, and it knows no group by name: every tag begins with
+ * one of the opens (simpleBlockOpen for a tag outside any group), whose zero-width token reads the tag's name to
+ * the scanner, and the end of the tag says what that name means.
  *
- * @param {Rule} marker
+ * - startBlock: a tag that opens a group, which pushes one expecting "end"
+ *   followed by the tag's name.
+ * - followBlock: a middle tag a group may hold only once, such as "else". The
+ *   first belongs to the innermost group; a second, once that group already
+ *   holds one, cannot be its own, so the innermost group is taken to be missing
+ *   its end tag and the tag goes to a group around it.
+ * - repeatBlock: a middle tag a group may hold any number of times, such as
+ *   "elif", which always belongs to the innermost group.
+ * - endBlock: the tag that closes the innermost group, which pops it.
+ *
+ * The ten utilities are inline rules rather than helpers, so that a grammar
+ * extending this one can build its own groups from them; every tag it adds has
+ * to begin with one of the opens, since the token they read with is valid
+ * wherever a tag's name is and always wins.
+ *
  * @param {RuleOrLiteral} tag
  * @param {RuleOrLiteral[]} args
  * @returns {SeqRule}
  */
-function groupBlock(marker, tag, ...args) {
+function startBlock(tag, ...args) {
   return seq(
-    "{%",
-    optional(SEP),
-    marker,
+    sym("startBlockOpen"),
     field("tag", tag),
     ...args,
-    optional(SEP),
-    "%}",
+    sym("startBlockClose"),
+  );
+}
+
+/**
+ * @param {RuleOrLiteral} tag
+ * @param {RuleOrLiteral[]} args
+ * @returns {SeqRule}
+ */
+function followBlock(tag, ...args) {
+  return seq(
+    sym("followBlockOpen"),
+    field("tag", tag),
+    ...args,
+    sym("followBlockClose"),
+  );
+}
+
+/**
+ * @param {RuleOrLiteral} tag
+ * @param {RuleOrLiteral[]} args
+ * @returns {SeqRule}
+ */
+function repeatBlock(tag, ...args) {
+  return seq(
+    sym("repeatBlockOpen"),
+    field("tag", tag),
+    ...args,
+    sym("repeatBlockClose"),
+  );
+}
+
+/**
+ * @param {RuleOrLiteral} tag
+ * @param {RuleOrLiteral[]} args
+ * @returns {SeqRule}
+ */
+function endBlock(tag, ...args) {
+  return seq(
+    sym("endBlockOpen"),
+    field("tag", tag),
+    ...args,
+    sym("endBlockClose"),
   );
 }
 
@@ -242,10 +296,9 @@ function simpleTag($, tag, args = true, kwargs = true) {
 function blocktransRules(tag) {
   return {
     [`_${tag}_block`]: ($) =>
-      groupBlock($._group_open, tag, $._tag_open, repeat($._translate_option)),
+      startBlock(tag, $._tag_open, repeat($._translate_option)),
     [`_${tag}_count_block`]: ($) =>
-      groupBlock(
-        $._group_open,
+      startBlock(
         tag,
         $._tag_open,
         repeat($._translate_option),
@@ -267,7 +320,7 @@ function blocktransRules(tag) {
           ),
         ),
       ),
-    [`end${tag}_block`]: ($) => groupBlock($._group_close, `end${tag}`),
+    [`end${tag}_block`]: ($) => endBlock(`end${tag}`),
   };
 }
 
@@ -460,12 +513,23 @@ const django = grammar({
     [$.spaceless_clause],
     [$.timezone_clause],
     [$.with_clause],
-    [$.predicate],
     [$.binaryOperator],
     [$.library, $.load_block],
-    [$._translate_option],
     [$._filtered_value_spaced],
     [$._filter_expression_spaced],
+  ],
+  // the tags of a group; see startBlock
+  inline: ($) => [
+    $.simpleBlockOpen,
+    $.simpleBlockClose,
+    $.startBlockOpen,
+    $.startBlockClose,
+    $.followBlockOpen,
+    $.followBlockClose,
+    $.repeatBlockOpen,
+    $.repeatBlockClose,
+    $.endBlockOpen,
+    $.endBlockClose,
   ],
   supertypes: ($) => [$.template_node, $.tag_block_group],
   externals: ($) => [
@@ -482,8 +546,12 @@ const django = grammar({
     $._bt_option,
     $._kwarg_name,
     $._missing_block,
-    $._group_open,
+    $._group_open_tag_read,
+    $._group_open_tag_push,
+    $._group_follow,
+    $._group_repeat,
     $._group_close,
+    $._group_held,
   ],
   reserved: {
     global: ($) => ["not", "if", "in", "is", "as", "for", "from"],
@@ -491,7 +559,20 @@ const django = grammar({
   },
   rules: {
     template: ($) => repeat1(choice($.template_node, $.content)),
+    // the tags of a group; see startBlock
+    simpleBlockOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
+    simpleBlockClose: ($) => seq(optional(SEP), "%}"),
+    startBlockOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
+    startBlockClose: ($) => seq($._group_open_tag_push, optional(SEP), "%}"),
+    followBlockOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
+    followBlockClose: ($) => seq($._group_follow, optional(SEP), "%}"),
+    repeatBlockOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
+    repeatBlockClose: ($) => seq($._group_repeat, optional(SEP), "%}"),
+    endBlockOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
+    endBlockClose: ($) => seq($._group_close, optional(SEP), "%}"),
     content: ($) => /(?:[^\{]|\{[^\{#%}])+/,
+    // the separator between the parts of a tag; see SEP
+    _sep: ($) => /[ \t\r\n]+/,
     template_node: ($) =>
       choice($.tag_block_group, $.template_variable, $.template_comment),
     filtered_value: ($) =>
@@ -627,6 +708,7 @@ const django = grammar({
         $.templatetag_block,
         $.timezone_group,
         $.translate_block,
+        $.unexpected_block,
         $.url_block,
         $.verbatim_group,
         $.widthratio_block,
@@ -676,9 +758,9 @@ const django = grammar({
         optional(seq(":", field("argument", $.value))),
       ),
     autoescape_block: ($) =>
-      groupBlock($._group_open, "autoescape", part(choice("on", "off"))),
+      startBlock("autoescape", part(choice("on", "off"))),
     autoescape_clause: ($) => seq($.autoescape_block, optional($.template)),
-    endautoescape_block: ($) => groupBlock($._group_close, "endautoescape"),
+    endautoescape_block: ($) => endBlock("endautoescape"),
     autoescape_group: ($) =>
       seq(
         $.autoescape_clause,
@@ -688,9 +770,9 @@ const django = grammar({
         ),
       ),
     // the scanner takes the whitespace before a name it has to match itself
-    block_block: ($) => block("block", field("name", $.push_block)),
+    block_block: ($) => startBlock("block", field("name", $.push_block)),
     block_clause: ($) => seq($.block_block, optional($.template)),
-    endblock_block: ($) => block("endblock", $.pop_block),
+    endblock_block: ($) => endBlock("endblock", $.pop_block),
     block_group: ($) =>
       seq(
         $.block_clause,
@@ -699,7 +781,7 @@ const django = grammar({
           alias($._missing_block, $.missing_endblock_block),
         ),
       ),
-    plural_block: ($) => groupBlock($._group_close, "plural"),
+    plural_block: ($) => followBlock("plural"),
     plural_clause: ($) => seq($.plural_block, optional($._translate_body)),
     ...blocktransRules("blocktrans"),
     ...blocktransRules("blocktranslate"),
@@ -765,8 +847,7 @@ const django = grammar({
         ),
       ),
     cache_block: ($) =>
-      groupBlock(
-        $._group_open,
+      startBlock(
         "cache",
         part($.filtered_value),
         part(choice($.identifier, $.string)),
@@ -774,7 +855,7 @@ const django = grammar({
         optional(part(seq("using=", $.filtered_value))),
       ),
     cache_clause: ($) => seq($.cache_block, optional($.template)),
-    endcache_block: ($) => groupBlock($._group_close, "endcache"),
+    endcache_block: ($) => endBlock("endcache"),
     cache_group: ($) =>
       seq(
         $.cache_clause,
@@ -783,10 +864,9 @@ const django = grammar({
           alias($._missing_block, $.missing_endcache_block),
         ),
       ),
-    comment_block: ($) =>
-      groupBlock($._group_open, "comment", optional(part($.string))),
+    comment_block: ($) => startBlock("comment", optional(part($.string))),
     comment_clause: ($) => seq($.comment_block, optional($.comment_content)),
-    endcomment_block: ($) => groupBlock($._group_close, "endcomment"),
+    endcomment_block: ($) => endBlock("endcomment"),
     comment_group: ($) =>
       seq(
         $.comment_clause,
@@ -823,13 +903,12 @@ const django = grammar({
     // than as split arguments, so pipes here take whitespace just as they do
     // between "{{" and "}}"
     filter_block: ($) =>
-      groupBlock(
-        $._group_open,
+      startBlock(
         "filter",
         part(alias($._filter_expression_spaced, $.filter_expression)),
       ),
     filter_clause: ($) => seq($.filter_block, optional($.template)),
-    endfilter_block: ($) => groupBlock($._group_close, "endfilter"),
+    endfilter_block: ($) => endBlock("endfilter"),
     filter_group: ($) =>
       seq(
         $.filter_clause,
@@ -845,8 +924,7 @@ const django = grammar({
         optional(asVariable($)),
       ),
     for_block: ($) =>
-      groupBlock(
-        $._group_open,
+      startBlock(
         "for",
         part(field("variable", $.identifier)),
         repeat(
@@ -873,9 +951,9 @@ const django = grammar({
         ),
       ),
     for_clause: ($) => seq($.for_block, optional($.template)),
-    empty_block: ($) => block("empty"),
+    empty_block: ($) => followBlock("empty"),
     empty_clause: ($) => seq($.empty_block, optional($.template)),
-    endfor_block: ($) => groupBlock($._group_close, "endfor"),
+    endfor_block: ($) => endBlock("endfor"),
     for_group: ($) =>
       seq(
         $.for_clause,
@@ -911,14 +989,14 @@ const django = grammar({
       block("get_media_prefix", optional(asVariable($))),
     get_static_prefix_block: ($) =>
       block("get_static_prefix", optional(asVariable($))),
-    if_block: ($) => groupBlock($._group_open, "if", part($.predicate)),
+    if_block: ($) => startBlock("if", part($.predicate)),
     if_clause: ($) => seq($.if_block, optional($.template)),
-    elif_block: ($) => block("elif", part($.predicate)),
+    elif_block: ($) => repeatBlock("elif", part($.predicate)),
     elif_clause: ($) => seq($.elif_block, optional($.template)),
     /** Shared by if_group and ifchanged_group, which spell it the same way. */
-    else_block: ($) => block("else"),
+    else_block: ($) => followBlock("else"),
     else_clause: ($) => seq($.else_block, optional($.template)),
-    endif_block: ($) => groupBlock($._group_close, "endif"),
+    endif_block: ($) => endBlock("endif"),
     if_group: ($) =>
       seq(
         $.if_clause,
@@ -927,9 +1005,9 @@ const django = grammar({
         choice($.endif_block, alias($._missing_block, $.missing_endif_block)),
       ),
     ifchanged_block: ($) =>
-      groupBlock($._group_open, "ifchanged", repeat(part($.filtered_value))),
+      startBlock("ifchanged", repeat(part($.filtered_value))),
     ifchanged_clause: ($) => seq($.ifchanged_block, optional($.template)),
-    endifchanged_block: ($) => groupBlock($._group_close, "endifchanged"),
+    endifchanged_block: ($) => endBlock("endifchanged"),
     ifchanged_group: ($) =>
       seq(
         $.ifchanged_clause,
@@ -955,10 +1033,9 @@ const django = grammar({
         ),
       ),
     /** django.templatetags.i18n. The language tag takes the one argument. */
-    language_block: ($) =>
-      groupBlock($._group_open, "language", part($.filtered_value)),
+    language_block: ($) => startBlock("language", part($.filtered_value)),
     language_clause: ($) => seq($.language_block, optional($.template)),
-    endlanguage_block: ($) => groupBlock($._group_close, "endlanguage"),
+    endlanguage_block: ($) => endBlock("endlanguage"),
     language_group: ($) =>
       seq(
         $.language_clause,
@@ -981,13 +1058,9 @@ const django = grammar({
      * rejects anything but "on" or "off", including a second word.
      */
     localize_block: ($) =>
-      groupBlock(
-        $._group_open,
-        "localize",
-        optional(part(choice("on", "off"))),
-      ),
+      startBlock("localize", optional(part(choice("on", "off")))),
     localize_clause: ($) => seq($.localize_block, optional($.template)),
-    endlocalize_block: ($) => groupBlock($._group_close, "endlocalize"),
+    endlocalize_block: ($) => endBlock("endlocalize"),
     localize_group: ($) =>
       seq(
         $.localize_clause,
@@ -998,13 +1071,9 @@ const django = grammar({
       ),
     /** django.templatetags.tz, taking "on" or "off" as localize does. */
     localtime_block: ($) =>
-      groupBlock(
-        $._group_open,
-        "localtime",
-        optional(part(choice("on", "off"))),
-      ),
+      startBlock("localtime", optional(part(choice("on", "off")))),
     localtime_clause: ($) => seq($.localtime_block, optional($.template)),
-    endlocaltime_block: ($) => groupBlock($._group_close, "endlocaltime"),
+    endlocaltime_block: ($) => endBlock("endlocaltime"),
     localtime_group: ($) =>
       seq(
         $.localtime_clause,
@@ -1023,9 +1092,9 @@ const django = grammar({
     now_block: ($) => block("now", part($.string), optional(asVariable($))),
     partial_block: ($) => block("partial", part($.identifier)),
     partialdef_block: ($) =>
-      block("partialdef", $.push_partial, optional(part("inline"))),
+      startBlock("partialdef", $.push_partial, optional(part("inline"))),
     partialdef_clause: ($) => seq($.partialdef_block, optional($.template)),
-    endpartialdef_block: ($) => block("endpartialdef", $.pop_partial),
+    endpartialdef_block: ($) => endBlock("endpartialdef", $.pop_partial),
     partialdef_group: ($) =>
       seq(
         $.partialdef_clause,
@@ -1045,9 +1114,9 @@ const django = grammar({
         optional(asVariable($)),
       ),
     resetcycle_block: ($) => block("resetcycle", optional(part($.identifier))),
-    spaceless_block: ($) => groupBlock($._group_open, "spaceless"),
+    spaceless_block: ($) => startBlock("spaceless"),
     spaceless_clause: ($) => seq($.spaceless_block, optional($.template)),
-    endspaceless_block: ($) => groupBlock($._group_close, "endspaceless"),
+    endspaceless_block: ($) => endBlock("endspaceless"),
     spaceless_group: ($) =>
       seq(
         $.spaceless_clause,
@@ -1075,10 +1144,9 @@ const django = grammar({
         ),
       ),
     /** django.templatetags.tz. timezone_tag takes the one argument. */
-    timezone_block: ($) =>
-      groupBlock($._group_open, "timezone", part($.filtered_value)),
+    timezone_block: ($) => startBlock("timezone", part($.filtered_value)),
     timezone_clause: ($) => seq($.timezone_block, optional($.template)),
-    endtimezone_block: ($) => groupBlock($._group_close, "endtimezone"),
+    endtimezone_block: ($) => endBlock("endtimezone"),
     timezone_group: ($) =>
       seq(
         $.timezone_clause,
@@ -1109,6 +1177,43 @@ const django = grammar({
           ]),
         ),
       ),
+    /**
+     * A tag of some group, written where no open group can hold it: an end tag
+     * with nothing open, or a middle tag the innermost group does not take. It
+     * is a node of its own rather than an ERROR so that error recovery has
+     * nothing to repair: recovery rewinds to just after the "{%" every tag
+     * starts with, and folds the stray tag into whichever tag comes next.
+     * Dynamic precedence keeps it from displacing a tag its group does take,
+     * and queries/errors.scm reports it.
+     *
+     * Of several tags with a name the group may hold only once, such as a
+     * second and a third "else", the later ones are the strays. Reading the
+     * first as the stray instead parses just as well, so _group_held, which the
+     * scanner returns only for a name the innermost group already holds, puts
+     * the later reading at -1 against -2 for each tag flagged before its time.
+     */
+    unexpected_block: ($) =>
+      choice(
+        prec.dynamic(
+          -1,
+          seq(
+            sym("simpleBlockOpen"),
+            field("tag", choice(...NAMES_INSIDE_A_TAG_GROUP)),
+            repeat(seq(SEP, /[^\s%]+/)),
+            $._group_held,
+            sym("simpleBlockClose"),
+          ),
+        ),
+        prec.dynamic(
+          -2,
+          seq(
+            sym("simpleBlockOpen"),
+            field("tag", choice(...NAMES_INSIDE_A_TAG_GROUP)),
+            repeat(seq(SEP, /[^\s%]+/)),
+            sym("simpleBlockClose"),
+          ),
+        ),
+      ),
     url_block: ($) =>
       block(
         "url",
@@ -1121,9 +1226,9 @@ const django = grammar({
         ),
         optional(asVariable($)),
       ),
-    verbatim_block: ($) => block("verbatim", $.push_verbatim),
+    verbatim_block: ($) => startBlock("verbatim", $.push_verbatim),
     verbatim_clause: ($) => seq($.verbatim_block, optional($.verbatim_content)),
-    endverbatim_block: ($) => block("endverbatim", $.pop_verbatim),
+    endverbatim_block: ($) => endBlock("endverbatim", $.pop_verbatim),
     verbatim_group: ($) =>
       seq(
         $.verbatim_clause,
@@ -1140,14 +1245,16 @@ const django = grammar({
         part($.filtered_value),
         optional(asVariable($)),
       ),
-    with_block: ($) =>
-      groupBlock($._group_open, "with", $._tag_open, $._tag_kwargs),
+    with_block: ($) => startBlock("with", $._tag_open, $._tag_kwargs),
     with_clause: ($) => seq($.with_block, optional($.template)),
-    endwith_block: ($) => groupBlock($._group_close, "endwith"),
+    endwith_block: ($) => endBlock("endwith"),
     with_group: ($) =>
       seq(
         $.with_clause,
-        choice($.endwith_block, alias($._missing_block, $.missing_endwith_block)),
+        choice(
+          $.endwith_block,
+          alias($._missing_block, $.missing_endwith_block),
+        ),
       ),
   },
 });

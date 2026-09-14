@@ -164,7 +164,7 @@ Missing Endif Before An Outer End Tag
   (content))
 
 ==================
-Missing Endfor Before An Outer Else
+Unseen Outer Else Is Not A Missing Tag
 ==================
 
 {% if a %}{% for x in y %}{% else %}b{% endif %}
@@ -189,12 +189,11 @@ Missing Endfor Before An Outer Else
               (filtered_value
                 (value
                   (variable_attribute
-                    (identifier))))))
+                    (identifier)))))
+            (template
+              (unexpected_block)
+              (content)))
           (missing_endfor_block))))
-    (else_clause
-      (else_block)
-      (template
-        (content)))
     (endif_block))
   (content))
 
@@ -463,34 +462,523 @@ Missing Endif After A Custom End Tag
     (missing_endif_block)))
 
 ==================
+Second Else After A Nested Else Is Unexpected
+==================
+
+{% if a %}{% if b %}x{% else %}y{% else %}z{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (if_group
+          (if_clause
+            (if_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
+            (template
+              (content)))
+          (else_clause
+            (else_block)
+            (template
+              (content)
+              (unexpected_block)
+              (content)))
+          (endif_block))
+        (content)))
+    (missing_endif_block)))
+
+==================
+Second Empty After A Nested Empty Is Unexpected
+==================
+
+{% for x in y %}{% for z in w %}a{% empty %}b{% empty %}c{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_clause
+      (for_block
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (for_group
+          (for_clause
+            (for_block
+              (identifier)
+              (filtered_value
+                (value
+                  (variable_attribute
+                    (identifier)))))
+            (template
+              (content)))
+          (empty_clause
+            (empty_block)
+            (template
+              (content)
+              (unexpected_block)
+              (content)))
+          (endfor_block))
+        (content)))
+    (missing_endfor_block)))
+
+==================
+Else Of An If Nested In An Else
+==================
+
+{% if a %}x{% else %}{% if b %}y{% else %}z{% endif %}{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (else_clause
+      (else_block)
+      (template
+        (if_group
+          (if_clause
+            (if_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
+            (template
+              (content)))
+          (else_clause
+            (else_block)
+            (template
+              (content)))
+          (endif_block))))
+    (endif_block))
+  (content))
+
+==================
+Elif Of An If Nested In An Elif
+==================
+
+{% if a %}x{% elif b %}{% if c %}y{% elif d %}z{% endif %}{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (elif_clause
+      (elif_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (if_group
+          (if_clause
+            (if_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
+            (template
+              (content)))
+          (elif_clause
+            (elif_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
+            (template
+              (content)))
+          (endif_block))))
+    (endif_block))
+  (content))
+
+==================
+Empty Of A For Nested In An Empty
+==================
+
+{% for x in y %}a{% empty %}{% for z in w %}b{% empty %}c{% endfor %}{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_clause
+      (for_block
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content)))
+    (empty_clause
+      (empty_block)
+      (template
+        (for_group
+          (for_clause
+            (for_block
+              (identifier)
+              (filtered_value
+                (value
+                  (variable_attribute
+                    (identifier)))))
+            (template
+              (content)))
+          (empty_clause
+            (empty_block)
+            (template
+              (content)))
+          (endfor_block))))
+    (endfor_block))
+  (content))
+
+==================
+Else Of An Ifchanged Nested In An Else Of An If
+==================
+
+{% if a %}x{% else %}{% ifchanged %}y{% else %}z{% endifchanged %}{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (else_clause
+      (else_block)
+      (template
+        (ifchanged_group
+          (ifchanged_clause
+            (ifchanged_block)
+            (template
+              (content)))
+          (else_clause
+            (else_block)
+            (template
+              (content)))
+          (endifchanged_block))))
+    (endif_block))
+  (content))
+
+==================
+Else Of An If Nested In An Else Of An Ifchanged
+==================
+
+{% ifchanged %}a{% else %}{% if b %}y{% else %}z{% endif %}{% endifchanged %}
+
+---
+
+(template
+  (content)
+  (ifchanged_group
+    (ifchanged_clause
+      (ifchanged_block)
+      (template
+        (content)))
+    (else_clause
+      (else_block)
+      (template
+        (if_group
+          (if_clause
+            (if_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
+            (template
+              (content)))
+          (else_clause
+            (else_block)
+            (template
+              (content)))
+          (endif_block))))
+    (endifchanged_block))
+  (content))
+
+==================
+Third Else Is Unexpected Too
+==================
+
+{% if a %}w{% else %}x{% else %}y{% else %}z{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (else_clause
+      (else_block)
+      (template
+        (content)
+        (unexpected_block)
+        (content)
+        (unexpected_block)
+        (content)))
+    (endif_block))
+  (content))
+
+==================
+Second And Third Empty Are Unexpected
+==================
+
+{% for x in y %}a{% empty %}b{% empty %}c{% empty %}d{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_clause
+      (for_block
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content)))
+    (empty_clause
+      (empty_block)
+      (template
+        (content)
+        (unexpected_block)
+        (content)
+        (unexpected_block)
+        (content)))
+    (endfor_block))
+  (content))
+
+==================
+Second And Third Else Of An Ifchanged Are Unexpected
+==================
+
+{% ifchanged %}a{% else %}b{% else %}c{% else %}d{% endifchanged %}
+
+---
+
+(template
+  (content)
+  (ifchanged_group
+    (ifchanged_clause
+      (ifchanged_block)
+      (template
+        (content)))
+    (else_clause
+      (else_block)
+      (template
+        (content)
+        (unexpected_block)
+        (content)
+        (unexpected_block)
+        (content)))
+    (endifchanged_block))
+  (content))
+
+==================
+Second Else Inside A Block Is Unexpected
+==================
+
+{% block a %}{% if b %}x{% else %}y{% else %}z{% endif %}{% endblock %}
+
+---
+
+(template
+  (content)
+  (block_group
+    (block_clause
+      (block_block
+        (push_block))
+      (template
+        (if_group
+          (if_clause
+            (if_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
+            (template
+              (content)))
+          (else_clause
+            (else_block)
+            (template
+              (content)
+              (unexpected_block)
+              (content)))
+          (endif_block))))
+    (endblock_block
+      (pop_block)))
+  (content))
+
+==================
+Second Else Of An If In A For Is Unexpected
+==================
+
+{% for x in y %}{% if a %}b{% else %}c{% else %}d{% endif %}{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_clause
+      (for_block
+        (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (if_group
+          (if_clause
+            (if_block
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
+            (template
+              (content)))
+          (else_clause
+            (else_block)
+            (template
+              (content)
+              (unexpected_block)
+              (content)))
+          (endif_block))))
+    (endfor_block))
+  (content))
+
+==================
 Stray End Tag After A Missing One
-:error
 ==================
 
 {% if a %}{% endfor %}
 
 ---
 
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (unexpected_block)
+        (content)))
+    (missing_endif_block)))
 
 ==================
 Endblock Naming No Open Block
-:error
 ==================
 
 {% block a %}{% block b %}{% endblock c %}
 
 ---
 
+(template
+  (content)
+  (block_group
+    (block_clause
+      (block_block
+        (push_block))
+      (template
+        (block_group
+          (block_clause
+            (block_block
+              (push_block))
+            (template
+              (unexpected_block)
+              (content)))
+          (missing_endblock_block))))
+    (missing_endblock_block)))
 
 ==================
 Second Else Is Not A Missing Tag
-:error
 ==================
 
 {% if a %}{% else %}{% else %}{% endif %}
 
 ---
 
+(template
+  (content)
+  (if_group
+    (if_clause
+      (if_block
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier)))))))
+    (else_clause
+      (else_block)
+      (template
+        (unexpected_block)))
+    (endif_block))
+  (content))
 
 ==================
 Plural Without Count Is Not A Missing Tag
