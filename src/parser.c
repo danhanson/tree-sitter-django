@@ -8211,8 +8211,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead == '#') ADVANCE(53);
       if (lookahead == '%') ADVANCE(26);
       if (lookahead == '{') ADVANCE(51);
-      if (lookahead != 0 &&
-          lookahead != '}') ADVANCE(28);
+      if (lookahead != 0) ADVANCE(28);
       END_STATE();
     case 7:
       if (lookahead == '%') ADVANCE(17);
@@ -8303,8 +8302,7 @@ static bool ts_lex(TSLexer *lexer, TSStateId state) {
       if (lookahead != 0 &&
           lookahead != '#' &&
           lookahead != '%' &&
-          lookahead != '{' &&
-          lookahead != '}') ADVANCE(28);
+          lookahead != '{') ADVANCE(28);
       END_STATE();
     case 21:
       if (lookahead != 0 &&

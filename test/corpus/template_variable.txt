@@ -211,6 +211,7 @@ Template Variable Literal Adjacent To Name
 ---
 
 
+
 ==================
 Template Variable With Escaped String
 ==================
@@ -272,6 +273,7 @@ Template Variable Attribute Beginning With Underscore
 ---
 
 
+
 ==================
 Template Variable Translated String
 ==================
@@ -318,6 +320,7 @@ Template Variable Translated String With Spaces
 {{ _( "Hello" ) }}
 
 ---
+
 
 
 ==================
@@ -462,6 +465,7 @@ Template Variable Attribute Of A Literal
 ---
 
 
+
 ==================
 Template Variable Trailing Dot With An Exponent
 ==================
@@ -489,6 +493,7 @@ Template Variable Trailing Dot
 ---
 
 
+
 ==================
 Template Variable Signed Trailing Dot
 :error
@@ -498,3 +503,27 @@ Template Variable Signed Trailing Dot
 
 ---
 
+
+
+==================
+Braces That Open Nothing Are Text
+==================
+
+{% if x %}Hello {} world{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_block
+      (if_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (endif_tag))
+  (content))

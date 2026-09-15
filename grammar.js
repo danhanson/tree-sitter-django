@@ -603,7 +603,7 @@ const django = grammar({
     endTagOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
     endTagClose: ($) =>
       seq(optional($.unexpected_argument), $._group_close, optional(SEP), "%}"),
-    content: ($) => /(?:[^\{]|\{[^\{#%}])+/,
+    content: ($) => /(?:[^\{]|\{[^\{#%])+/,
     // the separator between the parts of a tag; see SEP
     _sep: ($) => /[ \t\r\n]+/,
     template_node: ($) =>
