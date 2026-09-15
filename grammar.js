@@ -1251,6 +1251,10 @@ const django = grammar({
      * as an identifier to check for the keyword, so an identifier is a word
      * here too, followed by whatever touches it ("a=2", "x.y|upper"). It is
      * aliased so that queries/locals.scm does not take it for a reference.
+     *
+     * A word never holds "}}": tree-sitter shares lexer states between parse
+     * states, so the token is tried inside {{ }} as well, and after "{{ x|" it
+     * would swallow the closing braces and leave recovery nothing to close with.
      */
     _unexpected_word: ($) =>
       prec.dynamic(
@@ -1258,10 +1262,10 @@ const django = grammar({
         seq(
           SEP,
           choice(
-            token(prec(-1, /[^\s%]+/)),
+            token(prec(-1, /(?:[^\s%}]|\}[^\s%}])+/)),
             seq(
               alias($.identifier, "unexpected_word"),
-              optional(token.immediate(prec(-1, /[^\s%]+/))),
+              optional(token.immediate(prec(-1, /(?:[^\s%}]|\}[^\s%}])+/))),
             ),
           ),
         ),
@@ -1277,7 +1281,7 @@ const django = grammar({
         -1,
         seq(
           alias($.identifier, "unexpected_word"),
-          token.immediate(prec(-1, /[^\s%]+/)),
+          token.immediate(prec(-1, /(?:[^\s%}]|\}[^\s%}])+/)),
         ),
       ),
     url_tag: ($) =>

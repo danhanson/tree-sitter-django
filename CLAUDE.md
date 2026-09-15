@@ -206,7 +206,9 @@ before its scanner token, so `{% else x %}` stays the `else` of its group, `{% e
 its `if` (it used to leave the whole file an `ERROR`), and `{% static "a.css" "b.css" %}` is a `static_tag`.
 The node is a run of hidden `_unexpected_word`s, and three details make it work:
 
-- **Lexical precedence -1.** A loose word is `token(prec(-1, /[^\s%]+/))`. Tree-sitter weighs lexical
+- **Lexical precedence -1.** A loose word is `token(prec(-1, /(?:[^\s%}]|\}[^\s%}])+/))`, which never holds `}}`:
+  lexer states are shared between parse states, so the token is tried inside `{{ }}` too, and after
+  `{{ x| ` it once swallowed the closing braces and left recovery nothing to close the variable with. Tree-sitter weighs lexical
   precedence before match length, so a token an argument really takes wins wherever one is valid
   (`b|upper` stays a filtered value) and a loose word only matches where nothing else can.
 - **Identifiers are words too.** Wherever a keyword is valid — after `{% for a in b`, where `reversed` may

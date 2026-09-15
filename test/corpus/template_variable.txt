@@ -608,3 +608,41 @@ a{{{ x }}
 ---
 
 
+
+==================
+A Filter Pipe With No Filter Stays In Its Variable
+==================
+
+{{ oops| }}
+{% if x == 1 %}
+hello
+{% endif %}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (ERROR))
+  (content)
+  (if_group
+    (if_block
+      (if_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))
+          (binaryOperator)
+          (filtered_value
+            (value
+              (literal
+                (number))))))
+      (template
+        (content)))
+    (endif_tag))
+  (content))
