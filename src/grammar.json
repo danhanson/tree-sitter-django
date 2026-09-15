@@ -986,8 +986,22 @@
           ]
         },
         {
-          "type": "STRING",
-          "value": "}}"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "}}"
+            },
+            {
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_missing_variable_close"
+              },
+              "named": true,
+              "value": "missing_variable_close"
+            }
+          ]
         }
       ]
     },
@@ -8131,6 +8145,10 @@
     {
       "type": "SYMBOL",
       "name": "_text_brace"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_missing_variable_close"
     }
   ],
   "inline": [

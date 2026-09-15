@@ -70,7 +70,8 @@ Five of the files in `queries/` are query files an editor loads:
   belongs to an enclosing group, or before an `{% endblock %}` naming a block further out.
   A group's tag written where no open group can hold it, such as `{% else %}` inside a `{% for %}`, is an
   `unexpected_tag`, captured as `@error.unexpected_tag`. Words a tag does not take, such as the `x` in
-  `{% else x %}`, are an `unexpected_argument` inside that tag, captured as `@error.unexpected_argument`.
+  `{% else x %}`, are an `unexpected_argument` inside that tag, captured as `@error.unexpected_argument`. A `{{` whose `}}` is missing closes with a zero-width
+  `missing_variable_close`, captured as `@error.missing_variable_close`, so the rest of the template still parses.
 
 The other three are data for a tool rather than queries an editor runs. Each captures the two halves of a
 relation a tree-sitter query cannot express, and the tool does the join:

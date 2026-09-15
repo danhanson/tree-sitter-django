@@ -3340,11 +3340,15 @@
     "named": true,
     "fields": {},
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": true,
       "types": [
         {
           "type": "filtered_value",
+          "named": true
+        },
+        {
+          "type": "missing_variable_close",
           "named": true
         }
       ]
@@ -4456,6 +4460,10 @@
   },
   {
     "type": "missing_plural_tag",
+    "named": true
+  },
+  {
+    "type": "missing_variable_close",
     "named": true
   },
   {

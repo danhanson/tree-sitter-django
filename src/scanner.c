@@ -60,6 +60,8 @@ enum TokenType {
   /* a "{" that is text although another "{" follows it, because the second
    * one opens a tag or a comment, or although nothing follows it at all */
   TextBrace,
+  /* zero width, where a variable's "}}" is missing */
+  MissingVariableClose,
 };
 
 /* The options blocktranslate takes, in the order of the bits recording them.
@@ -956,6 +958,27 @@ static bool scan_raw_content(
   }
 }
 
+/* Scans the marker for a variable whose "}}" is missing: at the end of input,
+ * or before a "}" that is not "}}", a "%" or a "{", none of which can continue
+ * the variable. Django would read such a "{{" as text, since its lexer only
+ * takes a variable that closes on the same line; the marker reports it as the
+ * unfinished variable it almost certainly is. */
+static bool scan_missing_variable_close(TSLexer *const lexer) {
+  lexer->mark_end(lexer);
+  if (!lexer->eof(lexer)) {
+    if (lexer->lookahead == '}') {
+      lexer->advance(lexer, false);
+      if (lexer->lookahead == '}') {
+        return false;
+      }
+    } else if (lexer->lookahead != '%' && lexer->lookahead != '{') {
+      return false;
+    }
+  }
+  lexer->result_symbol = MissingVariableClose;
+  return true;
+}
+
 bool tree_sitter_django_external_scanner_scan(
   void *payload,
   TSLexer *lexer,
@@ -973,6 +996,9 @@ bool tree_sitter_django_external_scanner_scan(
   }
   if (valid_symbols[MatcherError]) {
     return false;
+  }
+  if (valid_symbols[MissingVariableClose]) {
+    return scan_missing_variable_close(lexer);
   }
   /* The zero-width tokens below belong here: above the raw-text scanners,
    * which find nothing at the end of an empty body, above the loop further

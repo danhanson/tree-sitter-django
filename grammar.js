@@ -566,6 +566,7 @@ const django = grammar({
     $._group_close,
     $._group_held,
     $._text_brace,
+    $._missing_variable_close,
   ],
   reserved: {
     global: ($) => ["not", "if", "in", "is", "as", "for", "from"],
@@ -677,13 +678,22 @@ const django = grammar({
           ),
         ),
       ),
+    /**
+     * A variable whose "}}" is missing closes with a zero-width marker instead,
+     * so that error recovery does not take the rest of the file with it. The
+     * scanner places it only where the variable cannot go on: at the end of
+     * input, or before a "}" that is not "}}", a "%" or a "{".
+     */
     template_variable: ($) =>
       seq(
         "{{",
         optional(SEP),
         alias($._filtered_value_spaced, $.filtered_value),
         optional(SEP),
-        "}}",
+        choice(
+          "}}",
+          alias($._missing_variable_close, $.missing_variable_close),
+        ),
       ),
     /**
      * Everything between "{{" and "}}" reaches Django as a single expression,

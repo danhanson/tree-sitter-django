@@ -284,7 +284,7 @@ README nothing checks at all. The library-contents differential below, run again
 
 ### External scanner (`src/scanner.c`)
 
-Nineteen external tokens, for the constraints a context-free grammar cannot express:
+Twenty external tokens, for the constraints a context-free grammar cannot express:
 
 - `push_block`/`push_partial`/`push_verbatim` and the matching `pop_*` — the names in
   `{% block a %}…{% endblock a %}`. A push token reads the name into `pending_name`, which the group takes
@@ -346,6 +346,11 @@ Nineteen external tokens, for the constraints a context-free grammar cannot expr
   brace. `content` is a right-associative run of `_text` and `_text_brace`, so it stays one node. Inside a
   group's body the missing-tag check reads past `{` first, so it scans the brace itself
   (`scan_text_brace_rest`) rather than give up the position.
+- `_missing_variable_close` — the marker where a variable's `}}` is missing, aliased to
+  `missing_variable_close`. It is placed only where the variable cannot go on — at the end of input, or
+  before a `}` that is not `}}`, a `%` or a `{` — so `{{ hello }{% if x %}` closes the variable, reads the
+  stray `}` as text and parses the `if` normally, where error recovery used to take the rest of the file.
+  It is valid only after a variable's value, never where `content` is. It added 18 states.
 - `matcher_error` — used by no rule; returned only if the scanner reaches an error state.
 
 `check_space()` defines whitespace for the scanner and **must stay in sync with `_sep`**, because the
@@ -409,8 +414,9 @@ A branch that is also a `@local.scope` confines its bindings whichever way the b
 `context.push()` as the loop body, so `empty_block` is a scope alongside `for_block`.
 
 `queries/errors.scm` collects what an editor should report: `(ERROR)` as `@error.syntax`, `(MISSING)` as
-`@error.missing`, every missing-tag marker as `@error.missing_tag`, and `unexpected_tag` and
-`unexpected_argument` as `@error.unexpected_tag` and `@error.unexpected_argument`. A tree holding only markers has
+`@error.missing`, every missing-tag marker as `@error.missing_tag`, `unexpected_tag` and
+`unexpected_argument` as `@error.unexpected_tag` and `@error.unexpected_argument`, and
+`missing_variable_close` as `@error.missing_variable_close`. A tree holding only markers has
 no `has_error`, so a tool that checks that flag alone misses them. Adding a tag group means adding its
 marker there, since no supertype matches them all.
 
@@ -492,3 +498,8 @@ unavoidable limitation, or a case where this grammar is the more permissive one 
   `{% for %}` closed while an `{% if %}` inside it is still open, holds a `missing_endif_tag` marker
   where the end tag belongs. The marker is the error, reported through `queries/errors.scm`; a check
   for `ERROR` nodes alone accepts the tree.
+- A `{{` that does not close is text in Django, whose lexer only takes a variable written `{{ … }}` on one
+  line, so `{{ hello }` renders as written. Here it is a `template_variable` closed by a
+  `missing_variable_close` marker, reported through `queries/errors.scm`, since a half-written variable is
+  what it almost always is. The same lexer makes `{{ hello\n}}` text too, which this grammar accepts as a
+  variable, because its separators allow newlines.

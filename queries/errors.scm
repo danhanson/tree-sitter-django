@@ -43,3 +43,5 @@
 (unexpected_tag) @error.unexpected_tag
 
 (unexpected_argument) @error.unexpected_argument
+
+(missing_variable_close) @error.missing_variable_close

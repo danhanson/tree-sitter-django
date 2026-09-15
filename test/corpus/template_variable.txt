@@ -211,7 +211,6 @@ Template Variable Literal Adjacent To Name
 ---
 
 
-
 ==================
 Template Variable With Escaped String
 ==================
@@ -273,7 +272,6 @@ Template Variable Attribute Beginning With Underscore
 ---
 
 
-
 ==================
 Template Variable Translated String
 ==================
@@ -320,7 +318,6 @@ Template Variable Translated String With Spaces
 {{ _( "Hello" ) }}
 
 ---
-
 
 
 ==================
@@ -465,7 +462,6 @@ Template Variable Attribute Of A Literal
 ---
 
 
-
 ==================
 Template Variable Trailing Dot With An Exponent
 ==================
@@ -493,7 +489,6 @@ Template Variable Trailing Dot
 ---
 
 
-
 ==================
 Template Variable Signed Trailing Dot
 :error
@@ -502,7 +497,6 @@ Template Variable Signed Trailing Dot
 {{ -1. }}
 
 ---
-
 
 
 ==================
@@ -608,7 +602,6 @@ a{{{ x }}
 ---
 
 
-
 ==================
 A Filter Pipe With No Filter Stays In Its Variable
 ==================
@@ -646,3 +639,49 @@ hello
         (content)))
     (endif_tag))
   (content))
+
+==================
+A Variable Missing Its Close Ends Where It Cannot Continue
+==================
+
+{{ hello }{% if display %}body {% endif %}
+
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (missing_variable_close))
+  (content)
+  (if_group
+    (if_block
+      (if_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (endif_tag))
+  (content))
+
+==================
+A Variable Missing Its Close At The End
+==================
+
+{{ hello
+---
+
+(template
+  (content)
+  (template_variable
+    (filtered_value
+      (value
+        (variable_attribute
+          (identifier))))
+    (missing_variable_close)))
