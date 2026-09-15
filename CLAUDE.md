@@ -282,7 +282,7 @@ README nothing checks at all. The library-contents differential below, run again
 
 ### External scanner (`src/scanner.c`)
 
-Eighteen external tokens, for the constraints a context-free grammar cannot express:
+Nineteen external tokens, for the constraints a context-free grammar cannot express:
 
 - `push_block`/`push_partial`/`push_verbatim` and the matching `pop_*` — the names in
   `{% block a %}…{% endblock a %}`. A push token reads the name into `pending_name`, which the group takes
@@ -338,6 +338,12 @@ Eighteen external tokens, for the constraints a context-free grammar cannot expr
   `{% if %}…{% else %}{% if %}…{% else %}`, because the outer group, having held an `else`, claimed the
   inner one's.
 
+- `_text_brace` — a single `{` that is text although the content regex cannot tell: before `{%` or `{#`,
+  and at the end of input. Django splits a template with `({%.*?%}|{{.*?}}|{#.*?#})`, so a `{` is text
+  unless one of those starts at it; `{{{` is not a text brace, since `{{` starts a variable at its first
+  brace. `content` is a right-associative run of `_text` and `_text_brace`, so it stays one node. Inside a
+  group's body the missing-tag check reads past `{` first, so it scans the brace itself
+  (`scan_text_brace_rest`) rather than give up the position.
 - `matcher_error` — used by no rule; returned only if the scanner reaches an error state.
 
 `check_space()` defines whitespace for the scanner and **must stay in sync with `_sep`**, because the

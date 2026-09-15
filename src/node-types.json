@@ -713,6 +713,11 @@
     }
   },
   {
+    "type": "content",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "csp_nonce_attr_tag",
     "named": true,
     "fields": {
@@ -4043,10 +4048,6 @@
   },
   {
     "type": "comment_content",
-    "named": true
-  },
-  {
-    "type": "content",
     "named": true
   },
   {

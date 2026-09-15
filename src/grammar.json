@@ -326,6 +326,26 @@
       ]
     },
     "content": {
+      "type": "PREC_RIGHT",
+      "value": 0,
+      "content": {
+        "type": "REPEAT1",
+        "content": {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_text"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "_text_brace"
+            }
+          ]
+        }
+      }
+    },
+    "_text": {
       "type": "PATTERN",
       "value": "(?:[^\\{]|\\{[^\\{#%])+"
     },
@@ -8107,6 +8127,10 @@
     {
       "type": "SYMBOL",
       "name": "_group_held"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_text_brace"
     }
   ],
   "inline": [

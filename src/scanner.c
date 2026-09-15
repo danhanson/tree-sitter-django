@@ -57,6 +57,9 @@ enum TokenType {
    * the innermost group already holds a tag by that name, which makes this the
    * likelier stray of the two */
   GroupHeld,
+  /* a "{" that is text although another "{" follows it, because the second
+   * one opens a tag or a comment, or although nothing follows it at all */
+  TextBrace,
 };
 
 /* The options blocktranslate takes, in the order of the bits recording them.
@@ -773,7 +776,32 @@ typedef enum {
   /* no marker, but input was read to decide that, so nothing else may be
    * scanned from here */
   NotMissingAfterReading,
+  /* no marker, but the "{" read to decide that was text, and was scanned */
+  TextBraceScanned,
 } MissingResult;
+
+/* Scans TextBrace once its "{" has been read. Django's lexer takes a template
+ * apart with ({%.*?%}|{{.*?}}|{#.*?#}), so a "{" is text unless one of those
+ * starts at it: before "{%" or "{#" the tag or comment starts one character
+ * later, and at the end of input nothing starts at all. The content regex
+ * cannot look that far ahead, so these are scanned here; "{{{" is not one of
+ * them, since "{{" does start a variable at its first brace. */
+static bool scan_text_brace_rest(TSLexer *const lexer) {
+  lexer->mark_end(lexer);
+  if (lexer->eof(lexer)) {
+    lexer->result_symbol = TextBrace;
+    return true;
+  }
+  if (lexer->lookahead != '{') {
+    return false;
+  }
+  lexer->advance(lexer, false);
+  if (lexer->lookahead == '%' || lexer->lookahead == '#') {
+    lexer->result_symbol = TextBrace;
+    return true;
+  }
+  return false;
+}
 
 /* Scans the zero-width marker for the innermost group's missing tag. The
  * marker is valid only where that group could close, which is after a body,
@@ -809,6 +837,10 @@ static MissingResult scan_missing_tag(
     }
     lexer->advance(lexer, false);
     if (lexer->lookahead != '%') {
+      // not a tag, but the "{" may be text the grammar still has to take
+      if (valid_symbols[TextBrace] && scan_text_brace_rest(lexer)) {
+        return TextBraceScanned;
+      }
       return NotMissingAfterReading;
     }
     lexer->advance(lexer, false);
@@ -950,12 +982,17 @@ bool tree_sitter_django_external_scanner_scan(
   if (valid_symbols[MissingTag]) {
     switch (scan_missing_tag(scanner, lexer, valid_symbols)) {
       case Missing:
+      case TextBraceScanned:
         return true;
       case NotMissingAfterReading:
         return false;
       case NotMissing:
         break;
     }
+  }
+  if (valid_symbols[TextBrace] && lexer->lookahead == '{') {
+    lexer->advance(lexer, false);
+    return scan_text_brace_rest(lexer);
   }
   if (valid_symbols[GroupOpenTagRead]) {
     scan_group_open_tag_read(scanner, lexer);

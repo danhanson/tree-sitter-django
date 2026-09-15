@@ -527,3 +527,84 @@ Braces That Open Nothing Are Text
         (content)))
     (endif_tag))
   (content))
+
+==================
+A Brace Before A Tag Is Text
+==================
+
+Hello {{% if x %}a{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_block
+      (if_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (endif_tag))
+  (content))
+
+==================
+A Brace Before A Comment Is Text
+==================
+
+a{{# c #}
+
+---
+
+(template
+  (content)
+  (template_comment)
+  (content))
+
+==================
+A Brace At The End Is Text
+==================
+
+a{
+
+---
+
+(template
+  (content))
+
+==================
+A Brace Before The End Tag Of A Group Is Text
+==================
+
+{% if x %}Hello {{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_block
+      (if_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (endif_tag))
+  (content))
+
+==================
+Three Braces Open A Variable
+:error
+==================
+
+a{{{ x }}
+
+---
+
+

@@ -565,6 +565,7 @@ const django = grammar({
     $._group_repeat,
     $._group_close,
     $._group_held,
+    $._text_brace,
   ],
   reserved: {
     global: ($) => ["not", "if", "in", "is", "as", "for", "from"],
@@ -603,7 +604,14 @@ const django = grammar({
     endTagOpen: ($) => seq("{%", $._group_open_tag_read, optional(SEP)),
     endTagClose: ($) =>
       seq(optional($.unexpected_argument), $._group_close, optional(SEP), "%}"),
-    content: ($) => /(?:[^\{]|\{[^\{#%])+/,
+    content: ($) => prec.right(repeat1(choice($._text, $._text_brace))),
+    /**
+     * Template text up to a "{{", "{%" or "{#". A "{" that is text only because
+     * of what comes after the next character, as in "a{{% if x %}" or a "{" at
+     * the end of input, is _text_brace from the scanner; see
+     * scan_text_brace_rest.
+     */
+    _text: ($) => /(?:[^\{]|\{[^\{#%])+/,
     // the separator between the parts of a tag; see SEP
     _sep: ($) => /[ \t\r\n]+/,
     template_node: ($) =>
