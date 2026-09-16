@@ -5,6 +5,10 @@
   "license": "MIT",
   "type": "module",
   "exports": {
+    ".": {
+      "types": "./bindings/node/index.d.ts",
+      "default": "./bindings/node/index.js"
+    },
     "./grammar": "./grammar.js",
     "./src/scanner.c": "./src/scanner.c",
     "./queries/*": "./queries/*",
@@ -20,16 +24,55 @@
     "parser-build": "tree-sitter build --wasm",
     "highlight": "tree-sitter highlight",
     "tag": "tree-sitter tag",
-    "playground": "tree-sitter playground"
+    "playground": "tree-sitter playground",
+    "install": "node-gyp-build",
+    "prebuildify": "prebuildify --napi --strip",
+    "binding-test": "node --test bindings/node/*_test.js"
   },
   "dependencies": {
+    "node-addon-api": "^8.3.1",
+    "node-gyp-build": "^4.8.4",
     "web-tree-sitter": "^0.26.12"
   },
   "devDependencies": {
     "eslint": "^9",
     "eslint-config-prettier": "^10.1.8",
+    "prebuildify": "^6.0.1",
     "prettier": "^3.9.6",
+    "tree-sitter": "^0.25.1",
     "tree-sitter-cli": "^0.26.12",
     "typescript": "^5"
+  },
+  "description": "Django grammar for tree-sitter",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danhanson/tree-sitter-django.git"
+  },
+  "author": "Daniel Hanson (https://github.com/danhanson)",
+  "keywords": [
+    "incremental",
+    "parsing",
+    "tree-sitter",
+    "django"
+  ],
+  "main": "bindings/node",
+  "types": "bindings/node",
+  "files": [
+    "grammar.js",
+    "tree-sitter.json",
+    "binding.gyp",
+    "prebuilds/**",
+    "bindings/node/*",
+    "queries/*",
+    "src/**",
+    "*.wasm"
+  ],
+  "peerDependencies": {
+    "tree-sitter": "^0.25.0"
+  },
+  "peerDependenciesMeta": {
+    "tree-sitter": {
+      "optional": true
+    }
   }
 }

@@ -6,21 +6,22 @@
       "camelcase": "django",
       "title": "Django Parser",
       "scope": "source.django",
-      "file-types": ["html", "txt", "md"],
-      "injection-regex": "^django$",
-      "class-name": "TreeSitterDjango",
+      "file-types": [
+        "html",
+        "txt",
+        "md"
+      ],
       "highlights": "queries/highlights.scm",
+      "injections": "queries/injections.scm",
       "locals": "queries/locals.scm",
-      "injections": "queries/injections.scm"
+      "injection-regex": "^django$",
+      "class-name": "TreeSitterDjango"
     }
   ],
-  "bindings": {
-    "node": true
-  },
   "metadata": {
-    "version": "0.0.1",
-    "description": "DJango grammar for tree-sitter",
+    "version": "0.1.0",
     "license": "MIT",
+    "description": "Django grammar for tree-sitter",
     "authors": [
       {
         "name": "Daniel Hanson",
@@ -30,5 +31,15 @@
     "links": {
       "repository": "https://github.com/danhanson/tree-sitter-django"
     }
+  },
+  "bindings": {
+    "c": true,
+    "go": true,
+    "java": false,
+    "node": true,
+    "python": true,
+    "rust": true,
+    "swift": true,
+    "zig": false
   }
 }

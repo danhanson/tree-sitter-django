@@ -1,2 +1,29 @@
 node_modules
 tree-sitter-django.wasm
+
+# Node binding
+build/
+prebuilds/
+*.node
+
+# Rust binding
+target/
+Cargo.lock
+
+# Python binding
+dist/
+*.egg-info/
+__pycache__/
+*.so
+*.pyd
+
+# C binding
+*.o
+*.a
+*.dylib
+libtree-sitter-django.*
+
+# Swift binding
+.build/
+Package.resolved
+*.pc
