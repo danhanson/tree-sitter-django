@@ -1,0 +1,85 @@
+name: CI
+
+# Pull requests run this directly; pushes to main reach it through release.yml,
+# which calls this workflow before it tags and publishes.
+on:
+  pull_request:
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parser:
+    name: Corpus and generated files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Corpus tests
+        run: npm run parser-test
+      - name: src/ matches grammar.js
+        run: |
+          npm run parser-generate
+          if ! git diff --exit-code --stat src/; then
+            echo "::error::src/ is out of date: run 'npm run parser-generate' and commit the result"
+            exit 1
+          fi
+
+  node:
+    name: Node binding (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      # npm ci builds the addon through the install script (node-gyp-build)
+      - run: npm ci
+      - run: npm run binding-test
+
+  rust:
+    name: Rust binding
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: cargo test
+
+  python:
+    name: Python binding
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install . "tree-sitter~=0.24"
+      - run: python -m unittest discover -s bindings/python/tests -v
+
+  go:
+    name: Go binding
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: go test ./bindings/go/
+
+  swift:
+    name: Swift binding
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: swift build

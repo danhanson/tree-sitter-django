@@ -1,0 +1,167 @@
+name: Release
+
+# Releasing is a version bump: push a commit to main that changes the version in
+# package.json, and this tags v<version>, creates the GitHub release and
+# publishes to npm. Every other push to main only runs the tests.
+#
+# Running it by hand instead publishes whatever version package.json holds, as
+# long as npm does not have it yet, and skips the tag and the release if a
+# previous attempt already made them. That is how a half-finished release is
+# retried.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      changed: ${{ steps.check.outputs.changed }}
+      tag_exists: ${{ steps.check.outputs.tag_exists }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+          fetch-tags: true
+      - id: check
+        shell: bash
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          name="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            tag_exists=true
+          else
+            tag_exists=false
+          fi
+          echo "tag_exists=$tag_exists" >> "$GITHUB_OUTPUT"
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            # by hand: publish what package.json says, unless npm has it already
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "::warning::$name@$version is already on npm; nothing to publish"
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "publishing $name@$version by hand (tag exists: $tag_exists)"
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            fi
+            exit 0
+          fi
+
+          if git cat-file -e HEAD~1:package.json 2>/dev/null; then
+            previous="$(git show HEAD~1:package.json | node -p "JSON.parse(require('node:fs').readFileSync(0, 'utf8')).version")"
+          else
+            previous=""
+          fi
+          if [ "$version" = "$previous" ]; then
+            echo "version is unchanged at $version; not releasing"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          elif [ "$tag_exists" = "true" ]; then
+            echo "::warning::tag v$version already exists; not releasing"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "releasing $previous -> $version"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  ci:
+    name: CI
+    needs: version
+    uses: ./.github/workflows/ci.yml
+
+  prebuild:
+    name: Prebuild (${{ matrix.os }})
+    needs: [version, ci]
+    if: needs.version.outputs.changed == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        # one runner per platform and architecture npm should ship a binary for;
+        # the arm Linux runner is free for public repositories only
+        os:
+          [
+            ubuntu-latest,
+            ubuntu-24.04-arm,
+            macos-13,
+            macos-latest,
+            windows-latest,
+          ]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run prebuildify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prebuilds-${{ matrix.os }}
+          path: prebuilds/
+          if-no-files-found: error
+
+  publish:
+    name: Tag and publish
+    needs: [version, prebuild]
+    if: needs.version.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the tag and the release
+      id-token: write # provenance for npm
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - name: Collect the prebuilds
+        uses: actions/download-artifact@v4
+        with:
+          pattern: prebuilds-*
+          path: prebuilds/
+          merge-multiple: true
+      - run: ls -R prebuilds/
+      - run: npm ci
+      # tree-sitter build --wasm needs Emscripten; the CLI runs it through
+      # Docker, which the ubuntu runners have
+      - name: Build the Wasm parser
+        run: npm run parser-build
+      # a retry of a half-finished release finds its tag and release already made
+      - name: Tag
+        if: needs.version.outputs.tag_exists != 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin "v$VERSION"
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "release v$VERSION exists; replacing its Wasm build"
+            gh release upload "v$VERSION" tree-sitter-django.wasm --clobber
+          else
+            gh release create "v$VERSION" --title "v$VERSION" --generate-notes tree-sitter-django.wasm
+          fi
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public

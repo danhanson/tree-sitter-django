@@ -55,6 +55,37 @@ Every binding was built and run on macOS: `npm install` plus `npm run binding-te
 `||` (`-Wlogical-op-parentheses`), so a comparison chain written with both needs its `&&` groups
 parenthesized.
 
+### CI and releasing
+
+`.github/workflows/ci.yml` runs on pull requests, and the release workflow calls it: the corpus tests, a
+check that `npm run parser-generate` leaves `src/` unchanged, the Node binding on Linux, macOS and Windows,
+and the Rust, Python, Go and Swift bindings.
+
+`.github/workflows/release.yml` runs on every push to `main` but only releases when `package.json`'s version
+differs from the previous commit's and no `v<version>` tag exists yet. Then it runs CI, `prebuildify` on
+five runners (Linux x64 and arm64, macOS x64 and arm64, Windows x64), and a last job that tags `v<version>`,
+creates the GitHub release with `tree-sitter-django.wasm` attached, and runs `npm publish --provenance`.
+**A release is a version-bump commit on `main`**; no other push starts one.
+
+Running the workflow by hand (`workflow_dispatch`) is the retry: it publishes whatever version
+`package.json` holds as long as `npm view` does not find it on the registry already, and it skips the tag
+and the release when a previous attempt left them behind, replacing only the Wasm asset. So a run that
+tagged and then failed to publish is finished by running it again, and a run against an already published
+version stops at the version job.
+
+Releasing needs three things to line up:
+
+- the `NPM_TOKEN` secret, a granular automation token. Provenance also needs `id-token: write`, which the
+  publish job already declares.
+- **the version in `package.json` and in `tree-sitter.json`'s `metadata`**. The release trigger reads the
+  first; the second is compiled into `src/parser.c` as the language's version, so bumping one alone leaves
+  the parser disagreeing with the manifest.
+- `npm run parser-generate` after that bump, committed with it, or CI's up-to-date check fails on a two-line
+  diff in `src/parser.c`.
+
+The arm64 Linux runner (`ubuntu-24.04-arm`) is free for public repositories only. `tree-sitter build --wasm`
+runs Emscripten through Docker, which the ubuntu runners provide.
+
 ### Stale parser library
 
 tree-sitter caches the compiled parser in `~/.cache/tree-sitter/lib/django.*`, and it has served a stale

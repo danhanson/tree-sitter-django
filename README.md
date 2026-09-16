@@ -74,6 +74,13 @@ to `grammar.js` or `src/scanner.c` is only half made until `parser-generate` has
 committed alongside it. `tree-sitter test` compiles the parser itself, so a stale `src/` shows up as tests
 that pass against the wrong grammar.
 
+Pull requests run the corpus tests and every binding through `.github/workflows/ci.yml`. A release is a
+version-bump commit on `main`: raise the version in `package.json` and in `tree-sitter.json`'s `metadata`,
+run `npm run parser-generate`, and push. The workflow tags `v<version>`, publishes to npm with provenance
+and prebuilt binaries for Linux, macOS and Windows, and attaches `tree-sitter-django.wasm` to the GitHub
+release. Running the workflow by hand publishes the current version if npm does not have it yet,
+which is how a release that failed part way through is retried.
+
 ## Queries
 
 Five of the files in `queries/` are query files an editor loads:
