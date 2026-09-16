@@ -1,6 +1,6 @@
 # tree-sitter-django
 
-A [tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar for the Django Template Language (DTL) — the `{% %}` tags, `{{ }}` variables and `{# #}` comments used in Django templates.
+A [tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar for the [Django Template Language (DTL)](https://docs.djangoproject.com/en/6.1/ref/templates/language/#the-django-template-language) — the `{% %}` tags, `{{ }}` variables and `{# #}` comments used in Django templates.
 
 ## Coverage
 
@@ -148,6 +148,9 @@ Because these names are modelled, they win over the fallbacks below: a project t
 under one of them with a different signature gets a parse error. They are common enough that shadowing
 them is treated as the mistake.
 
+If a project insists on shadowing one of these tags, it may use a sub-grammar that replaces the rule with
+their own. See [Adding rules for your own tags and filters](###adding-rules-for-your-own-tags-and-filters).
+
 ## Custom tags and filters
 
 A library's tags and filters are registered in Python, so the grammar cannot know their names, their
@@ -156,9 +159,8 @@ arity, or whether a tag opens a body. Two fallback rules accept them:
 - **Tags.** Any tag the grammar does not recognise parses as `custom_tag`, with the shape `simple_tag` and
   `inclusion_tag` give: positional filter expressions, then `name=value` keyword arguments, then an
   optional `as name`. So `{% mytag a b|upper "s" k=1 as out %}` parses, with the name on the `tag_name:` field.
-  A keyword argument written twice is refused, as `parse_bits` refuses it.
-- **Filters.** An unknown filter parses as `(filter filter_name: (identifier))` with at most one `:argument`,
-  which is all Django's expression regex allows. No arity check is possible.
+  A keyword argument written twice is refused.
+- **Filters.** An unknown filter parses as `(filter filter_name: (identifier))` with at most one `:argument`. No arity check for unknown filters is possible.
 
 Both are captured as `@function.call` rather than `@function`, so an editor can distinguish a name the
 grammar knows from one it is only tolerating.
@@ -197,7 +199,7 @@ export default grammar(django, {
     map_tag: ($) =>
       seq(
         $.simpleTagOpen,
-        field("tag", "map"),
+        field("tag_name", "map"),
         $._sep,
         $.filtered_value,
         $._sep,
@@ -211,14 +213,14 @@ export default grammar(django, {
     loop_tag: ($) =>
       seq(
         $.startTagOpen,
-        field("tag", "loop"),
+        field("tag_name", "loop"),
         $._sep,
         $.identifier,
         $.startTagClose,
       ),
     loop_block: ($) => seq($.loop_tag, optional($.template)),
     endloop_tag: ($) =>
-      seq($.endTagOpen, field("tag", "endloop"), $.endTagClose),
+      seq($.endTagOpen, field("tag_name", "endloop"), $.endTagClose),
     loop_group: ($) =>
       seq(
         $.loop_block,
@@ -229,7 +231,7 @@ export default grammar(django, {
     filter: ($, previous) =>
       choice(
         previous,
-        seq(field("name", "shout"), ":", field("argument", $.value)),
+        seq(field("filter_name", "shout"), ":", field("argument", $.value)),
       ),
   },
 });
@@ -307,10 +309,10 @@ carry on as before.
 
 ## Divergences from Django
 
-The grammar aims to accept what Django accepts, with one deliberate exception. Where Django takes an
-input without complaint but the input is almost certainly a mistake — it parses, and then silently
-renders nothing or quietly ignores half of what was written — the grammar reports an error instead.
-Every case below is input Django itself accepts:
+The grammar aims to accept what Django accepts, with one deliberate exception: where Django takes an
+input without complaint but the input is almost certainly a mistake. It reads the mistake and silently
+renders nothing or quietly ignores half of what was written. This grammar tries to report such mistakes
+as errors instead. Every case below is input Django itself accepts:
 
 - **Number-shaped names.** Django has no number token: a word is a literal if `int()` or `float()` parses
   it and a variable lookup otherwise, so `0x1f`, `1a`, `1.`, `1.2.3` and `1__0` look up a variable of that
