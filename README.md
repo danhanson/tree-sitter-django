@@ -59,10 +59,6 @@ language = tree_sitter.Language(tree_sitter_django.language())
 tree = tree_sitter.Parser(language).parse(b"{% if x %}hi {{ y|upper }}{% endif %}")
 ```
 
-The binding files are generated, so they are not edited by hand: change `tree-sitter.json` and re-run
-`tree-sitter init`. `package.json` still carries `"private": true`, so nothing is published from this
-repository yet.
-
 ## Development
 
 ```sh
