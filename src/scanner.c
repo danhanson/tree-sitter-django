@@ -341,11 +341,11 @@ static bool check_space(const int32_t character) {
 }
 
 static bool check_name_start_char(const int32_t letter) {
-  return 'a' <= letter && letter <= 'z' || 'A' <= letter && letter <= 'Z';
+  return ('a' <= letter && letter <= 'z') || ('A' <= letter && letter <= 'Z');
 }
 
 static bool check_name_char(const int32_t letter) {
-  return check_name_start_char(letter) || '0' <= letter && letter <= '9' || letter == '_';
+  return check_name_start_char(letter) || ('0' <= letter && letter <= '9') || letter == '_';
 }
 
 /* Reads one code point of the serialized state, or reports that none is left. */
@@ -1124,7 +1124,7 @@ bool tree_sitter_django_external_scanner_scan(
     if (read_name(lexer, &name)) {
       // validate tokens after name
       lexer->mark_end(lexer);
-      if (check_close_tag(lexer) || token == PushPartial && check_inline(lexer)) {
+      if (check_close_tag(lexer) || (token == PushPartial && check_inline(lexer))) {
         array_delete(&scanner->pending_name);
         scanner->pending_name = name;
         lexer->result_symbol = token;
