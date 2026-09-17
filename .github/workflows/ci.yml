@@ -44,6 +44,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # windows-latest is Windows Server 2025 with Visual Studio 2026, which the
+      # node-gyp bundled with the runner's npm (11.5) reports as "unknown
+      # version undefined" and then gives up on. node-gyp learned VS 18 in
+      # 12.1.0 and npm 12 bundles 13.
+      - if: runner.os == 'Windows'
+        run: npm install -g npm@^12
       # npm ci builds the addon through the install script (node-gyp-build)
       - run: npm ci
       - run: npm run binding-test

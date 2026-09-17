@@ -112,6 +112,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # the Windows runner's own npm bundles a node-gyp too old to see the
+      # Visual Studio 2026 on that image; see ci.yml
+      - if: runner.os == 'Windows'
+        run: npm install -g npm@^12
       - run: npm ci
       - run: npm run prebuildify
       - uses: actions/upload-artifact@v4

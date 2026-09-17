@@ -100,6 +100,14 @@ Releasing needs three things to line up:
 The arm64 Linux runner (`ubuntu-24.04-arm`) is free for public repositories only. `tree-sitter build --wasm`
 runs Emscripten through Docker, which the ubuntu runners provide.
 
+**Windows needs a newer npm than its runner ships.** `windows-latest` is Windows Server 2025 **with Visual
+Studio 2026**, and the node-gyp bundled with that image's npm (11.5.0) reads VS 18 as
+`unknown version "undefined"` and then reports "Could not find any Visual Studio installation to use", so
+`npm ci` fails in the install script. node-gyp learned VS 2026 in 12.1.0 and npm 12 bundles 13, which is why
+both jobs that compile the addon there — CI's Node binding and the release's `prebuild` — install `npm@^12`
+first. Pinning `windows-2022` instead would work, at the price of testing against a toolchain the image no
+longer has. Installs of the published package never meet this: they unpack a prebuild and never run node-gyp.
+
 **The npm package must carry its prebuilds**, or `npm install` runs `node-gyp-build`, finds nothing and
 compiles, which fails on an image without `python3`, `make` and a compiler — `node:20-slim`, for instance.
 0.1.0 was published by hand before the workflow existed and shipped none, which is what that image hit. The
