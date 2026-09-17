@@ -27,3 +27,4 @@ libtree-sitter-django.*
 .build/
 Package.resolved
 *.pc
+*.tgz

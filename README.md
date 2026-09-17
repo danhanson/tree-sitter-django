@@ -18,14 +18,15 @@ disagree is listed under [Divergences](#divergences-from-django).
 
 ## Using it
 
-There is no published package yet, but the language bindings are in place. What is here today:
+`tree-sitter-django` is [on npm](https://www.npmjs.com/package/tree-sitter-django), and the other language
+bindings are in place. What is here today:
 
 - **`src/parser.c` and `src/scanner.c` are generated and committed**, so any tree-sitter host can compile
   them directly without running the CLI. The scanner is required: block-name matching
   (`{% block a %}…{% endblock a %}`), the repeated-argument guards and the missing-tag markers live in it.
-- **`npm run parser-build`** produces `tree-sitter-django.wasm` for a `web-tree-sitter` host or an editor
-  that loads Wasm grammars. It is a build artifact rather than a checked-in one, so it has to be built
-  (or shipped by a release) before anything can load it.
+- **`tree-sitter-django.wasm`** is for a `web-tree-sitter` host or an editor that loads Wasm grammars. It
+  is not checked in: `npm run parser-build` makes it, and a release ships it both in the npm package (the
+  `tree-sitter-django/tree-sitter-django.wasm` export) and as an asset on the GitHub release.
 - **`queries/`** holds the highlight, locals, tags, injection and error queries an editor loads, plus three files
   meant for a linter. See [Queries](#queries).
 - **`tree-sitter.json`** names the grammar `django`, scopes it `source.django`, and points at the query
@@ -35,14 +36,14 @@ There is no published package yet, but the language bindings are in place. What 
 
 ## Bindings
 
-| Language | Build from a checkout                                    | Entry point                                            |
-| -------- | -------------------------------------------------------- | ------------------------------------------------------ |
-| Node     | `npm install` builds the addon through `node-gyp-build`  | `bindings/node/index.js` (ESM), typed by `index.d.ts`  |
-| Rust     | `cargo build`                                            | `bindings/rust/lib.rs`, `Cargo.toml`                   |
-| Python   | `pip install .`                                          | `bindings/python/tree_sitter_django`, `pyproject.toml` |
-| Go       | `go test ./bindings/go`                                  | `bindings/go/binding.go`, `go.mod`                     |
-| Swift    | `swift build`                                            | `bindings/swift/TreeSitterDjango`, `Package.swift`     |
-| C / C++  | `make` (static, shared and a pkg-config file) or `cmake` | `bindings/c/tree_sitter/tree-sitter-django.h`          |
+| Language | Build from a checkout                                         | Entry point                                            |
+| -------- | ------------------------------------------------------------- | ------------------------------------------------------ |
+| Node     | `npm install`, which uses a prebuilt binary when there is one | `bindings/node/index.js` (ESM), typed by `index.d.ts`  |
+| Rust     | `cargo build`                                                 | `bindings/rust/lib.rs`, `Cargo.toml`                   |
+| Python   | `pip install .`                                               | `bindings/python/tree_sitter_django`, `pyproject.toml` |
+| Go       | `go test ./bindings/go`                                       | `bindings/go/binding.go`, `go.mod`                     |
+| Swift    | `swift build`                                                 | `bindings/swift/TreeSitterDjango`, `Package.swift`     |
+| C / C++  | `make` (static, shared and a pkg-config file) or `cmake`      | `bindings/c/tree_sitter/tree-sitter-django.h`          |
 
 ```js
 import Parser from "tree-sitter";
@@ -50,6 +51,17 @@ import django from "tree-sitter-django";
 
 const parser = new Parser();
 parser.setLanguage(django);
+```
+
+To use the parser on a website, the wasm needs to be served then loaded.
+
+```js
+import { Language, Parser } from "web-tree-sitter";
+
+await Parser.init();
+const wasm = "my-resources-path/tree-sitter-django.wasm";
+const parser = new Parser();
+parser.setLanguage(await Language.load(wasm));
 ```
 
 ```python
@@ -76,10 +88,12 @@ that pass against the wrong grammar.
 
 Pull requests run the corpus tests and every binding through `.github/workflows/ci.yml`. A release is a
 version-bump commit on `main`: raise the version in `package.json` and in `tree-sitter.json`'s `metadata`,
-run `npm run parser-generate`, and push. The workflow tags `v<version>`, publishes to npm with provenance
-and prebuilt binaries for Linux, macOS and Windows, and attaches `tree-sitter-django.wasm` to the GitHub
-release. Running the workflow by hand publishes the current version if npm does not have it yet,
-which is how a release that failed part way through is retried.
+run `npm run parser-generate`, and push. The workflow tags `v<version>`, attaches
+`tree-sitter-django.wasm` to the GitHub release, and stages the npm publish with provenance and prebuilt
+binaries for Linux, macOS and Windows. Staging is not publishing: npm holds the tarball until a maintainer
+runs `npm stage approve <stage-id>` with 2FA, and the workflow's job summary carries that command. Running
+the workflow by hand stages the current version if npm does not have it yet, which is how a release that
+failed part way through is retried.
 
 ## Queries
 

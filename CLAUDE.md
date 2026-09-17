@@ -64,19 +64,33 @@ and the Rust, Python, Go and Swift bindings.
 `.github/workflows/release.yml` runs on every push to `main` but only releases when `package.json`'s version
 differs from the previous commit's and no `v<version>` tag exists yet. Then it runs CI, `prebuildify` on
 five runners (Linux x64 and arm64, macOS x64 and arm64, Windows x64), and a last job that tags `v<version>`,
-creates the GitHub release with `tree-sitter-django.wasm` attached, and runs `npm publish --provenance`.
-**A release is a version-bump commit on `main`**; no other push starts one.
+creates the GitHub release with `tree-sitter-django.wasm` attached, and runs
+`npm stage publish --provenance`. **A release is a version-bump commit on `main`**; no other push starts one.
 
-Running the workflow by hand (`workflow_dispatch`) is the retry: it publishes whatever version
-`package.json` holds as long as `npm view` does not find it on the registry already, and it skips the tag
-and the release when a previous attempt left them behind, replacing only the Wasm asset. So a run that
-tagged and then failed to publish is finished by running it again, and a run against an already published
-version stops at the version job.
+**The workflow stages the publish; it does not publish.** `npm stage publish` hands npm the tarball and
+holds it there, unavailable to install, until a maintainer runs `npm stage approve <stage-id>` and answers a
+2FA prompt — proof of presence deferred rather than dropped, which is npm's answer to deprecating the tokens
+that let a workflow publish unattended. The job summary prints the `view`/`download`/`approve`/`reject`
+commands for the stage it made. Approving needs npm 12 (`npm install -g npm@^12`), which is also why the job
+installs it: no runner image ships an npm that has the command.
+
+Running the workflow by hand (`workflow_dispatch`) is the retry: it stages whatever version `package.json`
+holds as long as `npm view` does not find it on the registry already, and it skips the tag and the release
+when a previous attempt left them behind, replacing only the Wasm asset. So a run that tagged and then
+failed to stage is finished by running it again, and a run against an already published version stops at the
+version job. A version that is _staged_ and not yet approved is invisible to `npm view` while still
+occupying npm's version index, so a second stage of it is an error rather than a no-op; the stage job asks
+`npm stage list` first and skips straight to the approval summary when it finds one. That listing is
+best-effort — a short-lived OIDC token may not run `npm stage` subcommands at all — and a failure there just
+means the stage is attempted.
 
 Releasing needs three things to line up:
 
-- the `NPM_TOKEN` secret, a granular automation token. Provenance also needs `id-token: write`, which the
-  publish job already declares.
+- credentials to stage with: either a trusted publisher configured for this workflow
+  (`npm trust github --allow-stage-publish`), which needs no secret at all because npm exchanges the
+  workflow's OIDC token for one of its own, or the `NPM_TOKEN` secret as the fallback. Staging works with any
+  token type, so that token no longer needs — and should no longer have — the 2FA bypass an automation token
+  carries. Both the exchange and provenance need `id-token: write`, which the publish job already declares.
 - **the version in `package.json` and in `tree-sitter.json`'s `metadata`**. The release trigger reads the
   first; the second is compiled into `src/parser.c` as the language's version, so bumping one alone leaves
   the parser disagreeing with the manifest.
@@ -85,6 +99,21 @@ Releasing needs three things to line up:
 
 The arm64 Linux runner (`ubuntu-24.04-arm`) is free for public repositories only. `tree-sitter build --wasm`
 runs Emscripten through Docker, which the ubuntu runners provide.
+
+**The npm package must carry its prebuilds**, or `npm install` runs `node-gyp-build`, finds nothing and
+compiles, which fails on an image without `python3`, `make` and a compiler — `node:20-slim`, for instance.
+0.1.0 was published by hand before the workflow existed and shipped none, which is what that image hit. The
+`prebuild` jobs are what produce them, and `files` carries `prebuilds/**`.
+
+`npm run prebuildify` passes `--napi --strip --tag-libc`. `--napi` makes one binary per platform that every
+Node ABI can load, so the file needs no ABI tag and is named after the package. `--tag-libc` adds `glibc` or
+`musl`: `node-gyp-build` treats a file with no libc tag as matching anything, so an Alpine install would
+otherwise load a glibc binary and fail at run time; with the tag it compiles instead. Only glibc is built,
+so musl installs need a toolchain.
+
+`package.json` exports the Wasm build as `tree-sitter-django/tree-sitter-django.wasm`. An `exports` map
+hides everything it does not name, so each published path — the queries, `grammar.js`, `src/scanner.c` —
+needs its own entry.
 
 ### Stale parser library
 

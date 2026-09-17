@@ -1,6 +1,6 @@
 {
   "name": "tree-sitter-django",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -9,6 +9,7 @@
       "default": "./bindings/node/index.js"
     },
     "./grammar": "./grammar.js",
+    "./tree-sitter-django.wasm": "./tree-sitter-django.wasm",
     "./src/scanner.c": "./src/scanner.c",
     "./queries/*": "./queries/*",
     "./package.json": "./package.json"
@@ -25,7 +26,7 @@
     "tag": "tree-sitter tag",
     "playground": "tree-sitter playground",
     "install": "node-gyp-build",
-    "prebuildify": "prebuildify --napi --strip",
+    "prebuildify": "prebuildify --napi --strip --tag-libc",
     "binding-test": "node --test bindings/node/*_test.js"
   },
   "dependencies": {

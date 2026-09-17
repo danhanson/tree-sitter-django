@@ -1,13 +1,19 @@
 name: Release
 
 # Releasing is a version bump: push a commit to main that changes the version in
-# package.json, and this tags v<version>, creates the GitHub release and
-# publishes to npm. Every other push to main only runs the tests.
+# package.json, and this tags v<version>, creates the GitHub release and stages
+# the npm publish. Every other push to main only runs the tests.
 #
-# Running it by hand instead publishes whatever version package.json holds, as
-# long as npm does not have it yet, and skips the tag and the release if a
-# previous attempt already made them. That is how a half-finished release is
-# retried.
+# Staging is not publishing: "npm stage publish" hands npm the tarball and nobody
+# can install it until a maintainer runs "npm stage approve <stage-id>" and
+# answers a 2FA prompt. That is the point — npm is deprecating the tokens that
+# let a workflow publish on its own, and staging defers the proof of presence
+# instead of removing it. The job summary carries the command to run.
+#
+# Running it by hand instead stages whatever version package.json holds, as long
+# as npm has neither published nor staged it yet, and skips the tag and the
+# release if a previous attempt already made them. That is how a half-finished
+# release is retried.
 on:
   push:
     branches: [main]
@@ -48,12 +54,14 @@ jobs:
           echo "tag_exists=$tag_exists" >> "$GITHUB_OUTPUT"
 
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
-            # by hand: publish what package.json says, unless npm has it already
+            # by hand: stage what package.json says, unless npm has it already.
+            # A version staged but not yet approved is invisible to npm view; the
+            # stage job looks for that one itself.
             if npm view "$name@$version" version >/dev/null 2>&1; then
-              echo "::warning::$name@$version is already on npm; nothing to publish"
+              echo "::warning::$name@$version is already on npm; nothing to stage"
               echo "changed=false" >> "$GITHUB_OUTPUT"
             else
-              echo "publishing $name@$version by hand (tag exists: $tag_exists)"
+              echo "staging $name@$version by hand (tag exists: $tag_exists)"
               echo "changed=true" >> "$GITHUB_OUTPUT"
             fi
             exit 0
@@ -113,13 +121,13 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Tag and publish
+    name: Tag and stage
     needs: [version, prebuild]
     if: needs.version.outputs.changed == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write # the tag and the release
-      id-token: write # provenance for npm
+      id-token: write # the OIDC exchange, and provenance for npm
     env:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
@@ -161,7 +169,74 @@ jobs:
           else
             gh release create "v$VERSION" --title "v$VERSION" --generate-notes tree-sitter-django.wasm
           fi
-      - name: Publish
+      # "npm stage" arrived in npm 12, which is newer than the npm any runner
+      # image ships with
+      - name: Install npm 12
+        run: npm install -g npm@^12
+      # staged versions share npm's version index with published ones, so a
+      # second stage of the same version is an error rather than a no-op. A run
+      # that staged and then failed later should find its stage and go on.
+      - name: Look for an existing stage
+        id: staged
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public
+        run: |
+          set -uo pipefail
+          name="$(node -p "require('./package.json').name")"
+          # a short-lived OIDC token cannot run "npm stage list" at all, so a
+          # failure here means "ask npm by staging", not "stop"
+          if ! items="$(npm stage list "$name" --json 2>/dev/null)"; then
+            echo "could not list staged versions; assuming there are none"
+            echo "staged=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          id="$(node -e '
+            const items = JSON.parse(require("node:fs").readFileSync(0, "utf8"));
+            const match = items.find((item) => item.version === process.env.VERSION);
+            if (match) console.log(match.id);
+          ' <<< "$items")"
+          if [ -n "$id" ]; then
+            echo "::warning::$name@$VERSION is already staged as $id; not staging it again"
+            echo "staged=true" >> "$GITHUB_OUTPUT"
+            echo "stage_id=$id" >> "$GITHUB_OUTPUT"
+          else
+            echo "staged=false" >> "$GITHUB_OUTPUT"
+          fi
+      # NPM_TOKEN is the fallback: where the package has a trusted publisher for
+      # this workflow, npm exchanges the OIDC token above for one of its own and
+      # the secret is not read at all.
+      - name: Stage the publish
+        id: stage
+        if: steps.staged.outputs.staged != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          npm stage publish --provenance --access public 2>&1 | tee stage.log
+          id="$(sed -n 's/.*staged with id \([0-9a-fA-F-]\{36\}\).*/\1/p' stage.log | tail -n1)"
+          echo "stage_id=$id" >> "$GITHUB_OUTPUT"
+      - name: Say how to approve it
+        env:
+          STAGE_ID: ${{ steps.stage.outputs.stage_id || steps.staged.outputs.stage_id }}
+        run: |
+          set -euo pipefail
+          name="$(node -p "require('./package.json').name")"
+          {
+            echo "### $name@$VERSION is staged, not published"
+            echo
+            echo "npm has the tarball and nobody can install it until a maintainer approves it, which asks for 2FA:"
+            echo
+            echo '```sh'
+            if [ -n "$STAGE_ID" ]; then
+              echo "npm stage view $STAGE_ID       # what was staged"
+              echo "npm stage download $STAGE_ID   # the tarball itself"
+              echo "npm stage approve $STAGE_ID    # publish it"
+              echo "npm stage reject $STAGE_ID     # throw it away"
+            else
+              echo "npm stage list $name"
+              echo "npm stage approve <stage-id>"
+            fi
+            echo '```'
+            echo
+            echo "Approving needs npm 12: \`npm install -g npm@^12\`."
+          } >> "$GITHUB_STEP_SUMMARY"
