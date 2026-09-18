@@ -105,6 +105,120 @@ For With Empty
   (content))
 
 ==================
+For Does Not Take An Else
+==================
+
+{% for a in b %}x{% else %}y{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_block
+      (for_tag
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content)
+        (unexpected_tag)
+        (content)))
+    (endfor_tag))
+  (content))
+
+==================
+For With Empty Twice
+==================
+
+{% for a in b %}x{% empty %}y{% empty %}z{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_block
+      (for_tag
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content)))
+    (empty_block
+      (empty_tag)
+      (template
+        (content)
+        (unexpected_tag)
+        (content)))
+    (endfor_tag))
+  (content))
+
+==================
+For With An Empty Clause And No Body
+==================
+
+{% for a in b %}{% empty %}{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_block
+      (for_tag
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier))))))
+    (empty_block
+      (empty_tag))
+    (endfor_tag))
+  (content))
+
+==================
+For With A Nested If In Its Empty Clause
+==================
+
+{% for a in b %}x{% empty %}{% if q %}y{% endif %}{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_block
+      (for_tag
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (content)))
+    (empty_block
+      (empty_tag)
+      (template
+        (if_group
+          (if_block
+            (if_tag
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
+            (template
+              (content)))
+          (endif_tag))))
+    (endfor_tag))
+  (content))
+
+==================
 For With A Tag In Its Body
 ==================
 
@@ -175,6 +289,104 @@ For With A Nested For
               (content)))
           (endfor_tag))
         (content)))
+    (endfor_tag))
+  (content))
+
+==================
+For With A Nested With
+==================
+
+{% for a in b %}{% with c=1 %}y{% endwith %}{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_block
+      (for_tag
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (with_group
+          (with_block
+            (with_tag
+              variable: (identifier)
+              (filtered_value
+                (value
+                  (literal
+                    (number)))))
+            (template
+              (content)))
+          (endwith_tag))))
+    (endfor_tag))
+  (content))
+
+==================
+For With A Cycle In Its Body
+==================
+
+{% for a in b %}{% cycle 1 2 %}{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_block
+      (for_tag
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (cycle_tag
+          (filtered_value
+            (value
+              (literal
+                (number))))
+          (filtered_value
+            (value
+              (literal
+                (number)))))))
+    (endfor_tag))
+  (content))
+
+==================
+For With Multiple Variables And A Nested If
+==================
+
+{% for a, b in c %}{% if x %}y{% endif %}{% endfor %}
+
+---
+
+(template
+  (content)
+  (for_group
+    (for_block
+      (for_tag
+        variable: (identifier)
+        variable: (identifier)
+        (filtered_value
+          (value
+            (variable_attribute
+              (identifier)))))
+      (template
+        (if_group
+          (if_block
+            (if_tag
+              (predicate
+                (filtered_value
+                  (value
+                    (variable_attribute
+                      (identifier))))))
+            (template
+              (content)))
+          (endif_tag))))
     (endfor_tag))
   (content))
 

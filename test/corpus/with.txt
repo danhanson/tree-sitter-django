@@ -67,6 +67,31 @@ With Multiple Variables
   (content))
 
 ==================
+With Does Not Take An Else
+==================
+
+{% with x=1 %}a{% else %}b{% endwith %}
+
+---
+
+(template
+  (content)
+  (with_group
+    (with_block
+      (with_tag
+        variable: (identifier)
+        (filtered_value
+          (value
+            (literal
+              (number)))))
+      (template
+        (content)
+        (unexpected_tag)
+        (content)))
+    (endwith_tag))
+  (content))
+
+==================
 With A Binding Twice
 ==================
 

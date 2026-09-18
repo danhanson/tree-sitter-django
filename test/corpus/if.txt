@@ -102,6 +102,153 @@ other
   (content))
 
 ==================
+If With Elif
+==================
+
+{% if x %}a{% elif y %}b{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_block
+      (if_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (elif_block
+      (elif_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (endif_tag))
+  (content))
+
+==================
+If With Else
+==================
+
+{% if x %}a{% else %}b{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_block
+      (if_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (else_block
+      (else_tag)
+      (template
+        (content)))
+    (endif_tag))
+  (content))
+
+==================
+If With An Elif Missing Its Condition
+==================
+
+{% if x %}a{% elif %}b{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_block
+      (if_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)
+        (unexpected_tag)
+        (content)))
+    (endif_tag))
+  (content))
+
+==================
+If With An Elif After An Else
+==================
+
+{% if x %}a{% else %}b{% elif y %}c{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_block
+      (if_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)
+        (unexpected_tag)
+        (content)))
+    (elif_block
+      (elif_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (endif_tag))
+  (content))
+
+==================
+If With Two Elses
+==================
+
+{% if x %}a{% else %}b{% else %}c{% endif %}
+
+---
+
+(template
+  (content)
+  (if_group
+    (if_block
+      (if_tag
+        (predicate
+          (filtered_value
+            (value
+              (variable_attribute
+                (identifier))))))
+      (template
+        (content)))
+    (else_block
+      (else_tag)
+      (template
+        (content)
+        (unexpected_tag)
+        (content)))
+    (endif_tag))
+  (content))
+
+==================
 If With Complex Predicate
 ==================
 
